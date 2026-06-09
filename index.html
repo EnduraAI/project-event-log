@@ -65,7 +65,20 @@
   .lanewrap{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:6px;margin-top:10px}
   .evspan{position:absolute;height:15px;border-radius:3px}
   .axis{display:flex;justify-content:space-between;color:var(--muted);font-size:10.5px;margin-top:3px}
-  @media print{*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}nav,.noprint{display:none!important}body{background:#fff}.panel,.card{break-inside:avoid;border-color:#bbb}}
+  @media print{
+    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
+    nav,.noprint{display:none!important}
+    body{background:#fff;font-size:12px}
+    header{padding:6px 0;border-bottom:1px solid var(--accent);break-after:avoid;page-break-after:avoid}
+    .mark{width:34px;height:34px}
+    .wordmark{font-size:18px}
+    main{padding:0;max-width:none}
+    .card{break-inside:avoid;border-color:#bbb}
+    .panel{break-inside:auto;border-color:#bbb;margin:8px 0;padding:10px}
+    .panel h3{break-after:avoid}
+    .tableScroll{overflow:visible}
+    tr,td,th{break-inside:avoid}
+  }
 </style>
 </head>
 <body>
@@ -155,11 +168,12 @@
     <div class="panel">
       <h3>End-of-day breakdown <span class="sub">(auto-calculated)</span></h3>
       <div id="dayTally" class="tally"></div>
+      <div id="ltClassify" class="chips noprint" style="margin-top:10px"></div>
       <div id="catChips" class="chips"></div>
       <div id="wbsChips" class="chips"></div>
       <div id="laneWrap" class="lanewrap"></div>
       <div class="axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span id="axEnd">24:00</span></div>
-      <div class="footnote">Each bar is one event, drawn on its own lane so overlapping events are visible side by side. "Downtime" totals merge overlaps (no double counting).</div>
+      <div class="footnote"><b>Actual downtime + NPT + clear running = day length</b> (overlaps merged, no double-counting; where a downtime and an NPT event overlap, that minute counts as actual downtime). Each bar is one event, drawn on its own lane so overlapping events are visible side by side. Set whether a category is genuine downtime or non-productive time using the controls above.</div>
     </div>
   </section>
 
@@ -179,7 +193,7 @@
       <h3>Campaign rollup</h3>
       <div class="tableScroll">
         <table>
-          <thead><tr><th>Day</th><th class="num">Day h</th><th class="num">Events</th><th class="num">Downtime h</th><th class="num">Clear h</th><th>Worst category</th></tr></thead>
+          <thead><tr><th>Day</th><th class="num">Day h</th><th class="num">Events</th><th class="num">Actual DT h</th><th class="num">NPT h</th><th class="num">Clear h</th><th>Worst category</th></tr></thead>
           <tbody id="rollupBody"></tbody>
           <tfoot id="rollupFoot"></tfoot>
         </table>
@@ -215,7 +229,7 @@
         </table>
       </div>
       <div class="row noprint" style="margin-top:10px"><div class="spacer"></div><button class="btn" onclick="exportWbsCSV()">Export WBS CSV</button></div>
-      <div class="footnote">A log line's hours run until the next timed line (last line runs to day end). Lines sharing the same start time each get the full span (asset-hours).</div>
+      <div class="footnote">A log line's hours run until the next timed line (last line runs to day end). When two WBS elements are active in the same time slot, that slot is split <b>0.5 to each</b> (max two concurrent). To run two elements at once, add two lines at the same time, each tagged with its element; both carry forward until you re-tag or end the span with <b>-</b>.</div>
     </div>
   </section>
 </main>
@@ -234,6 +248,20 @@
 
 var CATS=["Weather","ROV - Asset 1","ROV - Asset 2","Tooling","Scheduling","Crane","Vessel","Other"];
 var CCOL={"Weather":"#2f74c9","ROV - Asset 1":"#2fae54","ROV - Asset 2":"#dd3b40","Tooling":"#c98a2a","Scheduling":"#b23bb0","Crane":"#7d54d6","Vessel":"#0f9bad","Other":"#8C8C8C"};
+
+/* Lost-time classification: each event category is either Actual Downtime ("DT") or Non-Productive Time ("NPT").
+   DT  = genuine stop, work cannot progress (breakdown, weather, asset/equipment/vessel failure).
+   NPT = crew still working but not producing (tooling/consumable changeouts, waiting/standby).
+   Defaults below are a starting point — adjust per category in the End-of-day breakdown. */
+var CTYPE_DEFAULT={"Weather":"DT","ROV - Asset 1":"DT","ROV - Asset 2":"DT","Tooling":"NPT","Scheduling":"NPT","Crane":"DT","Vessel":"DT","Other":"DT"};
+var CTYPEK="endura_pel_ctype";
+var CTYPE=loadCtype();
+function loadCtype(){ var o={}; for(var c in CTYPE_DEFAULT) o[c]=CTYPE_DEFAULT[c];
+  try{ var s=localStorage.getItem(CTYPEK); if(s){ var p=JSON.parse(s); for(var k in p){ if(p[k]==="DT"||p[k]==="NPT") o[k]=p[k]; } } }catch(e){}
+  return o; }
+function saveCtype(){ try{ localStorage.setItem(CTYPEK,JSON.stringify(CTYPE)); }catch(e){} }
+function catType(c){ return CTYPE[c]==="NPT"?"NPT":"DT"; }
+function setCtype(c,v){ CTYPE[c]=(v==="NPT")?"NPT":"DT"; saveCtype(); renderLog(); var t=document.getElementById("tabDash"); if(t&&t.classList.contains("active")) renderDash(); }
 
 /* day = { end, log:[[time,text]], ev:[[category,start,end,description]] }  (blank event end = ongoing) */
 var SEED={
@@ -277,10 +305,17 @@ function unionH(sp){
   return tot/60;
 }
 function catH(sp){ var m={}; sp.forEach(function(x){ m[x.cat]=(m[x.cat]||0)+x.hrs; }); return m; }
+/* interval helpers (minutes) for splitting downtime vs NPT without double-counting */
+function mergeIv(spans){ var a=spans.map(function(x){return {s:x.s,e:x.e};}).sort(function(p,q){return p.s-q.s;}); var o=[]; a.forEach(function(x){ if(x.e<=x.s) return; if(!o.length||x.s>o[o.length-1].e) o.push({s:x.s,e:x.e}); else if(x.e>o[o.length-1].e) o[o.length-1].e=x.e; }); return o; }
+function ivMin(iv){ var t=0; iv.forEach(function(x){ t+=x.e-x.s; }); return t; }
+function subIv(base,cut){ var out=[]; base.forEach(function(b){ var segs=[{s:b.s,e:b.e}]; cut.forEach(function(c){ var ns=[]; segs.forEach(function(s){ if(c.e<=s.s||c.s>=s.e){ ns.push(s); } else { if(c.s>s.s) ns.push({s:s.s,e:c.s}); if(c.e<s.e) ns.push({s:c.e,e:s.e}); } }); segs=ns; }); out=out.concat(segs); }); return out; }
 function dayStats(key){
   var day=data[key]; var len=(toMin(day.end)||1440)/60;
   var sp=evSpans(key); var u=unionH(sp);
-  return {len:len,union:u,clear:Math.max(0,len-u),count:sp.length,cats:catH(sp),sp:sp,endMin:(toMin(day.end)||1440)};
+  var dtIv=mergeIv(sp.filter(function(x){return catType(x.cat)==="DT";}));
+  var nptIv=subIv(mergeIv(sp.filter(function(x){return catType(x.cat)==="NPT";})),dtIv);
+  var dt=ivMin(dtIv)/60, npt=ivMin(nptIv)/60;
+  return {len:len,union:u,dt:dt,npt:npt,clear:Math.max(0,len-dt-npt),count:sp.length,cats:catH(sp),sp:sp,endMin:(toMin(day.end)||1440)};
 }
 function worstCat(cats){ var w="",h=0; for(var c in cats){ if(cats[c]>h){ h=cats[c]; w=c; } } return w?w+" ("+r2(h)+"h)":"—"; }
 
@@ -339,12 +374,20 @@ function renderBreakdown(key){
   var st=dayStats(key);
   document.getElementById("dayTally").innerHTML=
     '<div class="tbox"><div class="k">Day length</div><div class="v">'+r2(st.len).toFixed(2)+'<small> h</small></div></div>'+
-    '<div class="tbox"><div class="k">Downtime (merged)</div><div class="v" style="color:#dd3b40">'+r2(st.union).toFixed(2)+'<small> h</small></div></div>'+
+    '<div class="tbox"><div class="k">Actual downtime</div><div class="v" style="color:#dd3b40">'+r2(st.dt).toFixed(2)+'<small> h</small></div></div>'+
+    '<div class="tbox"><div class="k">Non-productive (NPT)</div><div class="v" style="color:#c98a2a">'+r2(st.npt).toFixed(2)+'<small> h</small></div></div>'+
     '<div class="tbox"><div class="k">Clear running</div><div class="v" style="color:#0f9bad">'+r2(st.clear).toFixed(2)+'<small> h</small></div></div>'+
     '<div class="tbox"><div class="k">Events</div><div class="v">'+st.count+'</div></div>'+
     '<div class="tbox"><div class="k">Worst category</div><div class="v" style="font-size:14px;line-height:1.3;margin-top:7px">'+worstCat(st.cats)+'</div></div>';
+  var lt=document.getElementById("ltClassify");
+  if(lt){ lt.innerHTML='<span class="sub" style="align-self:center;margin-right:2px">Lost-time type:</span>'+CATS.map(function(c){
+      return '<span class="catchip"><span class="dot" style="background:'+CCOL[c]+'"></span>'+esc(c)+
+        ' <select onchange="setCtype(this.getAttribute(\'data-c\'),this.value)" data-c="'+esc(c)+'" style="font-size:11px;padding:1px 3px;margin-left:4px;border-radius:4px">'+
+        '<option value="DT"'+(catType(c)==="DT"?" selected":"")+'>Downtime</option>'+
+        '<option value="NPT"'+(catType(c)==="NPT"?" selected":"")+'>NPT</option></select></span>';
+    }).join(""); }
   var ch=document.getElementById("catChips"); ch.innerHTML="";
-  CATS.forEach(function(c){ if(st.cats[c]){ ch.insertAdjacentHTML("beforeend",'<span class="catchip"><span class="dot" style="background:'+CCOL[c]+'"></span>'+c+' · '+r2(st.cats[c]).toFixed(1)+'h</span>'); } });
+  CATS.forEach(function(c){ if(st.cats[c]){ ch.insertAdjacentHTML("beforeend",'<span class="catchip"><span class="dot" style="background:'+CCOL[c]+'"></span>'+c+' · '+r2(st.cats[c]).toFixed(1)+'h <span class="sub" style="font-size:10px">'+catType(c)+'</span></span>'); } });
   var wh=wbsHours(key); var wc=document.getElementById("wbsChips"); wc.innerHTML="";
   Object.keys(wh).sort().forEach(function(w){ var nm=wbsName(w); wc.insertAdjacentHTML("beforeend",'<span class="catchip" title="'+esc(nm)+'"><b>WBS '+esc(w)+'</b>&nbsp;· '+r2(wh[w]).toFixed(1)+'h</span>'); });
   var lw=document.getElementById("laneWrap"); lw.innerHTML="";
@@ -387,11 +430,12 @@ function htmlRow(lbl,mid,val){ var d=document.createElement("div"); d.className=
 function renderDash(){
   var keys=Object.keys(data).sort();
   var stats=keys.map(function(k){ var s=dayStats(k); s.k=k; return s; });
-  var tU=0,tC=0,tE=0,agg={};
-  stats.forEach(function(s){ tU+=s.union; tC+=s.clear; tE+=s.count; for(var c in s.cats) agg[c]=(agg[c]||0)+s.cats[c]; });
+  var tU=0,tDT=0,tNPT=0,tC=0,tE=0,agg={};
+  stats.forEach(function(s){ tU+=s.union; tDT+=s.dt; tNPT+=s.npt; tC+=s.clear; tE+=s.count; for(var c in s.cats) agg[c]=(agg[c]||0)+s.cats[c]; });
   document.getElementById("kpiCards").innerHTML=
     kpi("Days logged",keys.length,"")+
-    kpi("Total downtime",r2(tU).toFixed(1)+"<small> h</small>","#dd3b40")+
+    kpi("Actual downtime",r2(tDT).toFixed(1)+"<small> h</small>","#dd3b40")+
+    kpi("Non-productive (NPT)",r2(tNPT).toFixed(1)+"<small> h</small>","#c98a2a")+
     kpi("Clear running",r2(tC).toFixed(1)+"<small> h</small>","#0f9bad")+
     kpi("Events logged",tE,"")+
     kpi("Worst category",'<span style="font-size:15px">'+worstCat(agg)+'</span>',"");
@@ -407,12 +451,12 @@ function renderDash(){
     var sum=0; for(var c in s.cats) sum+=s.cats[c];
     var scale=Math.max(s.len,sum)||1; var segsH="";
     CATS.forEach(function(c){ if(s.cats[c]) segsH+='<div class="seg" style="width:'+(s.cats[c]/scale*100)+'%;background:'+CCOL[c]+'" title="'+c+' '+r2(s.cats[c])+'h"></div>'; });
-    dc.appendChild(htmlRow(fmtDay(s.k),'<div class="stack">'+segsH+'</div>',r2(s.union).toFixed(1)+"h DT"));
+    dc.appendChild(htmlRow(fmtDay(s.k),'<div class="stack">'+segsH+'</div>',r2(s.dt).toFixed(1)+" DT / "+r2(s.npt).toFixed(1)+" NPT"));
   });
   var rb=document.getElementById("rollupBody"); rb.innerHTML="";
-  stats.forEach(function(s){ rb.insertAdjacentHTML("beforeend",'<tr><td>'+fmtDay(s.k)+'</td><td class="num">'+r2(s.len).toFixed(2)+'</td><td class="num">'+s.count+'</td><td class="num">'+r2(s.union).toFixed(2)+'</td><td class="num">'+r2(s.clear).toFixed(2)+'</td><td>'+worstCat(s.cats)+'</td></tr>'); });
+  stats.forEach(function(s){ rb.insertAdjacentHTML("beforeend",'<tr><td>'+fmtDay(s.k)+'</td><td class="num">'+r2(s.len).toFixed(2)+'</td><td class="num">'+s.count+'</td><td class="num">'+r2(s.dt).toFixed(2)+'</td><td class="num">'+r2(s.npt).toFixed(2)+'</td><td class="num">'+r2(s.clear).toFixed(2)+'</td><td>'+worstCat(s.cats)+'</td></tr>'); });
   var tL=0; stats.forEach(function(s){ tL+=s.len; });
-  document.getElementById("rollupFoot").innerHTML='<tr style="font-weight:800"><td>TOTAL</td><td class="num">'+r2(tL).toFixed(2)+'</td><td class="num">'+tE+'</td><td class="num">'+r2(tU).toFixed(2)+'</td><td class="num">'+r2(tC).toFixed(2)+'</td><td>'+worstCat(agg)+'</td></tr>';
+  document.getElementById("rollupFoot").innerHTML='<tr style="font-weight:800"><td>TOTAL</td><td class="num">'+r2(tL).toFixed(2)+'</td><td class="num">'+tE+'</td><td class="num">'+r2(tDT).toFixed(2)+'</td><td class="num">'+r2(tNPT).toFixed(2)+'</td><td class="num">'+r2(tC).toFixed(2)+'</td><td>'+worstCat(agg)+'</td></tr>';
 }
 
 var USERK="endura_pel_user";
@@ -444,15 +488,32 @@ function effWbs(log){
     else { eff[o.i]=cur; } });
   return eff;
 }
+/* Per-element WBS hours.
+   Each time slot (gap between consecutive distinct log times) is attributed to the WBS
+   element(s) active in that slot. When two distinct elements are active at once the slot is
+   split equally (0.5 each); concurrency is capped at two. An element stays active (carries
+   forward) until it is replaced by a new tag at a later time or ended with "-". */
 function wbsHours(key){
   var day=data[key]; var endMin=toMin(day.end)||1440;
-  var eff=effWbs(day.log);
-  var rows=day.log.map(function(r,i){ return {t:toMin(r[0]),w:eff[i]||""}; }).filter(function(x){ return x.t!=null; });
-  var times=rows.map(function(x){ return x.t; }).sort(function(a,b){ return a-b; });
-  var m={}, seen={};
-  rows.forEach(function(x){ if(!x.w) return; var k2=x.t+"|"+x.w; if(seen[k2]) return; seen[k2]=1;
-    var nxt=endMin; for(var i=0;i<times.length;i++){ if(times[i]>x.t){ nxt=times[i]; break; } }
-    if(nxt>x.t) m[x.w]=(m[x.w]||0)+(nxt-x.t)/60; });
+  var lines=day.log.map(function(r,i){ return {t:toMin(r[0]),w:String(r[2]||"").trim(),i:i}; })
+                   .filter(function(x){ return x.t!=null; })
+                   .sort(function(a,b){ return a.t-b.t||a.i-b.i; });
+  if(!lines.length) return {};
+  var times=[]; lines.forEach(function(x){ if(!times.length||times[times.length-1]!==x.t) times.push(x.t); });
+  var byTime={}; lines.forEach(function(x){ (byTime[x.t]=byTime[x.t]||[]).push(x.w); });
+  var m={}, active=[];
+  for(var k=0;k<times.length;k++){
+    var t=times[k], nxt=(k+1<times.length)?times[k+1]:endMin; if(nxt<t) nxt=t;
+    var tags=byTime[t]||[];
+    var hasEnd=tags.indexOf("-")>=0;
+    var ids=[]; tags.forEach(function(w){ if(w&&w!=="-"&&ids.indexOf(w)<0) ids.push(w); });
+    if(ids.length) active=ids.slice(0,2);        /* a new tag (or pair) redefines what's active */
+    else if(hasEnd) active=[];                    /* "-" with no new tag ends the span(s) */
+    /* else: blank line inherits — active carries forward unchanged */
+    var dur=(nxt-t)/60; if(dur<=0||!active.length) continue;
+    var share=dur/active.length;
+    active.forEach(function(w){ m[w]=(m[w]||0)+share; });
+  }
   return m;
 }
 function wbsTotals(){
@@ -551,7 +612,7 @@ function exportCSV(){
   day.log.forEach(function(r,i){ csv+=r[0]+","+q(r[1])+","+(effA[i]||"")+","+(r[3]||"")+"\n"; });
   csv+="\nEVENTS\nCategory,Start,End,Duration_h,Description,By\n";
   st.sp.forEach(function(x){ csv+=[x.cat,min2t(x.s),(x.open?"ongoing":min2t(x.e)),r2(x.hrs),q(x.d),x.by||""].join(",")+"\n"; });
-  csv+="\nSUMMARY\nDay length h,"+r2(st.len)+"\nDowntime (merged) h,"+r2(st.union)+"\nClear h,"+r2(st.clear)+"\n";
+  csv+="\nSUMMARY\nDay length h,"+r2(st.len)+"\nActual downtime h,"+r2(st.dt)+"\nNon-productive (NPT) h,"+r2(st.npt)+"\nClear h,"+r2(st.clear)+"\n";
   for(var c in st.cats) csv+=c+" h,"+r2(st.cats[c])+"\n";
   var wh=wbsHours(key); var wk=Object.keys(wh);
   if(wk.length){ csv+="\nWBS HOURS\nWBS_ID,Activity,Hours\n"; wk.sort().forEach(function(w){ csv+=w+","+q(wbsName(w))+","+r2(wh[w])+"\n"; }); }
@@ -559,14 +620,14 @@ function exportCSV(){
 }
 function exportRollupCSV(){
   var keys=Object.keys(data).sort();
-  var csv="Day,Day_h,Events,Downtime_h,Clear_h,"+CATS.join("_h,")+"_h\n";
-  keys.forEach(function(k){ var s=dayStats(k); var row=[fmtDay(k),r2(s.len),s.count,r2(s.union),r2(s.clear)]; CATS.forEach(function(c){ row.push(r2(s.cats[c]||0)); }); csv+=row.join(",")+"\n"; });
+  var csv="Day,Day_h,Events,Actual_DT_h,NPT_h,Clear_h,"+CATS.join("_h,")+"_h\n";
+  keys.forEach(function(k){ var s=dayStats(k); var row=[fmtDay(k),r2(s.len),s.count,r2(s.dt),r2(s.npt),r2(s.clear)]; CATS.forEach(function(c){ row.push(r2(s.cats[c]||0)); }); csv+=row.join(",")+"\n"; });
   dl(csv,"Events_campaign_rollup.csv");
 }
 
 var fileHandle=null, writing=false, pendingWrite=false, writeTimer=null;
 function fsaSupported(){ return !!(window.showSaveFilePicker && window.showOpenFilePicker); }
-function payload(){ return JSON.stringify({app:"Endura Project Event Log",version:4,saved:new Date().toISOString(),days:data,wbs:WBSL},null,2); }
+function payload(){ return JSON.stringify({app:"Endura Project Event Log",version:5,saved:new Date().toISOString(),days:data,wbs:WBSL,ctype:CTYPE},null,2); }
 function idbReq(mode,fn){ return new Promise(function(res,rej){ var o=indexedDB.open("eventtracker",1); o.onupgradeneeded=function(){ o.result.createObjectStore("kv"); }; o.onsuccess=function(){ var tx=o.result.transaction("kv",mode); var st=tx.objectStore("kv"); var rq=fn(st); tx.oncomplete=function(){ res(rq&&rq.result); }; tx.onerror=function(){ rej(tx.error); }; }; o.onerror=function(){ rej(o.error); }; }); }
 function idbSet(k,v){ return idbReq("readwrite",function(st){ st.put(v,k); }); }
 function idbGet(k){ return idbReq("readonly",function(st){ return st.get(k); }); }
@@ -579,7 +640,7 @@ async function writeFile(){
   }catch(e){ console.warn("auto-save failed",e); }
   writing=false; if(pendingWrite){ pendingWrite=false; writeFile(); }
 }
-function adopt(txt){ if(txt&&txt.trim()){ var o=JSON.parse(txt); if(o&&o.days){ data=o.days; WBSL=o.wbs||WBSL; } else data=o; } }
+function adopt(txt){ if(txt&&txt.trim()){ var o=JSON.parse(txt); if(o&&o.days){ data=o.days; WBSL=o.wbs||WBSL; if(o.ctype){ for(var k in o.ctype){ if(o.ctype[k]==="DT"||o.ctype[k]==="NPT") CTYPE[k]=o.ctype[k]; } saveCtype(); } } else data=o; } }
 async function linkFile(){
   if(!fsaSupported()){ alert("Auto-save needs Edge or Chrome. Use Export/Import data (.json) instead."); return; }
   try{ fileHandle=await window.showSaveFilePicker({suggestedName:"Project-Event-Log-data.json",types:[{description:"Project Event Log data",accept:{"application/json":[".json"]}}]}); await idbSet("handle",fileHandle); await writeFile(); setFileStatus(); }
