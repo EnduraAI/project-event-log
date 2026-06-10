@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Project Event Log — Endura Asset Intelligence</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root{
     --bg:#FAF7F1; --panel:#ffffff; --panel2:#f2eee4; --line:#e3ddcf; --field:#fbfaf7;
@@ -116,11 +118,9 @@
     <div class="row noprint" style="padding:8px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px">
       <label class="sub">Logger:</label>
       <input id="userTag" style="width:74px" placeholder="initials" onchange="setUser(this.value)" title="Your initials — stamped on every line and event you enter">
-      <span class="sub" style="margin-left:8px">Project data file:</span>
-      <span id="fileStatus" class="sub">checking…</span>
-      <button class="btn" onclick="linkFile()">Link / create</button>
-      <button class="btn" onclick="openFile()">Open</button>
-      <button id="reconnectBtn" class="btn" style="display:none" onclick="reconnectFile()">Reconnect</button>
+      <span class="sub" style="margin-left:8px">Project:</span>
+      <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
+      <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
       <span class="spacer"></span>
       <button class="btn" onclick="exportJSON()">Export data (.json)</button>
       <button class="btn" onclick="document.getElementById('jsonImport').click()">Import data (.json)</button>
@@ -133,6 +133,8 @@
         <label class="sub">Mode:</label>
         <select id="impMode"><option value="replace">Replace this day's log</option><option value="append">Append to existing</option></select>
         <div class="spacer"></div>
+        <button class="btn" onclick="document.getElementById('logFileInput').click()" title="Upload an Excel or CSV watch log">&#11014; Upload file</button>
+        <input type="file" id="logFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="uploadLogFile(this)">
         <button class="btn" onclick="parsePreview()">Preview</button>
         <button class="btn primary" onclick="applyImport()">Apply</button>
         <button class="btn" onclick="toggleImport(false)">Close</button>
@@ -215,7 +217,9 @@
         <div class="spacer"></div>
         <button class="btn" onclick="loadDpr()" title="Re-load the embedded sample schedule">Load sample schedule</button>
         <button class="btn" onclick="addW()">+ Add manually</button>
-        <button class="btn primary" onclick="importWbs()">Add pasted activities</button>
+        <button class="btn primary" onclick="document.getElementById('wbsFileInput').click()" title="Upload an Excel or CSV schedule file">&#11014; Upload file (Excel / CSV)</button>
+        <input type="file" id="wbsFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="uploadWbsFile(this)">
+        <button class="btn" onclick="importWbs()">Add pasted activities</button>
       </div>
       <div class="footnote">Duplicate IDs are skipped. Then tag log lines with these activities on the Daily Log tab &mdash; hours accumulate below and in the day CSV.</div>
     </div>
@@ -261,7 +265,7 @@ function loadCtype(){ var o={}; for(var c in CTYPE_DEFAULT) o[c]=CTYPE_DEFAULT[c
   return o; }
 function saveCtype(){ try{ localStorage.setItem(CTYPEK,JSON.stringify(CTYPE)); }catch(e){} }
 function catType(c){ return CTYPE[c]==="NPT"?"NPT":"DT"; }
-function setCtype(c,v){ CTYPE[c]=(v==="NPT")?"NPT":"DT"; saveCtype(); renderLog(); var t=document.getElementById("tabDash"); if(t&&t.classList.contains("active")) renderDash(); }
+function setCtype(c,v){ CTYPE[c]=(v==="NPT")?"NPT":"DT"; saveCtype(); save(); renderLog(); var t=document.getElementById("tabDash"); if(t&&t.classList.contains("active")) renderDash(); }
 
 /* day = { end, log:[[time,text]], ev:[[category,start,end,description]] }  (blank event end = ongoing) */
 var SEED={
@@ -276,12 +280,8 @@ var WBSL=[];
 var data=load();
 function mergeEmb(){ var have={}; WBSL.forEach(function(w){ have[String(w[0])]=1; }); var n=0; EMB.forEach(function(w){ if(!have[String(w[0])]){ WBSL.push([w[0],w[1]]); n++; } }); return n; }
 function loadDpr(){ var n=mergeEmb(); save(); renderWbs(); alert(n+" schedule activities loaded."); }
-function load(){ var d=null;
-  try{ var s=localStorage.getItem(STORE); if(s){ var o=JSON.parse(s); if(o&&o.days){ WBSL=o.wbs||[]; d=o.days; } else d=o; } }catch(e){}
-  if(d==null) d=JSON.parse(JSON.stringify(SEED));
-  if(WBSL.length<10) mergeEmb();
-  return d; }
-function save(){ try{ localStorage.setItem(STORE,JSON.stringify({days:data,wbs:WBSL})); }catch(e){} scheduleWrite(); }
+function load(){ var d=JSON.parse(JSON.stringify(SEED)); if(WBSL.length<10) mergeEmb(); return d; }
+function save(){ scheduleCloudSave(); }
 
 function toMin(t){ if(!t) return null; var p=String(t).split(":"); if(p.length<2) return null; return (+p[0])*60+(+p[1]); }
 function r2(n){ return Math.round(n*100)/100; }
@@ -543,6 +543,142 @@ function renderWbs(){
 function updW(i,f,v){ WBSL[i][f]=v; save(); renderWbs(); }
 function delW(i){ WBSL.splice(i,1); save(); renderWbs(); }
 function addW(){ WBSL.push(["",""]); save(); renderWbs(); }
+
+/* ===================== FILE UPLOAD (Excel / CSV) ===================== */
+/* ===================== FILE UPLOAD (Excel / CSV) ===================== *
+ * Reads a spreadsheet, turns rows into the same tab-separated text the
+ * paste boxes already understand, then reuses the existing import logic.
+ * Nothing about parsing/dedup/carry-forward changes — this is just a
+ * doorway so crews can upload a file instead of copy-pasting.            */
+
+function readSheet(file, cb){
+  if(!window.XLSX){ alert("Spreadsheet reader didn't load — check your internet, or paste the data instead."); return; }
+  var rd=new FileReader();
+  rd.onload=function(e){
+    try{
+      var wb=XLSX.read(e.target.result,{type:"array"});
+      var ws=wb.Sheets[wb.SheetNames[0]];               // first sheet
+      var rows=XLSX.utils.sheet_to_json(ws,{header:1,blankrows:false,defval:""}); // array of arrays
+      cb(rows);
+    }catch(err){ alert("Couldn't read that file: "+err.message+"\nMake sure it's a valid .xlsx, .xls or .csv."); }
+  };
+  rd.onerror=function(){ alert("Couldn't open that file."); };
+  rd.readAsArrayBuffer(file);
+}
+
+/* Detect which columns hold the WBS ID and the activity name.
+ * Looks for a header row first; falls back to "first column = ID, second = name". */
+function detectWbsCols(rows){
+  var idC=0, nameC=1, headerRows=0, recognised=false;
+  if(rows.length){
+    var h=rows[0].map(function(x){ return String(x||"").toLowerCase().trim(); });
+    var isIdHdr=function(c){ return /(\bid\b|\bids\b|\bcode\b|\bwbs\b|\buid\b|unique)/.test(c); };
+    var isNameHdr=function(c){ return /(name|task|activity|description|title|scope|element)/.test(c) && !isIdHdr(c); };
+    var foundId=-1, foundName=-1;
+    h.forEach(function(c,ci){ if(foundId<0 && isIdHdr(c)) foundId=ci; });
+    h.forEach(function(c,ci){ if(foundName<0 && ci!==foundId && isNameHdr(c)) foundName=ci; });
+    if(foundId>=0 || foundName>=0){
+      headerRows=1; recognised=true;
+      if(foundId>=0) idC=foundId;
+      if(foundName>=0) nameC=foundName;
+      else nameC=(idC===0?1:0);
+      if(foundId<0) idC=(nameC===0?1:0);
+    }
+  }
+  return {idC:idC,nameC:nameC,headerRows:headerRows,recognised:recognised};
+}
+
+function uploadWbsFile(inp){
+  var f=inp.files[0]; if(!f) return; inp.value="";
+  readSheet(f,function(rows){
+    if(!rows.length){ alert("That file looks empty."); return; }
+    var c=detectWbsCols(rows);
+    var items=[], idCount=0, namedCount=0;
+    for(var i=c.headerRows;i<rows.length;i++){
+      var r=rows[i]||[];
+      var id=String(r[c.idC]==null?"":r[c.idC]).trim();
+      var nm=String(r[c.nameC]==null?"":r[c.nameC]).trim();
+      if(!id && !nm) continue;
+      if(id) idCount++;
+      if(nm) namedCount++;
+      items.push([id,nm]);
+    }
+    if(!items.length){ alert("Couldn't find any rows to import in that file."); return; }
+    // Sanity guard: if columns weren't recognised, this might be the wrong file — ask before importing.
+    if(!c.recognised){
+      if(!confirm("This file doesn't have recognisable 'ID' / 'Name' column headers.\nThe app will treat column 1 as the ID and column 2 as the activity name.\n\nFirst row would import as:  "+(items[0][0]||"(blank)")+" — "+(items[0][1]||"(blank)")+"\n\nImport anyway?")) return;
+    }
+    // If names are entirely missing, confirm before importing IDs with blank names.
+    if(namedCount===0){
+      if(!confirm(items.length+" rows found, but no activity NAMES were detected — only IDs.\nImport them with blank names anyway?")) return;
+    }
+    // Push directly into WBSL with the same dedup rule importWbs uses (avoids trim() eating tab-only lines).
+    var added=0;
+    items.forEach(function(it){
+      var id=it[0], nm=it[1];
+      if(!id && !nm) return;
+      var dup=false; for(var k=0;k<WBSL.length;k++){ if(String(WBSL[k][0])===String(id) && id!==""){ dup=true; break; } }
+      if(!dup){ WBSL.push([id,nm]); added++; }
+    });
+    save(); renderWbs();
+    alert(added+" activities added.");
+  });
+}
+
+/* Convert a cell that might be an Excel time value (fraction of a day) or text into HHMM/HH:MM text.
+ * Returns "" if it doesn't look like a time. */
+function cellToTime(v){
+  if(v==null) return "";
+  if(typeof v==="number" && v>=0 && v<1){            // Excel stores times as fraction of 24h
+    var mins=Math.round(v*24*60); var h=Math.floor(mins/60), m=mins%60;
+    return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
+  }
+  var s=String(v).trim();
+  // already a time like 0620, 06:20, 6:20
+  if(/^\d{1,2}:?\d{2}$/.test(s)) return s;
+  return "";
+}
+
+function uploadLogFile(inp){
+  var f=inp.files[0]; if(!f) return; inp.value="";
+  readSheet(f,function(rows){
+    if(!rows.length){ alert("That file looks empty."); return; }
+    // Find which column holds the time, and whether row 0 is a header.
+    var headerRows=0, timeC=-1;
+    // A row "has a time" if any cell is a time value/text, OR any cell starts with a time (e.g. "0620 survey").
+    var rowHasTime=function(r){ return r.some(function(c){
+      if(cellToTime(c)!=="") return true;
+      var s=String(c==null?"":c).trim();
+      return /^\d{1,2}:?\d{2}\b/.test(s);
+    }); };
+    if(!rowHasTime(rows[0])) headerRows=1;
+    // pick the time column from the first data row (pure time cell only; text-with-time handled by parseRaw)
+    var probe=rows[headerRows]||[];
+    for(var ci=0; ci<probe.length; ci++){ if(cellToTime(probe[ci])!==""){ timeC=ci; break; } }
+
+    var out=[];
+    for(var i=headerRows;i<rows.length;i++){
+      var r=rows[i]||[];
+      var cells=r.map(function(x){ return String(x==null?"":x).trim(); });
+      if(!cells.some(function(x){ return x!==""; })) continue;     // skip fully blank rows
+      if(timeC>=0){
+        var t=cellToTime(r[timeC]);
+        // everything except the time column becomes the entry text
+        var rest=[];
+        for(var ci2=0; ci2<r.length; ci2++){ if(ci2===timeC) continue; var v=String(r[ci2]==null?"":r[ci2]).trim(); if(v!=="") rest.push(v); }
+        if(t){ out.push(t+" "+rest.join(" ")); }
+        else if(rest.length){ out.push(rest.join(" ")); }   // untimed -> parseRaw folds into previous
+      } else {
+        // no detected time column: just join the row and let parseRaw find a leading time in the text
+        out.push(cells.filter(function(x){ return x!==""; }).join(" "));
+      }
+    }
+    if(!out.length){ alert("Couldn't read any rows from that file."); return; }
+    document.getElementById("impText").value=out.join("\n");
+    parsePreview();                       // show preview; user clicks Apply (same as paste flow)
+  });
+}
+
 function importWbs(){
   var txt=document.getElementById("wbsText").value; var n=0;
   txt.split(/\r?\n/).forEach(function(raw){
@@ -625,50 +761,133 @@ function exportRollupCSV(){
   dl(csv,"Events_campaign_rollup.csv");
 }
 
-var fileHandle=null, writing=false, pendingWrite=false, writeTimer=null;
-function fsaSupported(){ return !!(window.showSaveFilePicker && window.showOpenFilePicker); }
+/* ===================== CLOUD SYNC (Supabase) ===================== *
+ * Replaces the old local-file persistence. The whole app talks to one
+ * shared row in a cloud table keyed by project name, so every laptop
+ * that opens the same project sees the same live data. The DT/NPT
+ * category classification (ctype) rides in the same document so all
+ * users see the same downtime split.                                  */
+
+var SUPA_URL = window.SUPA_URL || "__SUPABASE_URL__";
+var SUPA_KEY = window.SUPA_KEY || "__SUPABASE_ANON_KEY__";
+var PROJK = "endura_pel_project";
+var sb=null, channel=null, saveTimer=null, applyingRemote=false, lastSavedJSON="", online=true;
+
 function payload(){ return JSON.stringify({app:"Endura Project Event Log",version:5,saved:new Date().toISOString(),days:data,wbs:WBSL,ctype:CTYPE},null,2); }
-function idbReq(mode,fn){ return new Promise(function(res,rej){ var o=indexedDB.open("eventtracker",1); o.onupgradeneeded=function(){ o.result.createObjectStore("kv"); }; o.onsuccess=function(){ var tx=o.result.transaction("kv",mode); var st=tx.objectStore("kv"); var rq=fn(st); tx.oncomplete=function(){ res(rq&&rq.result); }; tx.onerror=function(){ rej(tx.error); }; }; o.onerror=function(){ rej(o.error); }; }); }
-function idbSet(k,v){ return idbReq("readwrite",function(st){ st.put(v,k); }); }
-function idbGet(k){ return idbReq("readonly",function(st){ return st.get(k); }); }
-function scheduleWrite(){ if(!fileHandle) return; clearTimeout(writeTimer); writeTimer=setTimeout(writeFile,500); }
-async function writeFile(){
-  if(!fileHandle) return; if(writing){ pendingWrite=true; return; } writing=true;
+
+function curProject(){ try{ return localStorage.getItem(PROJK)||"MEFF-SAR"; }catch(e){ return "MEFF-SAR"; } }
+function setProject(v){ v=(v||"").trim().slice(0,60)||"MEFF-SAR"; try{ localStorage.setItem(PROJK,v); }catch(e){} location.reload(); }
+
+function setSync(state,msg){
+  var el=document.getElementById("syncStatus"); if(!el) return;
+  var col={green:"#2fae54",amber:"#E87722",red:"#dd3b40",grey:"#8C8C8C"}[state]||"#8C8C8C";
+  el.innerHTML='<b style="color:'+col+'">\u25cf</b> '+msg;
+}
+
+function adopt(txt){
+  if(!txt) return;
+  var o;
+  if(typeof txt==="string"){ if(!txt.trim()) return; o=JSON.parse(txt); }
+  else { o=txt; }
+  if(o&&o.days){
+    data=o.days; WBSL=o.wbs||WBSL;
+    if(o.ctype){ for(var k in o.ctype){ if(o.ctype[k]==="DT"||o.ctype[k]==="NPT") CTYPE[k]=o.ctype[k]; } saveCtype(); }
+  } else { data=o; }
+}
+
+/* Debounced push of full document to the cloud */
+function scheduleCloudSave(){
+  if(applyingRemote) return;          // don't echo a change we just received
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(cloudSave,500);
+}
+async function cloudSave(){
+  if(!sb){ try{ localStorage.setItem("endura_pel_offline_"+curProject(),payload()); }catch(e){} return; }
+  var body={ doc:{days:data,wbs:WBSL,ctype:CTYPE}, updated_at:new Date().toISOString(), updated_by:curUser()||"?" };
+  lastSavedJSON=JSON.stringify(body.doc);
+  setSync("amber","saving\u2026");
   try{
-    if(fileHandle.queryPermission){ var p=await fileHandle.queryPermission({mode:"readwrite"}); if(p!=="granted"){ writing=false; setFileStatus(); return; } }
-    var w=await fileHandle.createWritable(); await w.write(payload()); await w.close();
-  }catch(e){ console.warn("auto-save failed",e); }
-  writing=false; if(pendingWrite){ pendingWrite=false; writeFile(); }
+    var r=await sb.from("event_logs").upsert({ project:curProject(), doc:body.doc, updated_at:body.updated_at, updated_by:body.updated_by }, { onConflict:"project" });
+    if(r.error) throw r.error;
+    online=true; setSync("green","synced \u00b7 "+curProject());
+  }catch(e){
+    online=false;
+    try{ localStorage.setItem("endura_pel_offline_"+curProject(),payload()); }catch(_){}
+    setSync("red","offline \u2014 saved on this device, will sync when back");
+    console.warn("cloud save failed",e);
+  }
 }
-function adopt(txt){ if(txt&&txt.trim()){ var o=JSON.parse(txt); if(o&&o.days){ data=o.days; WBSL=o.wbs||WBSL; if(o.ctype){ for(var k in o.ctype){ if(o.ctype[k]==="DT"||o.ctype[k]==="NPT") CTYPE[k]=o.ctype[k]; } saveCtype(); } } else data=o; } }
-async function linkFile(){
-  if(!fsaSupported()){ alert("Auto-save needs Edge or Chrome. Use Export/Import data (.json) instead."); return; }
-  try{ fileHandle=await window.showSaveFilePicker({suggestedName:"Project-Event-Log-data.json",types:[{description:"Project Event Log data",accept:{"application/json":[".json"]}}]}); await idbSet("handle",fileHandle); await writeFile(); setFileStatus(); }
-  catch(e){ if(e.name!=="AbortError") alert("Could not link file: "+e.message); }
+
+/* Pull current state from cloud */
+async function cloudLoad(){
+  if(!sb) return false;
+  try{
+    var r=await sb.from("event_logs").select("doc,updated_by,updated_at").eq("project",curProject()).maybeSingle();
+    if(r.error) throw r.error;
+    if(r.data && r.data.doc){ applyingRemote=true; adopt(r.data.doc); applyingRemote=false; return true; }
+    return false;
+  }catch(e){ console.warn("cloud load failed",e); return false; }
 }
-async function openFile(){
-  if(!fsaSupported()){ document.getElementById("jsonImport").click(); return; }
-  try{ var picked=await window.showOpenFilePicker({types:[{description:"Project Event Log data",accept:{"application/json":[".json"]}}]}); fileHandle=picked[0]; await idbSet("handle",fileHandle); var f=await fileHandle.getFile(); adopt(await f.text()); save(); renderLog(); setFileStatus(); }
-  catch(e){ if(e.name!=="AbortError") alert("Could not open file: "+e.message); }
+
+/* Live subscription \u2014 when anyone else saves, refresh our copy */
+function subscribe(){
+  if(!sb||channel) return;
+  channel=sb.channel("pel_"+curProject())
+    .on("postgres_changes",{event:"*",schema:"public",table:"event_logs",filter:"project=eq."+curProject()},function(p){
+      var doc=p.new&&p.new.doc; if(!doc) return;
+      var incoming=JSON.stringify(doc);
+      if(incoming===lastSavedJSON) return;     // it's our own write coming back
+      applyingRemote=true; adopt(doc); applyingRemote=false;
+      lastSavedJSON=incoming;
+      renderLog(); var t=document.getElementById("tabDash"); if(t&&t.classList&&t.classList.contains&&t.classList.contains("active")&&typeof renderDash==="function") renderDash();
+      var by=(p.new&&p.new.updated_by)||"someone";
+      setSync("green","updated by "+by+" \u00b7 "+curProject());
+    })
+    .subscribe();
 }
-async function reconnectFile(){
-  if(!fileHandle) return;
-  try{ var p=await fileHandle.requestPermission({mode:"readwrite"}); if(p!=="granted"){ setFileStatus(); return; } var f=await fileHandle.getFile(); adopt(await f.text()); save(); renderLog(); setFileStatus(); }
-  catch(e){ alert("Reconnect failed: "+e.message); }
+
+/* Recover anything saved offline once we reconnect */
+async function flushOffline(){
+  if(!sb) return;
+  try{
+    var pend=localStorage.getItem("endura_pel_offline_"+curProject());
+    if(pend){ await cloudSave(); localStorage.removeItem("endura_pel_offline_"+curProject()); }
+  }catch(e){}
 }
-function setFileStatus(){
-  var el=document.getElementById("fileStatus"), rb=document.getElementById("reconnectBtn");
-  if(!fsaSupported()){ el.innerHTML='<span style="color:var(--muted)">auto-save not available here — use Export/Import, or open in Edge/Chrome</span>'; rb.style.display="none"; return; }
-  if(!fileHandle){ el.innerHTML='<b style="color:#dd3b40">●</b> not linked — saving to this browser only'; rb.style.display="none"; return; }
-  if(fileHandle.queryPermission){ fileHandle.queryPermission({mode:"readwrite"}).then(function(p){ if(p==="granted"){ el.innerHTML='<b style="color:#2fae54">●</b> auto-saving to '+fileHandle.name; rb.style.display="none"; } else { el.innerHTML='<b style="color:#E87722">●</b> '+fileHandle.name+' — click Reconnect to resume auto-save'; rb.style.display=""; } }); }
+
+async function initCloud(){
+  document.getElementById("projectName").value=curProject();
+  var configured = SUPA_URL.indexOf("http")===0 && SUPA_KEY.length>20;
+  if(!configured){
+    setSync("grey","not configured \u2014 running local only (see setup note)");
+    try{ var s=localStorage.getItem("endura_pel_local_"+curProject()); if(s) adopt(s); }catch(e){}
+    save=function(){ try{ localStorage.setItem("endura_pel_local_"+curProject(),payload()); }catch(e){} };
+    renderLog();
+    return;
+  }
+  try{
+    sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+    setSync("amber","loading\u2026");
+    var got=await cloudLoad();
+    if(!got){ await cloudSave(); }     // first run for this project \u2014 seed the row
+    subscribe();
+    flushOffline();
+    setSync("green","synced \u00b7 "+curProject());
+    renderLog();
+    window.addEventListener("online",function(){ flushOffline(); });
+  }catch(e){
+    setSync("red","could not connect \u2014 running local only");
+    console.warn(e);
+    renderLog();
+  }
 }
-async function initFile(){ if(!fsaSupported()){ setFileStatus(); return; } try{ var h=await idbGet("handle"); if(h){ fileHandle=h; } }catch(e){} setFileStatus(); }
+
 function exportJSON(){ dl(payload(),"Project-Event-Log-data.json","application/json"); }
 function importJSON(inp){ var f=inp.files[0]; if(!f) return; var rd=new FileReader(); rd.onload=function(){ try{ adopt(rd.result); save(); renderLog(); alert("Project data loaded."); }catch(e){ alert("That file could not be read."); } }; rd.readAsText(f); inp.value=""; }
 
 document.getElementById("userTag").value=curUser();
 renderLog();
-initFile();
+initCloud();
 </script>
 </body>
 </html>
