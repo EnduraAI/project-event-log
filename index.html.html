@@ -1,0 +1,893 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Event Log — Endura Asset Intelligence</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#FAF7F1; --panel:#ffffff; --panel2:#f2eee4; --line:#e3ddcf; --field:#fbfaf7;
+    --txt:#1A1A1A; --muted:#8C8C8C; --accent:#E87722;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
+  header{background:var(--panel);border-bottom:2px solid var(--accent);padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:13px}
+  .mark{width:48px;height:48px;flex:none}
+  .wordmark{font-weight:800;font-size:23px;letter-spacing:.3px;color:var(--txt);line-height:1}
+  .wordmark .ai,.wordmark .dotsep{color:var(--accent)}
+  .wordmark .prod{font-weight:600;font-size:13px;color:var(--muted);letter-spacing:1.5px;margin-left:8px}
+  .tagline{color:var(--muted);font-size:10px;letter-spacing:2.5px;margin-top:5px}
+  .sub{color:var(--muted);font-size:12px}
+  nav{display:flex;gap:4px;padding:10px 20px 0;background:var(--bg);border-bottom:1px solid var(--line)}
+  nav button{background:transparent;border:none;color:var(--muted);padding:10px 16px;font-size:14px;cursor:pointer;border-bottom:2px solid transparent;font-weight:600}
+  nav button.active{color:var(--txt);border-bottom-color:var(--accent)}
+  main{padding:18px 20px 60px;max-width:1320px;margin:0 auto}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .spacer{flex:1}
+  select,input,button.btn{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:13px}
+  button.btn{cursor:pointer;font-weight:600}
+  button.btn:hover{border-color:var(--accent)}
+  button.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  button.btn.danger{color:#dd3b40;border-color:#e8cccc}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .card .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .card .v{font-size:25px;font-weight:800;margin-top:4px}
+  .card .v small{font-size:13px;color:var(--muted);font-weight:600}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin:14px 0}
+  .panel h3{margin:0 0 12px;font-size:15px;display:flex;align-items:center;gap:8px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{border:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:var(--muted);font-weight:600}
+  .logtable input,.logtable select,.logtable textarea{width:100%;background:var(--field);border:1px solid var(--line);color:var(--txt);border-radius:4px;padding:4px;font-size:12.5px;font-family:inherit}
+  .logtable textarea{resize:vertical;min-height:30px;line-height:1.3}
+  .logtable td{padding:3px}
+  .tw{white-space:nowrap}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .tableScroll{overflow-x:auto}
+  .barwrap{display:flex;flex-direction:column;gap:8px}
+  .barrow{display:grid;grid-template-columns:140px 1fr 86px;align-items:center;gap:10px}
+  .barrow .lbl{color:var(--muted);font-size:12px}
+  .track{background:var(--panel2);border-radius:5px;height:20px;overflow:hidden;display:flex}
+  .seg{height:100%}
+  .val{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:12px}
+  .stack{display:flex;height:26px;border-radius:5px;overflow:hidden;background:var(--panel2)}
+  .footnote{color:var(--muted);font-size:11.5px;margin-top:8px}
+  .tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;margin-top:6px}
+  .tbox{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+  .tbox .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+  .tbox .v{font-size:19px;font-weight:800;margin-top:3px}
+  .tbox .v small{font-size:12px;color:var(--muted);font-weight:600}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .catchip{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:3px 10px;font-size:11.5px;font-weight:600}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .lanewrap{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:6px;margin-top:10px}
+  .evspan{position:absolute;height:15px;border-radius:3px}
+  .axis{display:flex;justify-content:space-between;color:var(--muted);font-size:10.5px;margin-top:3px}
+  @media print{
+    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
+    nav,.noprint{display:none!important}
+    body{background:#fff;font-size:12px}
+    header{padding:6px 0;border-bottom:1px solid var(--accent);break-after:avoid;page-break-after:avoid}
+    .mark{width:34px;height:34px}
+    .wordmark{font-size:18px}
+    main{padding:0;max-width:none}
+    .card{break-inside:avoid;border-color:#bbb}
+    .panel{break-inside:auto;border-color:#bbb;margin:8px 0;padding:10px}
+    .panel h3{break-after:avoid}
+    .tableScroll{overflow:visible}
+    tr,td,th{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg class="mark" id="mark" viewBox="0 0 120 120" aria-hidden="true"><g id="ring" fill="#1f1f1f"></g><circle cx="60" cy="60" r="9" fill="var(--accent)"/></svg>
+    <div>
+      <div class="wordmark">Project <span class="ai">Event</span> Log</div>
+      <div class="tagline">ENDURA ASSET INTELLIGENCE</div>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <button id="tabLog" class="active" onclick="showTab('log')">Daily Log</button>
+  <button id="tabDash" onclick="showTab('dash')">Campaign Dashboard</button>
+  <button id="tabWbs" onclick="showTab('wbs')">Schedule / WBS</button>
+</nav>
+
+<main>
+  <section id="view-log">
+    <div class="row noprint">
+      <label class="sub">Day:</label>
+      <select id="daySelect" onchange="renderLog()"></select>
+      <button class="btn" onclick="newDay()">+ New Day</button>
+      <button class="btn danger" onclick="deleteDay()">Delete Day</button>
+      <label class="sub" style="margin-left:10px">Day ends:</label>
+      <input id="dayEnd" style="width:80px" onchange="setEnd(this.value)">
+      <div class="spacer"></div>
+      <button class="btn primary" onclick="toggleImport(true)">Import / Paste raw</button>
+      <button class="btn" onclick="exportCSV()">Export CSV</button>
+      <button class="btn" onclick="window.print()">Print / PDF</button>
+    </div>
+
+    <div class="row noprint" style="padding:8px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px">
+      <label class="sub">Logger:</label>
+      <input id="userTag" style="width:74px" placeholder="initials" onchange="setUser(this.value)" title="Your initials — stamped on every line and event you enter">
+      <span class="sub" style="margin-left:8px">Project:</span>
+      <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
+      <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
+      <span class="spacer"></span>
+      <button class="btn" onclick="exportJSON()">Export data (.json)</button>
+      <button class="btn" onclick="document.getElementById('jsonImport').click()">Import data (.json)</button>
+      <input type="file" id="jsonImport" accept=".json,application/json" style="display:none" onchange="importJSON(this)">
+    </div>
+
+    <div id="importPanel" class="panel noprint" style="display:none">
+      <h3>Import raw log <span class="sub">— paste from OneNote or email, then flag events with ⚑</span></h3>
+      <div class="row">
+        <label class="sub">Mode:</label>
+        <select id="impMode"><option value="replace">Replace this day's log</option><option value="append">Append to existing</option></select>
+        <div class="spacer"></div>
+        <button class="btn" onclick="document.getElementById('logFileInput').click()" title="Upload an Excel or CSV watch log">&#11014; Upload file</button>
+        <input type="file" id="logFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="uploadLogFile(this)">
+        <button class="btn" onclick="parsePreview()">Preview</button>
+        <button class="btn primary" onclick="applyImport()">Apply</button>
+        <button class="btn" onclick="toggleImport(false)">Close</button>
+      </div>
+      <textarea id="impText" placeholder="Paste one line per entry, each starting with a time. Examples:&#10;0000  ROV on deck - tooling change&#10;0620  As-found survey commenced&#10;1410  Standby - waiting on crane&#10;1530  WOW - vessel standby on weather" style="width:100%;min-height:130px;margin-top:10px;background:var(--field);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:8px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px"></textarea>
+      <div id="impPreview"></div>
+      <div class="footnote">Each entry needs a leading time (<b>0620</b> / <b>06:20</b>; ranges like <b>0000-0620</b> use the start). Lines without a time append to the previous entry. After Apply, click <b>⚑</b> on any line to tag it as an event.</div>
+    </div>
+
+    <div class="panel">
+      <h3>Sequential daily log</h3>
+      <div class="tableScroll">
+        <table class="logtable">
+          <thead><tr><th class="tw" style="width:80px">Time</th><th>Entry</th><th class="tw" style="width:185px">WBS task</th><th class="tw noprint" style="width:46px">Flag</th><th class="tw noprint" style="width:40px"></th></tr></thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </div>
+      <button class="btn noprint" style="margin-top:8px" onclick="addL()">+ Add log line</button>
+      <div class="footnote"><b>⚑</b> turns a log line into an event below (start = line time, end = next line time, category auto-guessed — adjust as needed). <b>WBS:</b> tag only the line where a schedule activity <i>starts</i> — following lines inherit it (shown as &#8627;) until you tag a different activity, or type <b>-</b> to end the span.</div>
+    </div>
+
+    <div class="panel">
+      <h3>Events <span class="sub">— tag start &amp; stop; blank End = ongoing (runs to day end); overlaps allowed</span></h3>
+      <div class="tableScroll">
+        <table class="logtable">
+          <thead><tr><th class="tw" style="width:150px">Category</th><th class="tw" style="width:74px">Start</th><th class="tw" style="width:74px">End</th><th class="tw num" style="width:58px">Dur</th><th>Description</th><th class="tw noprint" style="width:40px"></th></tr></thead>
+          <tbody id="evBody"></tbody>
+        </table>
+      </div>
+      <button class="btn noprint" style="margin-top:8px" onclick="addE()">+ Add event</button>
+    </div>
+
+    <div class="panel">
+      <h3>End-of-day breakdown <span class="sub">(auto-calculated)</span></h3>
+      <div id="dayTally" class="tally"></div>
+      <div id="ltClassify" class="chips noprint" style="margin-top:10px"></div>
+      <div id="catChips" class="chips"></div>
+      <div id="wbsChips" class="chips"></div>
+      <div id="laneWrap" class="lanewrap"></div>
+      <div class="axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span id="axEnd">24:00</span></div>
+      <div class="footnote"><b>Actual downtime + NPT + clear running = day length</b> (overlaps merged, no double-counting; where a downtime and an NPT event overlap, that minute counts as actual downtime). Each bar is one event, drawn on its own lane so overlapping events are visible side by side. Set whether a category is genuine downtime or non-productive time using the controls above.</div>
+    </div>
+  </section>
+
+  <section id="view-dash" style="display:none">
+    <div class="cards" id="kpiCards"></div>
+    <div class="panel">
+      <h3>Downtime by category — campaign (hours)</h3>
+      <div id="paretoChart" class="barwrap"></div>
+    </div>
+    <div class="panel">
+      <h3>Daily downtime by category</h3>
+      <div id="catLegend" class="chips" style="margin:0 0 10px"></div>
+      <div id="dailyChart" class="barwrap"></div>
+      <div class="footnote">Bar length is hours attributed per category (overlapping events count in each of their categories). The figure at right is the day's merged downtime.</div>
+    </div>
+    <div class="panel">
+      <h3>Campaign rollup</h3>
+      <div class="tableScroll">
+        <table>
+          <thead><tr><th>Day</th><th class="num">Day h</th><th class="num">Events</th><th class="num">Actual DT h</th><th class="num">NPT h</th><th class="num">Clear h</th><th>Worst category</th></tr></thead>
+          <tbody id="rollupBody"></tbody>
+          <tfoot id="rollupFoot"></tfoot>
+        </table>
+      </div>
+      <div class="row noprint" style="margin-top:12px">
+        <div class="spacer"></div>
+        <button class="btn" onclick="exportRollupCSV()">Export rollup CSV</button>
+        <button class="btn" onclick="window.print()">Print / PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-wbs" style="display:none">
+    <div class="panel noprint">
+      <h3>Load schedule / WBS activities <span class="sub">&mdash; copy the ID and Task Name columns from the schedule (MS Project / Excel) and paste below</span></h3>
+      <textarea id="wbsText" placeholder="A100&#9;As-found survey&#10;A110&#9;Cutting &amp; recovery&#10;or:  A100  As-found survey" style="width:100%;min-height:110px;background:var(--field);border:1px solid var(--line);border-radius:6px;padding:8px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px"></textarea>
+      <div class="row" style="margin-top:8px">
+        <span id="wbsCount" class="sub"></span>
+        <div class="spacer"></div>
+        <button class="btn" onclick="loadDpr()" title="Re-load the embedded sample schedule">Load sample schedule</button>
+        <button class="btn" onclick="addW()">+ Add manually</button>
+        <button class="btn primary" onclick="document.getElementById('wbsFileInput').click()" title="Upload an Excel or CSV schedule file">&#11014; Upload file (Excel / CSV)</button>
+        <input type="file" id="wbsFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="uploadWbsFile(this)">
+        <button class="btn" onclick="importWbs()">Add pasted activities</button>
+      </div>
+      <div class="footnote">Duplicate IDs are skipped. Then tag log lines with these activities on the Daily Log tab &mdash; hours accumulate below and in the day CSV.</div>
+    </div>
+    <div class="panel">
+      <h3>WBS activity hours <span class="sub">&mdash; from tagged log lines, campaign to date</span></h3>
+      <div class="row noprint" style="margin-bottom:8px"><input id="wbsFilter" placeholder="Filter activities… (id or name)" style="min-width:280px" oninput="renderWbs()"></div>
+      <div class="tableScroll">
+        <table class="logtable">
+          <thead><tr><th class="tw" style="width:90px">ID</th><th>Activity</th><th class="tw num" style="width:80px">Hours</th><th class="tw num" style="width:60px">Days</th><th class="tw noprint" style="width:40px"></th></tr></thead>
+          <tbody id="wbsBody"></tbody>
+        </table>
+      </div>
+      <div class="row noprint" style="margin-top:10px"><div class="spacer"></div><button class="btn" onclick="exportWbsCSV()">Export WBS CSV</button></div>
+      <div class="footnote">A log line's hours run until the next timed line (last line runs to day end). When two WBS elements are active in the same time slot, that slot is split <b>0.5 to each</b> (max two concurrent). To run two elements at once, add two lines at the same time, each tagged with its element; both carry forward until you re-tag or end the span with <b>-</b>.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){
+  var g=document.getElementById("ring"); if(!g) return;
+  var seed=7; function rnd(){ seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff; }
+  var s="";
+  for(var i=0;i<360;i++){ var ang=i*Math.PI/180, b=(Math.sin(ang)+1)/2; if(rnd()>(0.45+0.5*b)) continue;
+    var jr=46+(rnd()-0.5)*5+2.2*b; s+='<circle cx="'+(60+jr*Math.cos(ang)).toFixed(1)+'" cy="'+(60+jr*Math.sin(ang)).toFixed(1)+'" r="'+(0.35+rnd()*0.55+0.5*b).toFixed(2)+'"/>'; }
+  for(var k=0;k<140;k++){ var a=((rnd()<0.7)?(70+rnd()*220):rnd()*360)*Math.PI/180; var jr2=46+(rnd()-0.5)*7;
+    s+='<circle cx="'+(60+jr2*Math.cos(a)).toFixed(1)+'" cy="'+(60+jr2*Math.sin(a)).toFixed(1)+'" r="'+(0.35+rnd()*0.75).toFixed(2)+'"/>'; }
+  g.innerHTML=s;
+})();
+
+var CATS=["Weather","ROV - Asset 1","ROV - Asset 2","Tooling","Scheduling","Crane","Vessel","Other"];
+var CCOL={"Weather":"#2f74c9","ROV - Asset 1":"#2fae54","ROV - Asset 2":"#dd3b40","Tooling":"#c98a2a","Scheduling":"#b23bb0","Crane":"#7d54d6","Vessel":"#0f9bad","Other":"#8C8C8C"};
+
+/* Lost-time classification: each event category is either Actual Downtime ("DT") or Non-Productive Time ("NPT").
+   DT  = genuine stop, work cannot progress (breakdown, weather, asset/equipment/vessel failure).
+   NPT = crew still working but not producing (tooling/consumable changeouts, waiting/standby).
+   Defaults below are a starting point — adjust per category in the End-of-day breakdown. */
+var CTYPE_DEFAULT={"Weather":"DT","ROV - Asset 1":"DT","ROV - Asset 2":"DT","Tooling":"NPT","Scheduling":"NPT","Crane":"DT","Vessel":"DT","Other":"DT"};
+var CTYPEK="endura_pel_ctype";
+var CTYPE=loadCtype();
+function loadCtype(){ var o={}; for(var c in CTYPE_DEFAULT) o[c]=CTYPE_DEFAULT[c];
+  try{ var s=localStorage.getItem(CTYPEK); if(s){ var p=JSON.parse(s); for(var k in p){ if(p[k]==="DT"||p[k]==="NPT") o[k]=p[k]; } } }catch(e){}
+  return o; }
+function saveCtype(){ try{ localStorage.setItem(CTYPEK,JSON.stringify(CTYPE)); }catch(e){} }
+function catType(c){ return CTYPE[c]==="NPT"?"NPT":"DT"; }
+function setCtype(c,v){ CTYPE[c]=(v==="NPT")?"NPT":"DT"; saveCtype(); save(); renderLog(); var t=document.getElementById("tabDash"); if(t&&t.classList.contains("active")) renderDash(); }
+
+/* day = { end, log:[[time,text]], ev:[[category,start,end,description]] }  (blank event end = ongoing) */
+var SEED={
+ "2026-06-01":{end:"24:00",
+  log:[["00:00","Vessel on DP at worksite - ROV ops commence","A100","DEMO"],["06:30","WOW - swell above ROV launch limits","","DEMO"],["09:15","Ops resume - cutting and recovery","A110","DEMO"],["14:00","Crane over side - lift #1 to deck","A120","DEMO"]],
+  ev:[["Weather","06:30","09:15","WOW - swell above ROV launch limits","DEMO"],["Crane","14:00","15:30","Lift #1 rigging delay","DEMO"]]}
+};
+
+var EMB=[["A100","As-found survey"],["A110","Cutting & recovery"],["A120","Structure lift & seafasten"],["A130","Demob / transit"]];
+var STORE="endura_pel_demo_v1";
+var WBSL=[];
+var data=load();
+function mergeEmb(){ var have={}; WBSL.forEach(function(w){ have[String(w[0])]=1; }); var n=0; EMB.forEach(function(w){ if(!have[String(w[0])]){ WBSL.push([w[0],w[1]]); n++; } }); return n; }
+function loadDpr(){ var n=mergeEmb(); save(); renderWbs(); alert(n+" schedule activities loaded."); }
+function load(){ var d=JSON.parse(JSON.stringify(SEED)); if(WBSL.length<10) mergeEmb(); return d; }
+function save(){ scheduleCloudSave(); }
+
+function toMin(t){ if(!t) return null; var p=String(t).split(":"); if(p.length<2) return null; return (+p[0])*60+(+p[1]); }
+function r2(n){ return Math.round(n*100)/100; }
+function fmtDay(k){ var a=k.split("-"); return a[2]+"/"+a[1]+"/"+a[0]; }
+function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;"); }
+function min2t(m){ var h=Math.floor(m/60),mm=Math.round(m%60); return String(h).padStart(2,"0")+":"+String(mm).padStart(2,"0"); }
+
+function evSpans(key){
+  var day=data[key]; var endMin=toMin(day.end)||1440;
+  return day.ev.map(function(e,i){
+    var s=toMin(e[1]); if(s==null) return null;
+    var en=e[2]?toMin(e[2]):endMin; if(en==null||en<=s) en=endMin;
+    s=Math.max(0,Math.min(s,endMin)); en=Math.max(0,Math.min(en,endMin));
+    return {cat:e[0],s:s,e:en,d:e[3]||"",by:e[4]||"",i:i,hrs:(en-s)/60,open:!e[2]};
+  }).filter(function(x){return !!x;}).sort(function(a,b){return a.s-b.s||a.e-b.e;});
+}
+function unionH(sp){
+  var tot=0,cs=-1,ce=-1;
+  sp.forEach(function(x){ if(x.s>ce){ if(ce>cs) tot+=ce-cs; cs=x.s; ce=x.e; } else if(x.e>ce){ ce=x.e; } });
+  if(ce>cs) tot+=ce-cs;
+  return tot/60;
+}
+function catH(sp){ var m={}; sp.forEach(function(x){ m[x.cat]=(m[x.cat]||0)+x.hrs; }); return m; }
+/* interval helpers (minutes) for splitting downtime vs NPT without double-counting */
+function mergeIv(spans){ var a=spans.map(function(x){return {s:x.s,e:x.e};}).sort(function(p,q){return p.s-q.s;}); var o=[]; a.forEach(function(x){ if(x.e<=x.s) return; if(!o.length||x.s>o[o.length-1].e) o.push({s:x.s,e:x.e}); else if(x.e>o[o.length-1].e) o[o.length-1].e=x.e; }); return o; }
+function ivMin(iv){ var t=0; iv.forEach(function(x){ t+=x.e-x.s; }); return t; }
+function subIv(base,cut){ var out=[]; base.forEach(function(b){ var segs=[{s:b.s,e:b.e}]; cut.forEach(function(c){ var ns=[]; segs.forEach(function(s){ if(c.e<=s.s||c.s>=s.e){ ns.push(s); } else { if(c.s>s.s) ns.push({s:s.s,e:c.s}); if(c.e<s.e) ns.push({s:c.e,e:s.e}); } }); segs=ns; }); out=out.concat(segs); }); return out; }
+function dayStats(key){
+  var day=data[key]; var len=(toMin(day.end)||1440)/60;
+  var sp=evSpans(key); var u=unionH(sp);
+  var dtIv=mergeIv(sp.filter(function(x){return catType(x.cat)==="DT";}));
+  var nptIv=subIv(mergeIv(sp.filter(function(x){return catType(x.cat)==="NPT";})),dtIv);
+  var dt=ivMin(dtIv)/60, npt=ivMin(nptIv)/60;
+  return {len:len,union:u,dt:dt,npt:npt,clear:Math.max(0,len-dt-npt),count:sp.length,cats:catH(sp),sp:sp,endMin:(toMin(day.end)||1440)};
+}
+function worstCat(cats){ var w="",h=0; for(var c in cats){ if(cats[c]>h){ h=cats[c]; w=c; } } return w?w+" ("+r2(h)+"h)":"—"; }
+
+function showTab(t){
+  document.getElementById("view-log").style.display=t==="log"?"":"none";
+  document.getElementById("view-dash").style.display=t==="dash"?"":"none";
+  document.getElementById("view-wbs").style.display=t==="wbs"?"":"none";
+  document.getElementById("tabLog").classList.toggle("active",t==="log");
+  document.getElementById("tabDash").classList.toggle("active",t==="dash");
+  document.getElementById("tabWbs").classList.toggle("active",t==="wbs");
+  if(t==="dash") renderDash();
+  if(t==="wbs") renderWbs();
+}
+function fillDaySelect(){
+  var sel=document.getElementById("daySelect"); var keys=Object.keys(data).sort(); var cur=sel.value;
+  sel.innerHTML=keys.map(function(k){return '<option value="'+k+'">'+fmtDay(k)+'</option>';}).join("");
+  sel.value=(keys.indexOf(cur)>=0)?cur:keys[keys.length-1];
+}
+function curKey(){ return document.getElementById("daySelect").value; }
+
+function renderLog(){
+  buildDL(false);
+  fillDaySelect();
+  var key=curKey(); var day=data[key];
+  document.getElementById("dayEnd").value=day.end;
+  var tb=document.getElementById("logBody"); tb.innerHTML="";
+  var effA=effWbs(day.log);
+  day.log.forEach(function(r,i){
+    var tr=document.createElement("tr");
+    tr.innerHTML='<td class="tw"><input value="'+esc(r[0])+'" onchange="updL('+i+',0,this.value)">'+(r[3]?'<div class="sub" style="font-size:9px;text-align:center">'+esc(r[3])+'</div>':'')+'</td>'+
+      '<td><textarea onchange="updL('+i+',1,this.value)">'+esc(r[1])+'</textarea></td>'+
+      '<td class="tw">'+wbsSel(i,r[2],r[2]?"":effA[i])+'</td>'+
+      '<td class="tw noprint"><button class="btn" title="Tag this line as an event" onclick="flagRow('+i+')">⚑</button></td>'+
+      '<td class="noprint"><button class="btn danger" title="Delete" onclick="delL('+i+')">✕</button></td>';
+    tb.appendChild(tr);
+  });
+  var eb=document.getElementById("evBody"); eb.innerHTML="";
+  var endMin=toMin(day.end)||1440;
+  day.ev.forEach(function(e,i){
+    var s=toMin(e[1]); var en=e[2]?toMin(e[2]):null;
+    var dur=(s!=null)?(((en!=null&&en>s)?en:endMin)-s)/60:0;
+    var opts=CATS.map(function(c){return '<option value="'+c+'"'+(c===e[0]?" selected":"")+'>'+c+'</option>';}).join("");
+    var tr=document.createElement("tr");
+    tr.innerHTML='<td class="tw" style="box-shadow:inset 3px 0 0 '+(CCOL[e[0]]||"#999")+'"><select onchange="updE('+i+',0,this.value)">'+opts+'</select></td>'+
+      '<td class="tw"><input value="'+esc(e[1])+'" onchange="updE('+i+',1,this.value)">'+(e[4]?'<div class="sub" style="font-size:9px;text-align:center">'+esc(e[4])+'</div>':'')+'</td>'+
+      '<td class="tw"><input value="'+esc(e[2])+'" placeholder="ongoing" onchange="updE('+i+',2,this.value)"></td>'+
+      '<td class="num">'+r2(dur).toFixed(2)+(e[2]?"":"&nbsp;→")+'</td>'+
+      '<td><textarea onchange="updE('+i+',3,this.value)">'+esc(e[3])+'</textarea></td>'+
+      '<td class="noprint"><button class="btn danger" title="Delete" onclick="delE('+i+')">✕</button></td>';
+    eb.appendChild(tr);
+  });
+  renderBreakdown(key);
+}
+
+function renderBreakdown(key){
+  var st=dayStats(key);
+  document.getElementById("dayTally").innerHTML=
+    '<div class="tbox"><div class="k">Day length</div><div class="v">'+r2(st.len).toFixed(2)+'<small> h</small></div></div>'+
+    '<div class="tbox"><div class="k">Actual downtime</div><div class="v" style="color:#dd3b40">'+r2(st.dt).toFixed(2)+'<small> h</small></div></div>'+
+    '<div class="tbox"><div class="k">Non-productive (NPT)</div><div class="v" style="color:#c98a2a">'+r2(st.npt).toFixed(2)+'<small> h</small></div></div>'+
+    '<div class="tbox"><div class="k">Clear running</div><div class="v" style="color:#0f9bad">'+r2(st.clear).toFixed(2)+'<small> h</small></div></div>'+
+    '<div class="tbox"><div class="k">Events</div><div class="v">'+st.count+'</div></div>'+
+    '<div class="tbox"><div class="k">Worst category</div><div class="v" style="font-size:14px;line-height:1.3;margin-top:7px">'+worstCat(st.cats)+'</div></div>';
+  var lt=document.getElementById("ltClassify");
+  if(lt){ lt.innerHTML='<span class="sub" style="align-self:center;margin-right:2px">Lost-time type:</span>'+CATS.map(function(c){
+      return '<span class="catchip"><span class="dot" style="background:'+CCOL[c]+'"></span>'+esc(c)+
+        ' <select onchange="setCtype(this.getAttribute(\'data-c\'),this.value)" data-c="'+esc(c)+'" style="font-size:11px;padding:1px 3px;margin-left:4px;border-radius:4px">'+
+        '<option value="DT"'+(catType(c)==="DT"?" selected":"")+'>Downtime</option>'+
+        '<option value="NPT"'+(catType(c)==="NPT"?" selected":"")+'>NPT</option></select></span>';
+    }).join(""); }
+  var ch=document.getElementById("catChips"); ch.innerHTML="";
+  CATS.forEach(function(c){ if(st.cats[c]){ ch.insertAdjacentHTML("beforeend",'<span class="catchip"><span class="dot" style="background:'+CCOL[c]+'"></span>'+c+' · '+r2(st.cats[c]).toFixed(1)+'h <span class="sub" style="font-size:10px">'+catType(c)+'</span></span>'); } });
+  var wh=wbsHours(key); var wc=document.getElementById("wbsChips"); wc.innerHTML="";
+  Object.keys(wh).sort().forEach(function(w){ var nm=wbsName(w); wc.insertAdjacentHTML("beforeend",'<span class="catchip" title="'+esc(nm)+'"><b>WBS '+esc(w)+'</b>&nbsp;· '+r2(wh[w]).toFixed(1)+'h</span>'); });
+  var lw=document.getElementById("laneWrap"); lw.innerHTML="";
+  var ends=[]; st.sp.forEach(function(x){ x.lane=-1; for(var l=0;l<ends.length;l++){ if(ends[l]<=x.s){ x.lane=l; ends[l]=x.e; break; } } if(x.lane<0){ x.lane=ends.length; ends.push(x.e); } });
+  var nl=Math.max(1,ends.length);
+  lw.style.height=(nl*19+6)+"px";
+  st.sp.forEach(function(x){
+    var d=document.createElement("div"); d.className="evspan";
+    d.style.left=(x.s/st.endMin*100)+"%"; d.style.width=Math.max(0.4,(x.e-x.s)/st.endMin*100)+"%";
+    d.style.top=(3+x.lane*19)+"px"; d.style.background=CCOL[x.cat]||"#999";
+    d.title=x.cat+" · "+min2t(x.s)+"–"+(x.open?"ongoing":min2t(x.e))+" · "+r2(x.hrs)+"h\n"+x.d;
+    lw.appendChild(d);
+  });
+  document.getElementById("axEnd").textContent=data[key].end;
+}
+
+function updL(i,f,v){ var r=data[curKey()].log[i]; r[f]=v; r[3]=curUser()||r[3]||""; save(); renderLog(); }
+function delL(i){ data[curKey()].log.splice(i,1); save(); renderLog(); }
+function addL(){ var L=data[curKey()].log; L.push([L.length?L[L.length-1][0]:"00:00","","",curUser()]); save(); renderLog(); }
+function updE(i,f,v){ var e=data[curKey()].ev[i]; e[f]=v; e[4]=curUser()||e[4]||""; save(); renderLog(); }
+function delE(i){ data[curKey()].ev.splice(i,1); save(); renderLog(); }
+function addE(){ data[curKey()].ev.push(["Other","","","",curUser()]); save(); renderLog(); }
+function setEnd(v){ data[curKey()].end=v; save(); renderLog(); }
+function newDay(){ var d=prompt("New day (YYYY-MM-DD):", new Date().toISOString().slice(0,10)); if(!d) return; if(!data[d]) data[d]={end:"24:00",log:[["00:00",""]],ev:[]}; save(); fillDaySelect(); document.getElementById("daySelect").value=d; renderLog(); }
+function deleteDay(){ var key=curKey(); if(Object.keys(data).length<=1){ alert("Keep at least one day."); return; } if(confirm("Delete "+fmtDay(key)+"?")){ delete data[key]; save(); renderLog(); } }
+
+var KW=[["ROV - Asset 2",/rov ?2/i],["ROV - Asset 1",/rov ?1|\btms\b|\bt4\b|umbilical|tether/i],["Weather",/weather|\bwow\b|swell|wave|wind|storm|cyclone/i],["Crane",/crane|lift(ing)?|deck ops/i],["Vessel",/vessel|\bdp\b|engine|thruster|beacon|gangway|bridge/i],["Tooling",/tool|grinder|ring ?saw|cutter|blade|hose|fit ?up|hot ?stab|dredge|jetter/i],["Scheduling",/schedul|waiting|wait on|standby|stand ?by|delay|no work|permit/i]];
+function guessCat(t){ t=t||""; for(var i=0;i<KW.length;i++){ if(KW[i][1].test(t)) return KW[i][0]; } return "Other"; }
+function flagRow(i){
+  var key=curKey(); var L=data[key].log; var t=L[i][0]||"";
+  var tm=toMin(t); var end="";
+  for(var j=0;j<L.length;j++){ var oj=toMin(L[j][0]); if(oj!=null&&tm!=null&&oj>tm){ end=L[j][0]; break; } }
+  data[key].ev.push([guessCat(L[i][1]),t,end,(L[i][1]||"").slice(0,100),curUser()]);
+  save(); renderLog();
+}
+
+function kpi(k,v,color){ return '<div class="card"><div class="k">'+k+'</div><div class="v" style="'+(color?'color:'+color:'')+'">'+v+'</div></div>'; }
+function htmlRow(lbl,mid,val){ var d=document.createElement("div"); d.className="barrow"; d.innerHTML='<div class="lbl">'+lbl+'</div>'+mid+'<div class="val">'+val+'</div>'; return d; }
+
+function renderDash(){
+  var keys=Object.keys(data).sort();
+  var stats=keys.map(function(k){ var s=dayStats(k); s.k=k; return s; });
+  var tU=0,tDT=0,tNPT=0,tC=0,tE=0,agg={};
+  stats.forEach(function(s){ tU+=s.union; tDT+=s.dt; tNPT+=s.npt; tC+=s.clear; tE+=s.count; for(var c in s.cats) agg[c]=(agg[c]||0)+s.cats[c]; });
+  document.getElementById("kpiCards").innerHTML=
+    kpi("Days logged",keys.length,"")+
+    kpi("Actual downtime",r2(tDT).toFixed(1)+"<small> h</small>","#dd3b40")+
+    kpi("Non-productive (NPT)",r2(tNPT).toFixed(1)+"<small> h</small>","#c98a2a")+
+    kpi("Clear running",r2(tC).toFixed(1)+"<small> h</small>","#0f9bad")+
+    kpi("Events logged",tE,"")+
+    kpi("Worst category",'<span style="font-size:15px">'+worstCat(agg)+'</span>',"");
+  var pares=Object.keys(agg).map(function(c){return [c,agg[c]];}).sort(function(a,b){return b[1]-a[1];});
+  var maxP=pares.length?pares[0][1]:1;
+  var pc=document.getElementById("paretoChart"); pc.innerHTML="";
+  if(!pares.length) pc.innerHTML='<div class="sub">No events logged.</div>';
+  pares.forEach(function(p){ pc.appendChild(htmlRow(p[0],'<div class="track"><div class="seg" style="width:'+(p[1]/maxP*100)+'%;background:'+(CCOL[p[0]]||"#999")+'"></div></div>',r2(p[1]).toFixed(1)+"h")); });
+  var lg=document.getElementById("catLegend"); lg.innerHTML="";
+  CATS.forEach(function(c){ if(agg[c]) lg.insertAdjacentHTML("beforeend",'<span class="catchip"><span class="dot" style="background:'+CCOL[c]+'"></span>'+c+'</span>'); });
+  var dc=document.getElementById("dailyChart"); dc.innerHTML="";
+  stats.forEach(function(s){
+    var sum=0; for(var c in s.cats) sum+=s.cats[c];
+    var scale=Math.max(s.len,sum)||1; var segsH="";
+    CATS.forEach(function(c){ if(s.cats[c]) segsH+='<div class="seg" style="width:'+(s.cats[c]/scale*100)+'%;background:'+CCOL[c]+'" title="'+c+' '+r2(s.cats[c])+'h"></div>'; });
+    dc.appendChild(htmlRow(fmtDay(s.k),'<div class="stack">'+segsH+'</div>',r2(s.dt).toFixed(1)+" DT / "+r2(s.npt).toFixed(1)+" NPT"));
+  });
+  var rb=document.getElementById("rollupBody"); rb.innerHTML="";
+  stats.forEach(function(s){ rb.insertAdjacentHTML("beforeend",'<tr><td>'+fmtDay(s.k)+'</td><td class="num">'+r2(s.len).toFixed(2)+'</td><td class="num">'+s.count+'</td><td class="num">'+r2(s.dt).toFixed(2)+'</td><td class="num">'+r2(s.npt).toFixed(2)+'</td><td class="num">'+r2(s.clear).toFixed(2)+'</td><td>'+worstCat(s.cats)+'</td></tr>'); });
+  var tL=0; stats.forEach(function(s){ tL+=s.len; });
+  document.getElementById("rollupFoot").innerHTML='<tr style="font-weight:800"><td>TOTAL</td><td class="num">'+r2(tL).toFixed(2)+'</td><td class="num">'+tE+'</td><td class="num">'+r2(tDT).toFixed(2)+'</td><td class="num">'+r2(tNPT).toFixed(2)+'</td><td class="num">'+r2(tC).toFixed(2)+'</td><td>'+worstCat(agg)+'</td></tr>';
+}
+
+var USERK="endura_pel_user";
+function curUser(){ try{ return localStorage.getItem(USERK)||""; }catch(e){ return ""; } }
+function setUser(v){ try{ localStorage.setItem(USERK,(v||"").trim().slice(0,8)); }catch(e){} renderLog(); }
+function wbsName(id){ for(var i=0;i<WBSL.length;i++){ if(String(WBSL[i][0])===String(id)) return WBSL[i][1]||""; } return ""; }
+function wbsSel(i,v,eff){
+  v=String(v||""); var nm=wbsName(v); var sub="";
+  if(v==="-") sub='<div class="sub" style="font-size:10px">span ended</div>';
+  else if(v) sub=nm?'<div class="sub" style="font-size:10px;line-height:1.2;max-width:175px;white-space:normal">'+esc(nm.slice(0,52))+'</div>':"";
+  else if(eff) sub='<div class="sub" style="font-size:10px;line-height:1.2;max-width:175px;white-space:normal;opacity:.8">&#8627; '+esc(String(eff))+' · '+esc((wbsName(eff)||"").slice(0,42))+'</div>';
+  return '<input list="wbsDL" value="'+esc(v)+'" placeholder="inherits above" onchange="updL('+i+',2,this.value)">'+sub;
+}
+function buildDL(force){
+  var dl=document.getElementById("wbsDL");
+  if(!dl){ dl=document.createElement("datalist"); dl.id="wbsDL"; document.body.appendChild(dl); }
+  if(!force && dl.childElementCount===WBSL.length) return;
+  dl.innerHTML=""; var fr=document.createDocumentFragment();
+  var oe=document.createElement("option"); oe.value="-"; oe.label="(end WBS span / no activity)"; fr.appendChild(oe);
+  WBSL.forEach(function(w){ var o=document.createElement("option"); o.value=String(w[0]); o.label=(w[1]||"").slice(0,60); fr.appendChild(o); });
+  dl.appendChild(fr);
+}
+function effWbs(log){
+  var ord=log.map(function(r,i){ return {t:toMin(r[0]),i:i}; }).sort(function(a,b){ if(a.t==null) return 1; if(b.t==null) return -1; return a.t-b.t||a.i-b.i; });
+  var eff=new Array(log.length); var cur="";
+  ord.forEach(function(o){ var v=String(log[o.i][2]||"").trim();
+    if(v==="-"){ cur=""; eff[o.i]=""; }
+    else if(v){ cur=v; eff[o.i]=v; }
+    else { eff[o.i]=cur; } });
+  return eff;
+}
+/* Per-element WBS hours.
+   Each time slot (gap between consecutive distinct log times) is attributed to the WBS
+   element(s) active in that slot. When two distinct elements are active at once the slot is
+   split equally (0.5 each); concurrency is capped at two. An element stays active (carries
+   forward) until it is replaced by a new tag at a later time or ended with "-". */
+function wbsHours(key){
+  var day=data[key]; var endMin=toMin(day.end)||1440;
+  var lines=day.log.map(function(r,i){ return {t:toMin(r[0]),w:String(r[2]||"").trim(),i:i}; })
+                   .filter(function(x){ return x.t!=null; })
+                   .sort(function(a,b){ return a.t-b.t||a.i-b.i; });
+  if(!lines.length) return {};
+  var times=[]; lines.forEach(function(x){ if(!times.length||times[times.length-1]!==x.t) times.push(x.t); });
+  var byTime={}; lines.forEach(function(x){ (byTime[x.t]=byTime[x.t]||[]).push(x.w); });
+  var m={}, active=[];
+  for(var k=0;k<times.length;k++){
+    var t=times[k], nxt=(k+1<times.length)?times[k+1]:endMin; if(nxt<t) nxt=t;
+    var tags=byTime[t]||[];
+    var hasEnd=tags.indexOf("-")>=0;
+    var ids=[]; tags.forEach(function(w){ if(w&&w!=="-"&&ids.indexOf(w)<0) ids.push(w); });
+    if(ids.length) active=ids.slice(0,2);        /* a new tag (or pair) redefines what's active */
+    else if(hasEnd) active=[];                    /* "-" with no new tag ends the span(s) */
+    /* else: blank line inherits — active carries forward unchanged */
+    var dur=(nxt-t)/60; if(dur<=0||!active.length) continue;
+    var share=dur/active.length;
+    active.forEach(function(w){ m[w]=(m[w]||0)+share; });
+  }
+  return m;
+}
+function wbsTotals(){
+  var keys=Object.keys(data).sort(); var tot={},days={};
+  keys.forEach(function(k){ var m=wbsHours(k); for(var w in m){ tot[w]=(tot[w]||0)+m[w]; days[w]=(days[w]||0)+1; } });
+  return {tot:tot,days:days};
+}
+function renderWbs(){
+  buildDL(true);
+  var t=wbsTotals();
+  var f=(document.getElementById("wbsFilter").value||"").toLowerCase();
+  var tb=document.getElementById("wbsBody"); tb.innerHTML="";
+  var shown=0, hidden=0;
+  var idx=WBSL.map(function(w,i){ return i; });
+  idx.sort(function(a,b){ var ha=t.tot[WBSL[a][0]]||0, hb=t.tot[WBSL[b][0]]||0; if(hb!==ha) return hb-ha; return a-b; });
+  idx.forEach(function(i){ var w=WBSL[i];
+    if(f && (String(w[0])+" "+(w[1]||"")).toLowerCase().indexOf(f)<0) return;
+    if(shown>=250){ hidden++; return; }
+    shown++;
+    tb.insertAdjacentHTML("beforeend",'<tr><td class="tw"><input value="'+esc(String(w[0]))+'" onchange="updW('+i+',0,this.value)"></td>'+
+      '<td><input value="'+esc(w[1])+'" onchange="updW('+i+',1,this.value)"></td>'+
+      '<td class="num">'+r2(t.tot[w[0]]||0).toFixed(2)+'</td><td class="num">'+(t.days[w[0]]||0)+'</td>'+
+      '<td class="noprint"><button class="btn danger" onclick="delW('+i+')">✕</button></td></tr>');
+  });
+  document.getElementById("wbsCount").textContent=WBSL.length+" activities loaded"+(hidden?" · showing "+shown+" (activities with hours first) — use the filter to find others":"");
+}
+function updW(i,f,v){ WBSL[i][f]=v; save(); renderWbs(); }
+function delW(i){ WBSL.splice(i,1); save(); renderWbs(); }
+function addW(){ WBSL.push(["",""]); save(); renderWbs(); }
+
+/* ===================== FILE UPLOAD (Excel / CSV) ===================== */
+/* ===================== FILE UPLOAD (Excel / CSV) ===================== *
+ * Reads a spreadsheet, turns rows into the same tab-separated text the
+ * paste boxes already understand, then reuses the existing import logic.
+ * Nothing about parsing/dedup/carry-forward changes — this is just a
+ * doorway so crews can upload a file instead of copy-pasting.            */
+
+function readSheet(file, cb){
+  if(!window.XLSX){ alert("Spreadsheet reader didn't load — check your internet, or paste the data instead."); return; }
+  var rd=new FileReader();
+  rd.onload=function(e){
+    try{
+      var wb=XLSX.read(e.target.result,{type:"array"});
+      var ws=wb.Sheets[wb.SheetNames[0]];               // first sheet
+      var rows=XLSX.utils.sheet_to_json(ws,{header:1,blankrows:false,defval:""}); // array of arrays
+      cb(rows);
+    }catch(err){ alert("Couldn't read that file: "+err.message+"\nMake sure it's a valid .xlsx, .xls or .csv."); }
+  };
+  rd.onerror=function(){ alert("Couldn't open that file."); };
+  rd.readAsArrayBuffer(file);
+}
+
+/* Detect which columns hold the WBS ID and the activity name.
+ * Looks for a header row first; falls back to "first column = ID, second = name". */
+function detectWbsCols(rows){
+  var idC=0, nameC=1, headerRows=0, recognised=false;
+  if(rows.length){
+    var h=rows[0].map(function(x){ return String(x||"").toLowerCase().trim(); });
+    var isIdHdr=function(c){ return /(\bid\b|\bids\b|\bcode\b|\bwbs\b|\buid\b|unique)/.test(c); };
+    var isNameHdr=function(c){ return /(name|task|activity|description|title|scope|element)/.test(c) && !isIdHdr(c); };
+    var foundId=-1, foundName=-1;
+    h.forEach(function(c,ci){ if(foundId<0 && isIdHdr(c)) foundId=ci; });
+    h.forEach(function(c,ci){ if(foundName<0 && ci!==foundId && isNameHdr(c)) foundName=ci; });
+    if(foundId>=0 || foundName>=0){
+      headerRows=1; recognised=true;
+      if(foundId>=0) idC=foundId;
+      if(foundName>=0) nameC=foundName;
+      else nameC=(idC===0?1:0);
+      if(foundId<0) idC=(nameC===0?1:0);
+    }
+  }
+  return {idC:idC,nameC:nameC,headerRows:headerRows,recognised:recognised};
+}
+
+function uploadWbsFile(inp){
+  var f=inp.files[0]; if(!f) return; inp.value="";
+  readSheet(f,function(rows){
+    if(!rows.length){ alert("That file looks empty."); return; }
+    var c=detectWbsCols(rows);
+    var items=[], idCount=0, namedCount=0;
+    for(var i=c.headerRows;i<rows.length;i++){
+      var r=rows[i]||[];
+      var id=String(r[c.idC]==null?"":r[c.idC]).trim();
+      var nm=String(r[c.nameC]==null?"":r[c.nameC]).trim();
+      if(!id && !nm) continue;
+      if(id) idCount++;
+      if(nm) namedCount++;
+      items.push([id,nm]);
+    }
+    if(!items.length){ alert("Couldn't find any rows to import in that file."); return; }
+    // Sanity guard: if columns weren't recognised, this might be the wrong file — ask before importing.
+    if(!c.recognised){
+      if(!confirm("This file doesn't have recognisable 'ID' / 'Name' column headers.\nThe app will treat column 1 as the ID and column 2 as the activity name.\n\nFirst row would import as:  "+(items[0][0]||"(blank)")+" — "+(items[0][1]||"(blank)")+"\n\nImport anyway?")) return;
+    }
+    // If names are entirely missing, confirm before importing IDs with blank names.
+    if(namedCount===0){
+      if(!confirm(items.length+" rows found, but no activity NAMES were detected — only IDs.\nImport them with blank names anyway?")) return;
+    }
+    // Push directly into WBSL with the same dedup rule importWbs uses (avoids trim() eating tab-only lines).
+    var added=0;
+    items.forEach(function(it){
+      var id=it[0], nm=it[1];
+      if(!id && !nm) return;
+      var dup=false; for(var k=0;k<WBSL.length;k++){ if(String(WBSL[k][0])===String(id) && id!==""){ dup=true; break; } }
+      if(!dup){ WBSL.push([id,nm]); added++; }
+    });
+    save(); renderWbs();
+    alert(added+" activities added.");
+  });
+}
+
+/* Convert a cell that might be an Excel time value (fraction of a day) or text into HHMM/HH:MM text.
+ * Returns "" if it doesn't look like a time. */
+function cellToTime(v){
+  if(v==null) return "";
+  if(typeof v==="number" && v>=0 && v<1){            // Excel stores times as fraction of 24h
+    var mins=Math.round(v*24*60); var h=Math.floor(mins/60), m=mins%60;
+    return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
+  }
+  var s=String(v).trim();
+  // already a time like 0620, 06:20, 6:20
+  if(/^\d{1,2}:?\d{2}$/.test(s)) return s;
+  return "";
+}
+
+function uploadLogFile(inp){
+  var f=inp.files[0]; if(!f) return; inp.value="";
+  readSheet(f,function(rows){
+    if(!rows.length){ alert("That file looks empty."); return; }
+    // Find which column holds the time, and whether row 0 is a header.
+    var headerRows=0, timeC=-1;
+    // A row "has a time" if any cell is a time value/text, OR any cell starts with a time (e.g. "0620 survey").
+    var rowHasTime=function(r){ return r.some(function(c){
+      if(cellToTime(c)!=="") return true;
+      var s=String(c==null?"":c).trim();
+      return /^\d{1,2}:?\d{2}\b/.test(s);
+    }); };
+    if(!rowHasTime(rows[0])) headerRows=1;
+    // pick the time column from the first data row (pure time cell only; text-with-time handled by parseRaw)
+    var probe=rows[headerRows]||[];
+    for(var ci=0; ci<probe.length; ci++){ if(cellToTime(probe[ci])!==""){ timeC=ci; break; } }
+
+    var out=[];
+    for(var i=headerRows;i<rows.length;i++){
+      var r=rows[i]||[];
+      var cells=r.map(function(x){ return String(x==null?"":x).trim(); });
+      if(!cells.some(function(x){ return x!==""; })) continue;     // skip fully blank rows
+      if(timeC>=0){
+        var t=cellToTime(r[timeC]);
+        // everything except the time column becomes the entry text
+        var rest=[];
+        for(var ci2=0; ci2<r.length; ci2++){ if(ci2===timeC) continue; var v=String(r[ci2]==null?"":r[ci2]).trim(); if(v!=="") rest.push(v); }
+        if(t){ out.push(t+" "+rest.join(" ")); }
+        else if(rest.length){ out.push(rest.join(" ")); }   // untimed -> parseRaw folds into previous
+      } else {
+        // no detected time column: just join the row and let parseRaw find a leading time in the text
+        out.push(cells.filter(function(x){ return x!==""; }).join(" "));
+      }
+    }
+    if(!out.length){ alert("Couldn't read any rows from that file."); return; }
+    document.getElementById("impText").value=out.join("\n");
+    parsePreview();                       // show preview; user clicks Apply (same as paste flow)
+  });
+}
+
+function importWbs(){
+  var txt=document.getElementById("wbsText").value; var n=0;
+  txt.split(/\r?\n/).forEach(function(raw){
+    var line=raw.trim(); if(!line) return;
+    var id="",name="";
+    if(line.indexOf("\t")>=0){ var pp=line.split("\t"); id=(pp[0]||"").trim(); name=(pp[1]||"").trim(); }
+    else { var m=line.match(/^([A-Za-z0-9.#\-]+)\s*[-–:·]?\s+(.*)$/); if(m){ id=m[1]; name=m[2]; } }
+    if(!id) return;
+    var dup=false; for(var i=0;i<WBSL.length;i++){ if(String(WBSL[i][0])===String(id)){ dup=true; break; } }
+    if(!dup){ WBSL.push([id,name]); n++; }
+  });
+  save(); document.getElementById("wbsText").value=""; renderWbs(); alert(n+" activities added.");
+}
+function exportWbsCSV(){
+  var t=wbsTotals(); var csv="WBS_ID,Activity,Total_h,Days\n";
+  WBSL.forEach(function(w){ csv+=[w[0],q(w[1]),r2(t.tot[w[0]]||0),(t.days[w[0]]||0)].join(",")+"\n"; });
+  dl(csv,"WBS_hours.csv");
+}
+function guessWbs(t){
+  t=" "+(t||"").toLowerCase()+" ";
+  for(var i=0;i<WBSL.length;i++){ var id=String(WBSL[i][0]||"").toLowerCase(); if(!id) continue;
+    var rx=new RegExp("(^|[^a-z0-9])"+id.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"([^a-z0-9]|$)");
+    if(rx.test(t)) return WBSL[i][0]; }
+  return "";
+}
+
+var impParsed=[];
+function toggleImport(show){ document.getElementById("importPanel").style.display=show?"":"none"; if(show) document.getElementById("impPreview").innerHTML=""; }
+function pad2(h){ return String(+h).padStart(2,"0"); }
+function parseRaw(text){
+  var out=[];
+  text.split(/\r?\n/).forEach(function(raw){
+    var line=raw.replace(/\t+/g," ").trim(); if(!line) return;
+    var start=null, rest=line, m;
+    m=line.match(/^(\d{1,2}):?(\d{2})\s*(?:[-–—]|to)\s*\d{1,2}:?\d{2}\s*(.*)$/i);
+    if(m){ start=pad2(m[1])+":"+m[2]; rest=m[3]||""; }
+    else { m=line.match(/^(\d{1,2}):?(\d{2})\b\s*(.*)$/); if(m){ start=pad2(m[1])+":"+m[2]; rest=m[3]||""; } }
+    if(start==null){ if(out.length) out[out.length-1][1]=(out[out.length-1][1]+" "+line).trim(); return; }
+    out.push([start,rest.replace(/^[\s\-:|,]+/,"").trim()]);
+  });
+  return out;
+}
+function parsePreview(){
+  impParsed=parseRaw(document.getElementById("impText").value);
+  var div=document.getElementById("impPreview");
+  if(!impParsed.length){ div.innerHTML='<div class="sub" style="margin-top:10px">Nothing parsed — each entry needs a leading time like <b>0620</b>.</div>'; return; }
+  div.innerHTML='<div class="tableScroll" style="margin-top:10px"><table><thead><tr><th class="tw">Time</th><th>Entry</th><th class="tw">Suggested category</th></tr></thead><tbody>'+
+    impParsed.map(function(r){ var c=guessCat(r[1]); return '<tr><td class="tw">'+r[0]+'</td><td>'+esc(r[1])+'</td><td class="tw"><span class="dot" style="background:'+CCOL[c]+';margin-right:5px"></span>'+c+'</td></tr>'; }).join("")+
+    '</tbody></table></div><div class="sub" style="margin-top:6px">'+impParsed.length+' entries parsed. Apply, then use ⚑ to tag events.</div>';
+}
+function applyImport(){
+  if(!impParsed.length) parsePreview();
+  if(!impParsed.length) return;
+  var key=curKey(); var clone=JSON.parse(JSON.stringify(impParsed));
+  clone.forEach(function(e){ e[2]=guessWbs(e[1]); e[3]=curUser(); });
+  if(document.getElementById("impMode").value==="replace") data[key].log=clone;
+  else clone.forEach(function(e){ data[key].log.push(e); });
+  save(); document.getElementById("impText").value=""; impParsed=[]; toggleImport(false); renderLog();
+}
+
+function q(s){ s=(s||"").replace(/\n/g," ").replace(/"/g,'""'); return /[,"]/.test(s)?'"'+s+'"':s; }
+function dl(txt,name,type){ var b=new Blob([txt],{type:type||"text/csv"}); var a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=name; a.click(); }
+function exportCSV(){
+  var key=curKey(); var day=data[key]; var st=dayStats(key);
+  var csv="LOG\nTime,Entry,WBS,By\n";
+  var effA=effWbs(day.log);
+  day.log.forEach(function(r,i){ csv+=r[0]+","+q(r[1])+","+(effA[i]||"")+","+(r[3]||"")+"\n"; });
+  csv+="\nEVENTS\nCategory,Start,End,Duration_h,Description,By\n";
+  st.sp.forEach(function(x){ csv+=[x.cat,min2t(x.s),(x.open?"ongoing":min2t(x.e)),r2(x.hrs),q(x.d),x.by||""].join(",")+"\n"; });
+  csv+="\nSUMMARY\nDay length h,"+r2(st.len)+"\nActual downtime h,"+r2(st.dt)+"\nNon-productive (NPT) h,"+r2(st.npt)+"\nClear h,"+r2(st.clear)+"\n";
+  for(var c in st.cats) csv+=c+" h,"+r2(st.cats[c])+"\n";
+  var wh=wbsHours(key); var wk=Object.keys(wh);
+  if(wk.length){ csv+="\nWBS HOURS\nWBS_ID,Activity,Hours\n"; wk.sort().forEach(function(w){ csv+=w+","+q(wbsName(w))+","+r2(wh[w])+"\n"; }); }
+  dl(csv,"Events_"+key+".csv");
+}
+function exportRollupCSV(){
+  var keys=Object.keys(data).sort();
+  var csv="Day,Day_h,Events,Actual_DT_h,NPT_h,Clear_h,"+CATS.join("_h,")+"_h\n";
+  keys.forEach(function(k){ var s=dayStats(k); var row=[fmtDay(k),r2(s.len),s.count,r2(s.dt),r2(s.npt),r2(s.clear)]; CATS.forEach(function(c){ row.push(r2(s.cats[c]||0)); }); csv+=row.join(",")+"\n"; });
+  dl(csv,"Events_campaign_rollup.csv");
+}
+
+/* ===================== CLOUD SYNC (Supabase) ===================== *
+ * Replaces the old local-file persistence. The whole app talks to one
+ * shared row in a cloud table keyed by project name, so every laptop
+ * that opens the same project sees the same live data. The DT/NPT
+ * category classification (ctype) rides in the same document so all
+ * users see the same downtime split.                                  */
+
+var SUPA_URL = window.SUPA_URL || "__SUPABASE_URL__";
+var SUPA_KEY = window.SUPA_KEY || "__SUPABASE_ANON_KEY__";
+var PROJK = "endura_pel_project";
+var sb=null, channel=null, saveTimer=null, applyingRemote=false, lastSavedJSON="", online=true;
+
+function payload(){ return JSON.stringify({app:"Endura Project Event Log",version:5,saved:new Date().toISOString(),days:data,wbs:WBSL,ctype:CTYPE},null,2); }
+
+function curProject(){ try{ return localStorage.getItem(PROJK)||"MEFF-SAR"; }catch(e){ return "MEFF-SAR"; } }
+function setProject(v){ v=(v||"").trim().slice(0,60)||"MEFF-SAR"; try{ localStorage.setItem(PROJK,v); }catch(e){} location.reload(); }
+
+function setSync(state,msg){
+  var el=document.getElementById("syncStatus"); if(!el) return;
+  var col={green:"#2fae54",amber:"#E87722",red:"#dd3b40",grey:"#8C8C8C"}[state]||"#8C8C8C";
+  el.innerHTML='<b style="color:'+col+'">\u25cf</b> '+msg;
+}
+
+function adopt(txt){
+  if(!txt) return;
+  var o;
+  if(typeof txt==="string"){ if(!txt.trim()) return; o=JSON.parse(txt); }
+  else { o=txt; }
+  if(o&&o.days){
+    data=o.days; WBSL=o.wbs||WBSL;
+    if(o.ctype){ for(var k in o.ctype){ if(o.ctype[k]==="DT"||o.ctype[k]==="NPT") CTYPE[k]=o.ctype[k]; } saveCtype(); }
+  } else { data=o; }
+}
+
+/* Debounced push of full document to the cloud */
+function scheduleCloudSave(){
+  if(applyingRemote) return;          // don't echo a change we just received
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(cloudSave,500);
+}
+async function cloudSave(){
+  if(!sb){ try{ localStorage.setItem("endura_pel_offline_"+curProject(),payload()); }catch(e){} return; }
+  var body={ doc:{days:data,wbs:WBSL,ctype:CTYPE}, updated_at:new Date().toISOString(), updated_by:curUser()||"?" };
+  lastSavedJSON=JSON.stringify(body.doc);
+  setSync("amber","saving\u2026");
+  try{
+    var r=await sb.from("event_logs").upsert({ project:curProject(), doc:body.doc, updated_at:body.updated_at, updated_by:body.updated_by }, { onConflict:"project" });
+    if(r.error) throw r.error;
+    online=true; setSync("green","synced \u00b7 "+curProject());
+  }catch(e){
+    online=false;
+    try{ localStorage.setItem("endura_pel_offline_"+curProject(),payload()); }catch(_){}
+    setSync("red","offline \u2014 saved on this device, will sync when back");
+    console.warn("cloud save failed",e);
+  }
+}
+
+/* Pull current state from cloud */
+async function cloudLoad(){
+  if(!sb) return false;
+  try{
+    var r=await sb.from("event_logs").select("doc,updated_by,updated_at").eq("project",curProject()).maybeSingle();
+    if(r.error) throw r.error;
+    if(r.data && r.data.doc){ applyingRemote=true; adopt(r.data.doc); applyingRemote=false; return true; }
+    return false;
+  }catch(e){ console.warn("cloud load failed",e); return false; }
+}
+
+/* Live subscription \u2014 when anyone else saves, refresh our copy */
+function subscribe(){
+  if(!sb||channel) return;
+  channel=sb.channel("pel_"+curProject())
+    .on("postgres_changes",{event:"*",schema:"public",table:"event_logs",filter:"project=eq."+curProject()},function(p){
+      var doc=p.new&&p.new.doc; if(!doc) return;
+      var incoming=JSON.stringify(doc);
+      if(incoming===lastSavedJSON) return;     // it's our own write coming back
+      applyingRemote=true; adopt(doc); applyingRemote=false;
+      lastSavedJSON=incoming;
+      renderLog(); var t=document.getElementById("tabDash"); if(t&&t.classList&&t.classList.contains&&t.classList.contains("active")&&typeof renderDash==="function") renderDash();
+      var by=(p.new&&p.new.updated_by)||"someone";
+      setSync("green","updated by "+by+" \u00b7 "+curProject());
+    })
+    .subscribe();
+}
+
+/* Recover anything saved offline once we reconnect */
+async function flushOffline(){
+  if(!sb) return;
+  try{
+    var pend=localStorage.getItem("endura_pel_offline_"+curProject());
+    if(pend){ await cloudSave(); localStorage.removeItem("endura_pel_offline_"+curProject()); }
+  }catch(e){}
+}
+
+async function initCloud(){
+  document.getElementById("projectName").value=curProject();
+  var configured = SUPA_URL.indexOf("http")===0 && SUPA_KEY.length>20;
+  if(!configured){
+    setSync("grey","not configured \u2014 running local only (see setup note)");
+    try{ var s=localStorage.getItem("endura_pel_local_"+curProject()); if(s) adopt(s); }catch(e){}
+    save=function(){ try{ localStorage.setItem("endura_pel_local_"+curProject(),payload()); }catch(e){} };
+    renderLog();
+    return;
+  }
+  try{
+    sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+    setSync("amber","loading\u2026");
+    var got=await cloudLoad();
+    if(!got){ await cloudSave(); }     // first run for this project \u2014 seed the row
+    subscribe();
+    flushOffline();
+    setSync("green","synced \u00b7 "+curProject());
+    renderLog();
+    window.addEventListener("online",function(){ flushOffline(); });
+  }catch(e){
+    setSync("red","could not connect \u2014 running local only");
+    console.warn(e);
+    renderLog();
+  }
+}
+
+function exportJSON(){ dl(payload(),"Project-Event-Log-data.json","application/json"); }
+function importJSON(inp){ var f=inp.files[0]; if(!f) return; var rd=new FileReader(); rd.onload=function(){ try{ adopt(rd.result); save(); renderLog(); alert("Project data loaded."); }catch(e){ alert("That file could not be read."); } }; rd.readAsText(f); inp.value=""; }
+
+document.getElementById("userTag").value=curUser();
+renderLog();
+initCloud();
+</script>
+</body>
+</html>
