@@ -48,8 +48,11 @@
   tr.flagged td{background:#fff4e8}
   tr.flagged td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
   .flagbtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
-  /* B1: inherited WBS shows as a near-solid muted value, not faint placeholder */
-  .logtable input.wbsinh::placeholder{color:#6a6256;opacity:1;font-weight:600}
+  /* B1: WBS task meta line under the input */
+  .wbsmeta{font-size:10px;line-height:1.25;max-width:178px;white-space:normal;margin-top:2px}
+  .wbsmeta.named{color:var(--muted)}
+  .wbsmeta.inherit{color:#9a9384;font-style:italic}
+  .wbsmeta.ended{color:var(--muted)}
   .tw{white-space:nowrap}
   .num{text-align:right;font-variant-numeric:tabular-nums}
   .tableScroll{overflow-x:auto}
@@ -445,9 +448,12 @@ function flagRow(i){
   if(!t){ alert("Add a time to this line before flagging it."); return; }
   /* B1 fix: toggle. If an event already exists at this line's time, clicking the flag removes it (unflag). */
   var ev=data[key].ev;
-  var existing=-1;
-  for(var k=0;k<ev.length;k++){ if(ev[k][1]===t){ existing=k; break; } }
-  if(existing>=0){ ev.splice(existing,1); save(); renderLog(); return; }
+  /* B1 fix: if any event(s) share this line's start time, clicking the flag removes ALL of them
+     in one click (previously it removed only the first, so the row stayed highlighted and you
+     had to click again). */
+  var had=false;
+  for(var k=ev.length-1;k>=0;k--){ if(ev[k][1]===t){ ev.splice(k,1); had=true; } }
+  if(had){ save(); renderLog(); return; }
   var tm=toMin(t); var end="";
   for(var j=0;j<L.length;j++){ var oj=toMin(L[j][0]); if(oj!=null&&tm!=null&&oj>tm){ end=L[j][0]; break; } }
   ev.push([guessCat(L[i][1]),t,end,(L[i][1]||"").slice(0,100),curUser()]);
@@ -494,21 +500,24 @@ function curUser(){ try{ return localStorage.getItem(USERK)||""; }catch(e){ retu
 function setUser(v){ try{ localStorage.setItem(USERK,(v||"").trim().slice(0,8)); }catch(e){} renderLog(); }
 function wbsName(id){ for(var i=0;i<WBSL.length;i++){ if(String(WBSL[i][0])===String(id)) return WBSL[i][1]||""; } return ""; }
 function wbsSel(i,v,eff){
-  v=String(v||""); var nm=wbsName(v); var sub="";
+  v=String(v||""); var nm=wbsName(v);
   if(v==="-"){
-    /* explicit end of span */
-    sub='<div class="sub" style="font-size:10px">span ended</div>';
-    return '<input list="wbsDL" value="'+esc(v)+'" placeholder="tag activity" onchange="updL('+i+',2,this.value)">'+sub;
+    return '<input list="wbsDL" value="-" placeholder="tag activity" onchange="updL('+i+',2,this.value)">'+
+           '<div class="wbsmeta ended">span ended</div>';
   }
   if(v){
-    /* explicitly tagged on this line: show the activity name beneath */
-    sub=nm?'<div class="sub" style="font-size:10px;line-height:1.2;max-width:175px;white-space:normal">'+esc(nm.slice(0,52))+'</div>':"";
+    /* explicitly tagged on THIS line: show id in box, activity name beneath */
+    var sub=nm?'<div class="wbsmeta named">'+esc(nm)+'</div>':"";
     return '<input list="wbsDL" value="'+esc(v)+'" placeholder="tag activity" onchange="updL('+i+',2,this.value)">'+sub;
   }
-  /* INHERITED: show the inherited id+name greyed INSIDE the box (so it reads as the real task),
-     leave the input value empty so carry-forward logic is untouched, and NO duplicate line below. */
-  var ph = eff ? (esc(String(eff))+(wbsName(eff)?" \u00b7 "+esc((wbsName(eff)||"").slice(0,30)):"")) : "tag activity";
-  return '<input list="wbsDL" class="wbsinh" value="" placeholder="'+ph+'" title="Inheriting the activity shown. Type a new id to start a different activity, or - to end the span." onchange="updL('+i+',2,this.value)">';
+  /* INHERITED: empty input (carry-forward untouched) + a tidy, muted, clearly-inherited line beneath.
+     Distinct look (italic + ↳), full activity name, wraps instead of clipping mid-word. */
+  if(eff){
+    var enm=wbsName(eff)||"";
+    var meta='<div class="wbsmeta inherit" title="Carried forward from the line above. Type a new id to change activity, or - to end.">&#8627; '+esc(String(eff))+(enm?' '+esc(enm):"")+'</div>';
+    return '<input list="wbsDL" value="" placeholder="\u2014" onchange="updL('+i+',2,this.value)">'+meta;
+  }
+  return '<input list="wbsDL" value="" placeholder="tag activity" onchange="updL('+i+',2,this.value)">';
 }
 function buildDL(force){
   var dl=document.getElementById("wbsDL");
