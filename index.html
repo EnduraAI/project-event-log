@@ -88,19 +88,36 @@
   .bar24tot .tbox .v{font-size:18px}
   .evspan{position:absolute;height:15px;border-radius:3px}
   .axis{display:flex;justify-content:space-between;color:var(--muted);font-size:10.5px;margin-top:3px}
+  .printonly{display:none}
   @media print{
+    @page{size:A4;margin:14mm 12mm}
     *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
     nav,.noprint{display:none!important}
-    body{background:#fff;font-size:12px}
-    header{padding:6px 0;border-bottom:1px solid var(--accent);break-after:avoid;page-break-after:avoid}
-    .mark{width:34px;height:34px}
-    .wordmark{font-size:18px}
+    .printonly{display:block}
+    body{background:#fff;font-size:11.5px}
+    header{padding:4px 0;border-bottom:1px solid var(--accent);break-after:avoid;page-break-after:avoid}
+    .mark{width:30px;height:30px}
+    .wordmark{font-size:17px}
     main{padding:0;max-width:none}
     .card{break-inside:avoid;border-color:#bbb}
-    .panel{break-inside:auto;border-color:#bbb;margin:8px 0;padding:10px}
-    .panel h3{break-after:avoid}
+    .panel{break-inside:auto;border:none;box-shadow:none;margin:10px 0;padding:0}
+    .panel h3{break-after:avoid;font-size:13px;margin:0 0 6px}
     .tableScroll{overflow:visible}
+    table{font-size:10.5px}
     tr,td,th{break-inside:avoid}
+    /* report header block */
+    #reportHeader{margin:6px 0 4px}
+    #reportHeader .rh-title{font-size:16px;font-weight:800}
+    #reportHeader .rh-meta{color:#444;font-size:11px;margin-top:2px}
+    #reportHeader .rh-rule{height:2px;background:var(--accent);margin-top:8px}
+    /* charts hidden unless opted in */
+    body:not(.print-charts) .chartPanel{display:none!important}
+    /* the 24h day-picker bar at top is screen-only; per-day section carries print bars */
+    #bar24Panel{display:none!important}  /* top day-picker bar is screen-only; per-day section carries print bars */
+    .perday-day{break-inside:avoid;margin:0 0 12px;border-top:1px solid #ddd;padding-top:8px}
+    .perday-day h4{margin:0 0 4px;font-size:12.5px}
+    .pd-tot{color:#444;font-size:11px;margin:2px 0 6px}
+    .bar24{height:30px}
   }
 </style>
 </head>
@@ -201,53 +218,69 @@
   </section>
 
   <section id="view-dash" style="display:none">
-    <div class="panel noprint" style="padding:12px 16px">
-      <div class="row" style="gap:14px">
-        <div style="font-weight:700">Report range</div>
-        <label class="sub">From <input type="date" id="rangeFrom" onchange="onRangeChange()"></label>
-        <label class="sub">To <input type="date" id="rangeTo" onchange="onRangeChange()"></label>
+    <!-- Report controls (screen only) -->
+    <div class="panel noprint" style="padding:14px 16px">
+      <div class="row" style="gap:14px;align-items:flex-end">
+        <div>
+          <div style="font-weight:700;margin-bottom:6px">Report period</div>
+          <div class="row" style="gap:10px">
+            <label class="sub" style="display:flex;flex-direction:column;gap:3px">From<input type="date" id="rangeFrom" onchange="onRangeChange()"></label>
+            <label class="sub" style="display:flex;flex-direction:column;gap:3px">To<input type="date" id="rangeTo" onchange="onRangeChange()"></label>
+          </div>
+        </div>
         <div class="row" style="gap:6px">
           <button class="btn" onclick="setRangePreset('7')">Last 7 days</button>
           <button class="btn" onclick="setRangePreset('month')">This month</button>
           <button class="btn" onclick="setRangePreset('all')">All</button>
         </div>
         <div class="spacer"></div>
-        <div class="sub" id="rangeSummary"></div>
+        <label class="sub" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="printCharts" style="width:auto"> include charts in PDF</label>
+        <button class="btn" onclick="exportRollupCSV()">Export CSV</button>
+        <button class="btn primary" onclick="printReport()">Print PDF</button>
       </div>
+      <div class="sub" id="rangeSummary" style="margin-top:10px"></div>
     </div>
+
+    <!-- Print-only report header -->
+    <div id="reportHeader" class="printonly"></div>
+
     <div class="cards" id="kpiCards"></div>
-    <div class="panel">
+
+    <div class="panel" id="bar24Panel">
       <div class="row" style="margin-bottom:6px">
         <h3 style="margin:0">24-hour breakdown</h3>
-        <div class="spacer"></div>
-        <label class="sub">Day <select id="barDay" onchange="renderDash()"></select></label>
+        <div class="spacer noprint"></div>
+        <label class="sub noprint">Day <select id="barDay" onchange="renderDash()"></select></label>
       </div>
       <div id="dayBar24"></div>
     </div>
-    <div class="panel">
+
+    <div class="panel chartPanel">
       <h3>Downtime by category — campaign (hours)</h3>
       <div id="paretoChart" class="barwrap"></div>
     </div>
-    <div class="panel">
+    <div class="panel chartPanel">
       <h3>Daily downtime by category</h3>
       <div id="catLegend" class="chips" style="margin:0 0 10px"></div>
       <div id="dailyChart" class="barwrap"></div>
       <div class="footnote">Bar length is hours attributed per category (overlapping events count in each of their categories). The figure at right is the day's merged downtime.</div>
     </div>
+
     <div class="panel">
-      <h3>Campaign rollup</h3>
+      <h3>Daily rollup</h3>
       <div class="tableScroll">
         <table>
-          <thead><tr><th>Day</th><th class="num">Day h</th><th class="num">Events</th><th class="num">Actual DT h</th><th class="num">NPT h</th><th class="num">Clear h</th><th>Worst category</th></tr></thead>
+          <thead><tr><th>Day</th><th class="num">Day h</th><th class="num">Events</th><th class="num">Actual DT h</th><th class="num">NPT h</th><th class="num">Other h</th><th class="num">Clear h</th><th>Worst category</th></tr></thead>
           <tbody id="rollupBody"></tbody>
           <tfoot id="rollupFoot"></tfoot>
         </table>
       </div>
-      <div class="row noprint" style="margin-top:12px">
-        <div class="spacer"></div>
-        <button class="btn" onclick="exportRollupCSV()">Export rollup CSV</button>
-        <button class="btn" onclick="window.print()">Print / PDF</button>
-      </div>
+    </div>
+
+    <!-- Per-day breakdown with events listed -->
+    <div class="panel" id="perDayPanel">
+      <h3>Per-day breakdown</h3>
+      <div id="perDay"></div>
     </div>
   </section>
 
@@ -555,7 +588,7 @@ function setRangePreset(p){
   renderDash();
 }
 /* Build the 24-hour timeline for one day: DT / NPT / Other laid on the clock, gaps = clear running. */
-function build24Bar(key){
+function build24Bar(key,compact){
   if(!key||!data[key]) return '<div class="sub">No day selected.</div>';
   var st=dayStats(key); var endMin=st.endMin||1440;
   /* classify each minute-span by effective type using the event spans already computed */
@@ -577,6 +610,7 @@ function build24Bar(key){
     '<div class="tbox"><div class="k">Other</div><div class="v" style="color:#7a7a7a">'+r2(st.other||0).toFixed(2)+'<small> h</small></div></div>'+
     '<div class="tbox"><div class="k">Clear running</div><div class="v" style="color:#0f9bad">'+r2(st.clear).toFixed(2)+'<small> h</small></div></div>'+
     '</div>';
+  if(compact) return '<div class="bar24wrap"><div class="bar24"><div class="bar24grid">'+grid+'</div>'+bars+'</div>'+axis+'</div>';
   return '<div class="bar24wrap"><div class="bar24"><div class="bar24grid">'+grid+'</div>'+bars+'</div>'+axis+tot+'</div>';
 }
 
@@ -625,9 +659,58 @@ function renderDash(){
     dc.appendChild(htmlRow(fmtDay(s.k),'<div class="stack">'+segsH+'</div>',r2(s.dt).toFixed(1)+" DT / "+r2(s.npt).toFixed(1)+" NPT"));
   });
   var rb=document.getElementById("rollupBody"); rb.innerHTML="";
-  stats.forEach(function(s){ rb.insertAdjacentHTML("beforeend",'<tr><td>'+fmtDay(s.k)+'</td><td class="num">'+r2(s.len).toFixed(2)+'</td><td class="num">'+s.count+'</td><td class="num">'+r2(s.dt).toFixed(2)+'</td><td class="num">'+r2(s.npt).toFixed(2)+'</td><td class="num">'+r2(s.clear).toFixed(2)+'</td><td>'+worstCat(s.cats)+'</td></tr>'); });
-  var tL=0; stats.forEach(function(s){ tL+=s.len; });
-  document.getElementById("rollupFoot").innerHTML='<tr style="font-weight:800"><td>TOTAL</td><td class="num">'+r2(tL).toFixed(2)+'</td><td class="num">'+tE+'</td><td class="num">'+r2(tDT).toFixed(2)+'</td><td class="num">'+r2(tNPT).toFixed(2)+'</td><td class="num">'+r2(tC).toFixed(2)+'</td><td>'+worstCat(agg)+'</td></tr>';
+  stats.forEach(function(s){ rb.insertAdjacentHTML("beforeend",'<tr><td>'+fmtDay(s.k)+'</td><td class="num">'+r2(s.len).toFixed(2)+'</td><td class="num">'+s.count+'</td><td class="num">'+r2(s.dt).toFixed(2)+'</td><td class="num">'+r2(s.npt).toFixed(2)+'</td><td class="num">'+r2(s.other||0).toFixed(2)+'</td><td class="num">'+r2(s.clear).toFixed(2)+'</td><td>'+worstCat(s.cats)+'</td></tr>'); });
+  var tL=0,tO=0; stats.forEach(function(s){ tL+=s.len; tO+=(s.other||0); });
+  document.getElementById("rollupFoot").innerHTML='<tr style="font-weight:800"><td>TOTAL</td><td class="num">'+r2(tL).toFixed(2)+'</td><td class="num">'+tE+'</td><td class="num">'+r2(tDT).toFixed(2)+'</td><td class="num">'+r2(tNPT).toFixed(2)+'</td><td class="num">'+r2(tO).toFixed(2)+'</td><td class="num">'+r2(tC).toFixed(2)+'</td><td>'+worstCat(agg)+'</td></tr>';
+
+  /* Batch 2: per-day breakdown (with events listed) for the selected range */
+  renderPerDay(stats);
+}
+
+/* Build the print-only report header + the per-day breakdown section */
+function renderPerDay(stats){
+  var pd=document.getElementById("perDay"); if(!pd) return;
+  if(!stats.length){ pd.innerHTML='<div class="sub">No days in the selected period.</div>'; }
+  else {
+    pd.innerHTML=stats.map(function(s){
+      var bar=build24Bar(s.k, true);   /* compact bar, no totals grid */
+      var evs=(data[s.k]&&data[s.k].ev)?data[s.k].ev.slice():[];
+      evs.sort(function(a,b){ return (toMin(a[1])||0)-(toMin(b[1])||0); });
+      var rows=evs.length? evs.map(function(e){
+        var s2=toMin(e[1]), en=e[2]?toMin(e[2]):(s.endMin||1440);
+        var dur=(en!=null&&s2!=null)?((en>s2?en:(s.endMin||1440))-s2)/60:0;
+        var ty=evType(e);
+        return '<tr><td class="tw">'+esc(e[1]||"")+'</td><td class="tw">'+esc(e[2]||"ongoing")+'</td><td>'+esc(e[0]||"")+'</td><td class="tw">'+ty+'</td><td class="num">'+r2(dur).toFixed(2)+'</td><td>'+esc(e[3]||"")+'</td></tr>';
+      }).join("") : '<tr><td colspan="6" class="sub">No events logged.</td></tr>';
+      return '<div class="perday-day">'+
+        '<h4>'+fmtDay(s.k)+'</h4>'+
+        '<div class="pd-tot">Day '+r2(s.len).toFixed(2)+'h · DT '+r2(s.dt).toFixed(2)+'h · NPT '+r2(s.npt).toFixed(2)+'h · Other '+r2(s.other||0).toFixed(2)+'h · Clear '+r2(s.clear).toFixed(2)+'h · '+s.count+' event'+(s.count===1?"":"s")+'</div>'+
+        bar+
+        '<table style="margin-top:8px"><thead><tr><th class="tw">Start</th><th class="tw">End</th><th>Category</th><th class="tw">Type</th><th class="num">Dur h</th><th>Description</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+        '</div>';
+    }).join("");
+  }
+}
+
+/* Build the print report header and trigger the browser print dialog */
+function printReport(){
+  var keys=keysInRange();
+  var rh=document.getElementById("reportHeader");
+  var period=(!RANGE.from && !RANGE.to)
+      ? "Full campaign"
+      : ((RANGE.from?fmtDay(RANGE.from):"start")+" to "+(RANGE.to?fmtDay(RANGE.to):"latest"));
+  var gen=new Date();
+  var genStr=gen.toLocaleDateString()+" "+gen.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+  if(rh){
+    rh.innerHTML='<div class="rh-title">Project Event Log — Downtime Report</div>'+
+      '<div class="rh-meta">Project: '+esc(curProject())+' &nbsp;·&nbsp; Period: '+esc(period)+' &nbsp;·&nbsp; '+keys.length+' day'+(keys.length===1?"":"s")+' &nbsp;·&nbsp; Generated: '+esc(genStr)+'</div>'+
+      '<div class="rh-rule"></div>';
+  }
+  /* charts on/off */
+  var wantCharts=document.getElementById("printCharts");
+  if(wantCharts && wantCharts.checked) document.body.classList.add("print-charts");
+  else document.body.classList.remove("print-charts");
+  window.print();
 }
 
 var USERK="endura_pel_user";
