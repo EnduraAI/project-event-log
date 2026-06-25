@@ -52,6 +52,8 @@
   .wbsmeta{font-size:10px;line-height:1.25;max-width:178px;white-space:normal;margin-top:2px}
   .wbsmeta.named{color:var(--muted)}
   .wbsmeta.inherit{color:#9a9384;font-style:italic}
+  /* inherited WBS placeholder shown as a real-looking value */
+  .logtable input.wbsinh::placeholder{color:#5d574c;opacity:1}
   .wbsmeta.ended{color:var(--muted)}
   .tw{white-space:nowrap}
   .num{text-align:right;font-variant-numeric:tabular-nums}
@@ -351,10 +353,21 @@ function fillDaySelect(){
 function curKey(){ return document.getElementById("daySelect").value; }
 
 
-/* B1: a log line is "flagged" when an event shares its start time */
+/* B1: a log line is "flagged" when an event was created from it.
+   Match on time + description together so that lines sharing a time don't all light up,
+   and so flag/unflag are deterministic per line. Falls back to time-only for events that
+   have no description (older flags). */
+function evKey(t,d){ return String(t||"")+"\u0001"+String(d||"").slice(0,100); }
 function flaggedSet(day){
-  var times={}; day.ev.forEach(function(e){ if(e[1]) times[e[1]]=true; });
-  var set={}; day.log.forEach(function(r,i){ if(r[0] && times[r[0]]) set[i]=true; });
+  /* A line is flagged when an event was created from it (same time + description).
+     Exact match keeps flag/unflag deterministic even when several lines share a time. */
+  var exact={};
+  day.ev.forEach(function(e){ if(e[1]) exact[evKey(e[1],e[3])]=true; });
+  var set={};
+  day.log.forEach(function(r,i){
+    if(!r[0]) return;
+    if(exact[evKey(r[0],(r[1]||"").slice(0,100))]) set[i]=true;
+  });
   return set;
 }
 
@@ -444,19 +457,18 @@ function deleteDay(){ var key=curKey(); if(Object.keys(data).length<=1){ alert("
 var KW=[["ROV - Asset 2",/rov ?2/i],["ROV - Asset 1",/rov ?1|\btms\b|\bt4\b|umbilical|tether/i],["Weather",/weather|\bwow\b|swell|wave|wind|storm|cyclone/i],["Crane",/crane|lift(ing)?|deck ops/i],["Vessel",/vessel|\bdp\b|engine|thruster|beacon|gangway|bridge/i],["Tooling",/tool|grinder|ring ?saw|cutter|blade|hose|fit ?up|hot ?stab|dredge|jetter/i],["Scheduling",/schedul|waiting|wait on|standby|stand ?by|delay|no work|permit/i]];
 function guessCat(t){ t=t||""; for(var i=0;i<KW.length;i++){ if(KW[i][1].test(t)) return KW[i][0]; } return "Other"; }
 function flagRow(i){
-  var key=curKey(); var L=data[key].log; var t=L[i][0]||"";
+  var key=curKey(); var L=data[key].log; var t=L[i][0]||""; var desc=(L[i][1]||"").slice(0,100);
   if(!t){ alert("Add a time to this line before flagging it."); return; }
-  /* B1 fix: toggle. If an event already exists at this line's time, clicking the flag removes it (unflag). */
   var ev=data[key].ev;
-  /* B1 fix: if any event(s) share this line's start time, clicking the flag removes ALL of them
-     in one click (previously it removed only the first, so the row stayed highlighted and you
-     had to click again). */
+  /* Toggle deterministically: if an event created from THIS line (same time + description) exists,
+     remove it (unflag) in one click. Otherwise create the event (flag). */
+  var myKey=evKey(t,desc);
   var had=false;
-  for(var k=ev.length-1;k>=0;k--){ if(ev[k][1]===t){ ev.splice(k,1); had=true; } }
+  for(var k=ev.length-1;k>=0;k--){ if(evKey(ev[k][1],ev[k][3])===myKey){ ev.splice(k,1); had=true; } }
   if(had){ save(); renderLog(); return; }
   var tm=toMin(t); var end="";
   for(var j=0;j<L.length;j++){ var oj=toMin(L[j][0]); if(oj!=null&&tm!=null&&oj>tm){ end=L[j][0]; break; } }
-  ev.push([guessCat(L[i][1]),t,end,(L[i][1]||"").slice(0,100),curUser()]);
+  ev.push([guessCat(L[i][1]),t,end,desc,curUser()]);
   save(); renderLog();
 }
 
@@ -506,16 +518,18 @@ function wbsSel(i,v,eff){
            '<div class="wbsmeta ended">span ended</div>';
   }
   if(v){
-    /* explicitly tagged on THIS line: show id in box, activity name beneath */
+    /* explicitly tagged on THIS line: id in box, activity name beneath */
     var sub=nm?'<div class="wbsmeta named">'+esc(nm)+'</div>':"";
     return '<input list="wbsDL" value="'+esc(v)+'" placeholder="tag activity" onchange="updL('+i+',2,this.value)">'+sub;
   }
-  /* INHERITED: empty input (carry-forward untouched) + a tidy, muted, clearly-inherited line beneath.
-     Distinct look (italic + ↳), full activity name, wraps instead of clipping mid-word. */
+  /* INHERITED: show the SAME id + task name as the line it continues, and NOTHING below.
+     The input value stays empty so carry-forward hours logic is untouched and edits to the
+     start line flow down automatically; the inherited id+name is shown as the box's placeholder,
+     styled to read like a real value (not faint hint text). */
   if(eff){
     var enm=wbsName(eff)||"";
-    var meta='<div class="wbsmeta inherit" title="Carried forward from the line above. Type a new id to change activity, or - to end.">&#8627; '+esc(String(eff))+(enm?' '+esc(enm):"")+'</div>';
-    return '<input list="wbsDL" value="" placeholder="\u2014" onchange="updL('+i+',2,this.value)">'+meta;
+    var ph=esc(String(eff))+(enm?" "+esc(enm):"");
+    return '<input list="wbsDL" class="wbsinh" value="" placeholder="'+ph+'" title="Continues the activity above ('+ph+'). Type a new id to change activity, or - to end the span." onchange="updL('+i+',2,this.value)">';
   }
   return '<input list="wbsDL" value="" placeholder="tag activity" onchange="updL('+i+',2,this.value)">';
 }
