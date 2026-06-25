@@ -78,6 +78,14 @@
   .catchip{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:3px 10px;font-size:11.5px;font-weight:600}
   .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
   .lanewrap{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:6px;margin-top:10px}
+  .bar24wrap{margin-top:4px}
+  .bar24{position:relative;height:46px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .bar24 .seg24{position:absolute;top:0;height:100%}
+  .bar24grid{position:absolute;inset:0;pointer-events:none}
+  .bar24grid i{position:absolute;top:0;height:100%;border-left:1px solid rgba(0,0,0,.06)}
+  .bar24axis{display:flex;justify-content:space-between;color:var(--muted);font-size:10.5px;margin-top:4px}
+  .bar24tot{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;margin-top:12px}
+  .bar24tot .tbox .v{font-size:18px}
   .evspan{position:absolute;height:15px;border-radius:3px}
   .axis{display:flex;justify-content:space-between;color:var(--muted);font-size:10.5px;margin-top:3px}
   @media print{
@@ -193,7 +201,29 @@
   </section>
 
   <section id="view-dash" style="display:none">
+    <div class="panel noprint" style="padding:12px 16px">
+      <div class="row" style="gap:14px">
+        <div style="font-weight:700">Report range</div>
+        <label class="sub">From <input type="date" id="rangeFrom" onchange="onRangeChange()"></label>
+        <label class="sub">To <input type="date" id="rangeTo" onchange="onRangeChange()"></label>
+        <div class="row" style="gap:6px">
+          <button class="btn" onclick="setRangePreset('7')">Last 7 days</button>
+          <button class="btn" onclick="setRangePreset('month')">This month</button>
+          <button class="btn" onclick="setRangePreset('all')">All</button>
+        </div>
+        <div class="spacer"></div>
+        <div class="sub" id="rangeSummary"></div>
+      </div>
+    </div>
     <div class="cards" id="kpiCards"></div>
+    <div class="panel">
+      <div class="row" style="margin-bottom:6px">
+        <h3 style="margin:0">24-hour breakdown</h3>
+        <div class="spacer"></div>
+        <label class="sub">Day <select id="barDay" onchange="renderDash()"></select></label>
+      </div>
+      <div id="dayBar24"></div>
+    </div>
     <div class="panel">
       <h3>Downtime by category — campaign (hours)</h3>
       <div id="paretoChart" class="barwrap"></div>
@@ -491,8 +521,85 @@ function flagRow(i){
 function kpi(k,v,color){ return '<div class="card"><div class="k">'+k+'</div><div class="v" style="'+(color?'color:'+color:'')+'">'+v+'</div></div>'; }
 function htmlRow(lbl,mid,val){ var d=document.createElement("div"); d.className="barrow"; d.innerHTML='<div class="lbl">'+lbl+'</div>'+mid+'<div class="val">'+val+'</div>'; return d; }
 
+/* ===== Batch 2: dashboard date range + 24h bar ===== */
+var RANGE={from:"",to:""};
+function allDayKeys(){ return Object.keys(data).sort(); }
+function keysInRange(){
+  var ks=allDayKeys();
+  if(!RANGE.from && !RANGE.to) return ks;
+  return ks.filter(function(k){
+    if(RANGE.from && k<RANGE.from) return false;
+    if(RANGE.to && k>RANGE.to) return false;
+    return true;
+  });
+}
+function onRangeChange(){
+  RANGE.from=(document.getElementById("rangeFrom").value||"");
+  RANGE.to=(document.getElementById("rangeTo").value||"");
+  renderDash();
+}
+function setRangePreset(p){
+  var ks=allDayKeys(); if(!ks.length){ return; }
+  var last=ks[ks.length-1];           /* latest logged day anchors presets */
+  var from="", to=last;
+  if(p==="all"){ from=""; to=""; }
+  else if(p==="7"){
+    var d=new Date(last+"T00:00:00"); d.setDate(d.getDate()-6);
+    from=d.toISOString().slice(0,10);
+  } else if(p==="month"){
+    from=last.slice(0,7)+"-01";
+  }
+  RANGE.from=from; RANGE.to=to;
+  var fEl=document.getElementById("rangeFrom"), tEl=document.getElementById("rangeTo");
+  if(fEl) fEl.value=from; if(tEl) tEl.value=to;
+  renderDash();
+}
+/* Build the 24-hour timeline for one day: DT / NPT / Other laid on the clock, gaps = clear running. */
+function build24Bar(key){
+  if(!key||!data[key]) return '<div class="sub">No day selected.</div>';
+  var st=dayStats(key); var endMin=st.endMin||1440;
+  /* classify each minute-span by effective type using the event spans already computed */
+  var dtIv=mergeIv(st.sp.filter(function(x){return x.type==="DT";}));
+  var nptIv=subIv(mergeIv(st.sp.filter(function(x){return x.type==="NPT";})),dtIv);
+  var othIv=subIv(subIv(mergeIv(st.sp.filter(function(x){return x.type==="OTHER";})),dtIv),nptIv);
+  function segs(iv,color,label){ return iv.map(function(v){
+    var left=v.s/endMin*100, w=(v.e-v.s)/endMin*100;
+    return '<div class="seg24" style="left:'+left+'%;width:'+w+'%;background:'+color+'" title="'+label+' '+min2t(v.s)+'–'+min2t(v.e)+'"></div>';
+  }).join(""); }
+  var bars=segs(dtIv,"#dd3b40","Downtime")+segs(nptIv,"#c98a2a","NPT")+segs(othIv,"#8C8C8C","Other");
+  /* hour gridlines every 2h */
+  var grid=""; for(var h=2;h<24;h+=2){ grid+='<i style="left:'+(h*60/endMin*100)+'%"></i>'; }
+  var axis='<div class="bar24axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>'+min2t(endMin)+'</span></div>';
+  var tot='<div class="bar24tot">'+
+    '<div class="tbox"><div class="k">Day length</div><div class="v">'+r2(st.len).toFixed(2)+'<small> h</small></div></div>'+
+    '<div class="tbox"><div class="k">Actual downtime</div><div class="v" style="color:#dd3b40">'+r2(st.dt).toFixed(2)+'<small> h</small></div></div>'+
+    '<div class="tbox"><div class="k">NPT</div><div class="v" style="color:#c98a2a">'+r2(st.npt).toFixed(2)+'<small> h</small></div></div>'+
+    '<div class="tbox"><div class="k">Other</div><div class="v" style="color:#7a7a7a">'+r2(st.other||0).toFixed(2)+'<small> h</small></div></div>'+
+    '<div class="tbox"><div class="k">Clear running</div><div class="v" style="color:#0f9bad">'+r2(st.clear).toFixed(2)+'<small> h</small></div></div>'+
+    '</div>';
+  return '<div class="bar24wrap"><div class="bar24"><div class="bar24grid">'+grid+'</div>'+bars+'</div>'+axis+tot+'</div>';
+}
+
 function renderDash(){
-  var keys=Object.keys(data).sort();
+  /* Batch 2: populate the 24h bar day-picker (default to latest logged day) */
+  var allKeys=allDayKeys();
+  var bd=document.getElementById("barDay");
+  if(bd){
+    var prev=bd.value;
+    bd.innerHTML=allKeys.map(function(k){return '<option value="'+k+'">'+fmtDay(k)+'</option>';}).join("");
+    if(prev && allKeys.indexOf(prev)>=0) bd.value=prev;
+    else if(allKeys.length) bd.value=allKeys[allKeys.length-1];   /* latest by default */
+  }
+  var barKey=bd?bd.value:(allKeys.length?allKeys[allKeys.length-1]:"");
+  var db=document.getElementById("dayBar24"); if(db) db.innerHTML=build24Bar(barKey);
+
+  /* Batch 2: everything below respects the date range */
+  var keys=keysInRange();
+  var rs=document.getElementById("rangeSummary");
+  if(rs){
+    if(!RANGE.from && !RANGE.to) rs.textContent=keys.length+" day"+(keys.length===1?"":"s")+" · full campaign";
+    else rs.textContent=keys.length+" day"+(keys.length===1?"":"s")+" · "+(RANGE.from?fmtDay(RANGE.from):"start")+" → "+(RANGE.to?fmtDay(RANGE.to):"latest");
+  }
   var stats=keys.map(function(k){ var s=dayStats(k); s.k=k; return s; });
   var tU=0,tDT=0,tNPT=0,tC=0,tE=0,agg={};
   stats.forEach(function(s){ tU+=s.union; tDT+=s.dt; tNPT+=s.npt; tC+=s.clear; tE+=s.count; for(var c in s.cats) agg[c]=(agg[c]||0)+s.cats[c]; });
@@ -846,10 +953,12 @@ function exportCSV(){
   dl(csv,"Events_"+key+".csv");
 }
 function exportRollupCSV(){
-  var keys=Object.keys(data).sort();
-  var csv="Day,Day_h,Events,Actual_DT_h,NPT_h,Clear_h,"+CATS.join("_h,")+"_h\n";
-  keys.forEach(function(k){ var s=dayStats(k); var row=[fmtDay(k),r2(s.len),s.count,r2(s.dt),r2(s.npt),r2(s.clear)]; CATS.forEach(function(c){ row.push(r2(s.cats[c]||0)); }); csv+=row.join(",")+"\n"; });
-  dl(csv,"Events_campaign_rollup.csv");
+  /* Batch 2: export the SAME date range shown on the dashboard */
+  var keys=keysInRange();
+  var csv="Day,Day_h,Events,Actual_DT_h,NPT_h,Other_h,Clear_h,"+CATS.join("_h,")+"_h\n";
+  keys.forEach(function(k){ var s=dayStats(k); var row=[fmtDay(k),r2(s.len),s.count,r2(s.dt),r2(s.npt),r2(s.other||0),r2(s.clear)]; CATS.forEach(function(c){ row.push(r2(s.cats[c]||0)); }); csv+=row.join(",")+"\n"; });
+  var tag=(RANGE.from||RANGE.to)?("_"+(RANGE.from||"start")+"_to_"+(RANGE.to||"latest")):"_full_campaign";
+  dl(csv,"Events_rollup"+tag+".csv");
 }
 
 /* ===================== CLOUD SYNC (Supabase) ===================== *
