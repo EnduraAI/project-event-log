@@ -90,34 +90,82 @@
   .axis{display:flex;justify-content:space-between;color:var(--muted);font-size:10.5px;margin-top:3px}
   .printonly{display:none}
   @media print{
-    @page{size:A4;margin:14mm 12mm}
+    @page{
+      size:A4; margin:16mm 14mm 18mm 14mm;
+    }
     *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
     nav,.noprint{display:none!important}
     .printonly{display:block}
-    body{background:#fff;font-size:11.5px}
-    header{padding:4px 0;border-bottom:1px solid var(--accent);break-after:avoid;page-break-after:avoid}
-    .mark{width:30px;height:30px}
-    .wordmark{font-size:17px}
+    html,body{background:#fff}
+    body{font-family:Calibri,"Segoe UI",Helvetica,Arial,sans-serif;font-size:10.5pt;color:#2b2b2b;line-height:1.35}
+    /* hide the app chrome header; the report has its own masthead */
+    body>header{display:none!important}
     main{padding:0;max-width:none}
-    .card{break-inside:avoid;border-color:#bbb}
-    .panel{break-inside:auto;border:none;box-shadow:none;margin:10px 0;padding:0}
-    .panel h3{break-after:avoid;font-size:13px;margin:0 0 6px}
-    .tableScroll{overflow:visible}
-    table{font-size:10.5px}
-    tr,td,th{break-inside:avoid}
-    /* report header block */
-    #reportHeader{margin:6px 0 4px}
-    #reportHeader .rh-title{font-size:16px;font-weight:800}
-    #reportHeader .rh-meta{color:#444;font-size:11px;margin-top:2px}
-    #reportHeader .rh-rule{height:2px;background:var(--accent);margin-top:8px}
-    /* charts hidden unless opted in */
+    /* hide everything that isn't the report */
+    #view-log,#view-wbs{display:none!important}
+    /* the on-screen control panel, screen cards, charts(unless opted), picker-bar all hidden */
+    .card,.cards{display:none!important}
+    .panel{border:none!important;box-shadow:none!important;background:transparent!important;margin:0!important;padding:0!important}
+    .panel>h3{display:none!important}              /* screen panel headings replaced by report sections */
+    #bar24Panel{display:none!important}
     body:not(.print-charts) .chartPanel{display:none!important}
-    /* the 24h day-picker bar at top is screen-only; per-day section carries print bars */
-    #bar24Panel{display:none!important}  /* top day-picker bar is screen-only; per-day section carries print bars */
-    .perday-day{break-inside:avoid;margin:0 0 12px;border-top:1px solid #ddd;padding-top:8px}
-    .perday-day h4{margin:0 0 4px;font-size:12.5px}
-    .pd-tot{color:#444;font-size:11px;margin:2px 0 6px}
-    .bar24{height:30px}
+    .chartPanel{margin:10px 0 0!important}
+    .chartPanel h3{display:block!important;font-family:Calibri;font-size:11pt;font-weight:700;color:#1A1A1A;margin:0 0 6px;border-bottom:1px solid #E87722;padding-bottom:3px}
+
+    /* ===== MASTHEAD ===== */
+    #reportHeader{display:block;margin:0 0 12px}
+    .rh-top{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2.5pt solid #E87722;padding-bottom:8px}
+    .rh-brand{font-family:Calibri;font-weight:800;font-size:18pt;color:#1A1A1A;letter-spacing:.2px;line-height:1}
+    .rh-brand .o{color:#E87722}
+    .rh-brandsub{font-size:7.5pt;letter-spacing:2.5px;color:#8C8C8C;margin-top:3px;font-weight:700}
+    .rh-doc{text-align:right}
+    .rh-doctype{font-size:8pt;letter-spacing:2px;color:#E87722;font-weight:700}
+    .rh-title{font-size:15pt;font-weight:700;color:#1A1A1A;margin-top:2px;line-height:1.1}
+    .rh-meta{margin-top:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid #e3ddcf;border-radius:4px;overflow:hidden}
+    .rh-meta .m{padding:6px 9px;border-right:1px solid #e3ddcf;background:#FAF7F1}
+    .rh-meta .m:last-child{border-right:none}
+    .rh-meta .mk{font-size:7pt;letter-spacing:1px;color:#8C8C8C;text-transform:uppercase;font-weight:700}
+    .rh-meta .mv{font-size:10pt;color:#1A1A1A;font-weight:600;margin-top:1px}
+
+    /* ===== EXECUTIVE SUMMARY STRIP ===== */
+    .rpt-section-h{font-family:Calibri;font-size:11pt;font-weight:700;color:#1A1A1A;margin:14px 0 6px;padding-bottom:3px;border-bottom:1px solid #E87722;break-after:avoid}
+    .sumstrip{display:grid;grid-template-columns:repeat(6,1fr);border:1px solid #e3ddcf;border-radius:5px;overflow:hidden;break-inside:avoid}
+    .sumstrip .s{padding:8px 10px;border-right:1px solid #e3ddcf}
+    .sumstrip .s:last-child{border-right:none}
+    .sumstrip .sk{font-size:7pt;letter-spacing:.6px;color:#8C8C8C;text-transform:uppercase;font-weight:700}
+    .sumstrip .sv{font-size:14pt;font-weight:800;color:#1A1A1A;margin-top:2px;line-height:1}
+    .sumstrip .sv small{font-size:8pt;font-weight:600;color:#8C8C8C}
+    .insight{margin-top:8px;font-size:9.5pt;color:#3a3a3a;background:#FAF7F1;border-left:3px solid #E87722;padding:7px 10px;border-radius:0 4px 4px 0;break-inside:avoid}
+    .insight b{color:#1A1A1A}
+
+    /* ===== LEGEND ===== */
+    .barlegend{display:flex;gap:14px;margin:8px 0 4px;font-size:8.5pt;color:#555}
+    .barlegend .lg{display:inline-flex;align-items:center;gap:5px}
+    .barlegend .sw{width:11px;height:11px;border-radius:2px;display:inline-block}
+
+    /* ===== TABLES ===== */
+    .tableScroll{overflow:visible!important}
+    table{font-size:9.5pt;border-collapse:collapse;width:100%}
+    th{background:#1A1A1A!important;color:#fff!important;font-weight:600;font-size:8pt;letter-spacing:.4px;text-transform:uppercase;padding:5px 7px;text-align:left;border:none}
+    td{padding:4px 7px;border-bottom:1px solid #e3ddcf;border-left:none;border-right:none;border-top:none;vertical-align:top}
+    tbody tr:nth-child(even) td{background:#FAF7F1}
+    tfoot td{font-weight:800;background:#f2eee4!important;border-top:1.5px solid #1A1A1A}
+    .num{text-align:right;font-variant-numeric:tabular-nums}
+
+    /* ===== PER-DAY ===== */
+    .perday-day{break-inside:avoid;margin:12px 0 0;padding-top:2px}
+    .perday-day h4{font-family:Calibri;margin:0;font-size:10.5pt;font-weight:700;color:#1A1A1A;display:flex;align-items:center;gap:7px}
+    .perday-day h4::before{content:"";width:4px;height:13px;background:#E87722;display:inline-block;border-radius:1px}
+    .pd-tot{color:#555;font-size:8.5pt;margin:3px 0 6px 11px}
+    .pd-tot b{color:#1A1A1A}
+    .bar24{height:26px;border:1px solid #d8d2c4;border-radius:4px}
+    .bar24axis{font-size:7.5pt}
+
+    /* charts in print */
+    .barwrap .barrow{font-size:8.5pt}
+    .stack,.track{height:16px}
+
+    tr,td,th{break-inside:avoid}
   }
 </style>
 </head>
@@ -243,6 +291,7 @@
 
     <!-- Print-only report header -->
     <div id="reportHeader" class="printonly"></div>
+    <div id="reportSummary" class="printonly"></div>
 
     <div class="cards" id="kpiCards"></div>
 
@@ -267,6 +316,7 @@
     </div>
 
     <div class="panel">
+      <div class="rpt-section-h printonly">Daily rollup</div>
       <h3>Daily rollup</h3>
       <div class="tableScroll">
         <table>
@@ -279,6 +329,8 @@
 
     <!-- Per-day breakdown with events listed -->
     <div class="panel" id="perDayPanel">
+      <div class="rpt-section-h printonly">Per-day breakdown</div>
+      <div id="perDayLegend" class="printonly"></div>
       <h3>Per-day breakdown</h3>
       <div id="perDay"></div>
     </div>
@@ -665,6 +717,7 @@ function renderDash(){
 
   /* Batch 2: per-day breakdown (with events listed) for the selected range */
   renderPerDay(stats);
+  buildReportBlocks();
 }
 
 /* Build the print-only report header + the per-day breakdown section */
@@ -692,21 +745,85 @@ function renderPerDay(stats){
   }
 }
 
-/* Build the print report header and trigger the browser print dialog */
-function printReport(){
+/* Build the Santos-grade report blocks (masthead + summary + insight + legend).
+   Called on every dashboard render so a manual Ctrl+P also produces the full report. */
+function buildReportBlocks(){
   var keys=keysInRange();
-  var rh=document.getElementById("reportHeader");
   var period=(!RANGE.from && !RANGE.to)
       ? "Full campaign"
-      : ((RANGE.from?fmtDay(RANGE.from):"start")+" to "+(RANGE.to?fmtDay(RANGE.to):"latest"));
+      : ((RANGE.from?fmtDay(RANGE.from):"start")+"  to  "+(RANGE.to?fmtDay(RANGE.to):"latest"));
   var gen=new Date();
-  var genStr=gen.toLocaleDateString()+" "+gen.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+  var genStr=gen.toLocaleDateString("en-GB")+" "+gen.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+
+  /* aggregate totals across the range */
+  var tL=0,tDT=0,tNPT=0,tO=0,tC=0,tE=0,agg={};
+  keys.forEach(function(k){ var st=dayStats(k); tL+=st.len; tDT+=st.dt; tNPT+=st.npt; tO+=(st.other||0); tC+=st.clear; tE+=st.count;
+    for(var c in st.cats) agg[c]=(agg[c]||0)+st.cats[c]; });
+  var lostTotal=tDT+tNPT+tO;
+  var dtPct=tL>0?(tDT/tL*100):0, lostPct=tL>0?(lostTotal/tL*100):0;
+  var worst=worstCat(agg);
+
+  /* ----- masthead ----- */
+  var rh=document.getElementById("reportHeader");
   if(rh){
-    rh.innerHTML='<div class="rh-title">Project Event Log — Downtime Report</div>'+
-      '<div class="rh-meta">Project: '+esc(curProject())+' &nbsp;·&nbsp; Period: '+esc(period)+' &nbsp;·&nbsp; '+keys.length+' day'+(keys.length===1?"":"s")+' &nbsp;·&nbsp; Generated: '+esc(genStr)+'</div>'+
-      '<div class="rh-rule"></div>';
+    rh.innerHTML=
+      '<div class="rh-top">'+
+        '<div>'+
+          '<div class="rh-brand">Project <span class="o">Event</span> Log</div>'+
+          '<div class="rh-brandsub">ENDURA ASSET INTELLIGENCE</div>'+
+        '</div>'+
+        '<div class="rh-doc">'+
+          '<div class="rh-doctype">DOWNTIME REPORT</div>'+
+          '<div class="rh-title">Campaign Lost-Time Summary</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="rh-meta">'+
+        '<div class="m"><div class="mk">Project</div><div class="mv">'+esc(curProject())+'</div></div>'+
+        '<div class="m"><div class="mk">Reporting period</div><div class="mv">'+esc(period)+'</div></div>'+
+        '<div class="m"><div class="mk">Days in period</div><div class="mv">'+keys.length+'</div></div>'+
+        '<div class="m"><div class="mk">Generated</div><div class="mv">'+esc(genStr)+'</div></div>'+
+      '</div>';
   }
-  /* charts on/off */
+
+  /* ----- executive summary strip + insight ----- */
+  var rs=document.getElementById("reportSummary");
+  if(rs){
+    var strip='<div class="rpt-section-h">Summary</div>'+
+      '<div class="sumstrip">'+
+        '<div class="s"><div class="sk">Period hours</div><div class="sv">'+r2(tL).toFixed(1)+'<small> h</small></div></div>'+
+        '<div class="s"><div class="sk">Actual downtime</div><div class="sv" style="color:#c0392b">'+r2(tDT).toFixed(1)+'<small> h</small></div></div>'+
+        '<div class="s"><div class="sk">NPT</div><div class="sv" style="color:#b9822b">'+r2(tNPT).toFixed(1)+'<small> h</small></div></div>'+
+        '<div class="s"><div class="sk">Other</div><div class="sv" style="color:#666">'+r2(tO).toFixed(1)+'<small> h</small></div></div>'+
+        '<div class="s"><div class="sk">Clear running</div><div class="sv" style="color:#0f7d8a">'+r2(tC).toFixed(1)+'<small> h</small></div></div>'+
+        '<div class="s"><div class="sk">Events</div><div class="sv">'+tE+'</div></div>'+
+      '</div>';
+    var insight="";
+    if(keys.length===0){ insight='<div class="insight">No days logged in this period.</div>'; }
+    else {
+      var verdict;
+      if(lostTotal<=0) verdict="No downtime or non-productive time was recorded over the period — the spread ran clear throughout.";
+      else verdict="Total lost time was <b>"+r2(lostTotal).toFixed(1)+" h</b> ("+r2(lostPct).toFixed(0)+"% of the "+r2(tL).toFixed(0)+" h period), of which <b>"+r2(tDT).toFixed(1)+" h</b> was actual downtime ("+r2(dtPct).toFixed(0)+"%) and <b>"+r2(tNPT).toFixed(1)+" h</b> non-productive time."+(worst&&worst!=="—"?" The largest single contributor was <b>"+esc(worst)+"</b>.":"");
+      insight='<div class="insight">'+verdict+'</div>';
+    }
+    rs.innerHTML=strip+insight;
+  }
+
+  /* ----- per-day bar legend ----- */
+  var pl=document.getElementById("perDayLegend");
+  if(pl){
+    pl.innerHTML='<div class="barlegend">'+
+      '<span class="lg"><span class="sw" style="background:#dd3b40"></span>Actual downtime</span>'+
+      '<span class="lg"><span class="sw" style="background:#c98a2a"></span>Non-productive (NPT)</span>'+
+      '<span class="lg"><span class="sw" style="background:#8C8C8C"></span>Other</span>'+
+      '<span class="lg"><span class="sw" style="background:#f2eee4;border:1px solid #d8d2c4"></span>Clear running</span>'+
+      '</div>';
+  }
+
+}
+
+/* Apply chart preference and open the print dialog. */
+function printReport(){
+  buildReportBlocks();
   var wantCharts=document.getElementById("printCharts");
   if(wantCharts && wantCharts.checked) document.body.classList.add("print-charts");
   else document.body.classList.remove("print-charts");
