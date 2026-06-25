@@ -358,15 +358,22 @@ function curKey(){ return document.getElementById("daySelect").value; }
    and so flag/unflag are deterministic per line. Falls back to time-only for events that
    have no description (older flags). */
 function evKey(t,d){ return String(t||"")+"\u0001"+String(d||"").slice(0,100); }
+/* B1: stable per-flag link id. A flagged log line and its event share this id, so flag/unflag
+   and the highlight keep working even after the line's time or text is edited.
+   Stored at log[4] and ev[6]; absent on old data (falls back to time+desc match). */
+function newSrcId(){ return "f"+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36); }
 function flaggedSet(day){
-  /* A line is flagged when an event was created from it (same time + description).
-     Exact match keeps flag/unflag deterministic even when several lines share a time. */
-  var exact={};
-  day.ev.forEach(function(e){ if(e[1]) exact[evKey(e[1],e[3])]=true; });
+  /* Primary: match a log line to its event by the stable srcId (log[4] <-> ev[6]).
+     Survives time/text edits. Fallback: legacy events with no srcId match by time+description. */
+  var ids={}, legacy={};
+  day.ev.forEach(function(e){
+    if(e[6]) ids[e[6]]=true;
+    else if(e[1]) legacy[evKey(e[1],e[3])]=true;
+  });
   var set={};
   day.log.forEach(function(r,i){
-    if(!r[0]) return;
-    if(exact[evKey(r[0],(r[1]||"").slice(0,100))]) set[i]=true;
+    if(r[4] && ids[r[4]]){ set[i]=true; return; }
+    if(r[0] && legacy[evKey(r[0],(r[1]||"").slice(0,100))]) set[i]=true;
   });
   return set;
 }
@@ -457,18 +464,27 @@ function deleteDay(){ var key=curKey(); if(Object.keys(data).length<=1){ alert("
 var KW=[["ROV - Asset 2",/rov ?2/i],["ROV - Asset 1",/rov ?1|\btms\b|\bt4\b|umbilical|tether/i],["Weather",/weather|\bwow\b|swell|wave|wind|storm|cyclone/i],["Crane",/crane|lift(ing)?|deck ops/i],["Vessel",/vessel|\bdp\b|engine|thruster|beacon|gangway|bridge/i],["Tooling",/tool|grinder|ring ?saw|cutter|blade|hose|fit ?up|hot ?stab|dredge|jetter/i],["Scheduling",/schedul|waiting|wait on|standby|stand ?by|delay|no work|permit/i]];
 function guessCat(t){ t=t||""; for(var i=0;i<KW.length;i++){ if(KW[i][1].test(t)) return KW[i][0]; } return "Other"; }
 function flagRow(i){
-  var key=curKey(); var L=data[key].log; var t=L[i][0]||""; var desc=(L[i][1]||"").slice(0,100);
+  var key=curKey(); var L=data[key].log; var row=L[i]; var t=row[0]||""; var desc=(row[1]||"").slice(0,100);
   if(!t){ alert("Add a time to this line before flagging it."); return; }
   var ev=data[key].ev;
-  /* Toggle deterministically: if an event created from THIS line (same time + description) exists,
-     remove it (unflag) in one click. Otherwise create the event (flag). */
-  var myKey=evKey(t,desc);
-  var had=false;
-  for(var k=ev.length-1;k>=0;k--){ if(evKey(ev[k][1],ev[k][3])===myKey){ ev.splice(k,1); had=true; } }
-  if(had){ save(); renderLog(); return; }
+  /* UNFLAG: if this line already carries a srcId, remove the linked event and clear the id.
+     This works no matter how the time/text was edited after flagging. */
+  if(row[4]){
+    var sid=row[4];
+    for(var k=ev.length-1;k>=0;k--){ if(ev[k][6]===sid) ev.splice(k,1); }
+    row[4]="";
+    save(); renderLog(); return;
+  }
+  /* Legacy unflag: line has no id but an event matches by time+desc (older flags). */
+  var myKey=evKey(t,desc); var hadLegacy=false;
+  for(var m=ev.length-1;m>=0;m--){ if(!ev[m][6] && evKey(ev[m][1],ev[m][3])===myKey){ ev.splice(m,1); hadLegacy=true; } }
+  if(hadLegacy){ save(); renderLog(); return; }
+  /* FLAG: create the event and link it to this line with a fresh srcId. */
+  var sid2=newSrcId();
   var tm=toMin(t); var end="";
   for(var j=0;j<L.length;j++){ var oj=toMin(L[j][0]); if(oj!=null&&tm!=null&&oj>tm){ end=L[j][0]; break; } }
-  ev.push([guessCat(L[i][1]),t,end,desc,curUser()]);
+  row[4]=sid2;
+  ev.push([guessCat(row[1]),t,end,desc,curUser(),undefined,sid2]);
   save(); renderLog();
 }
 
