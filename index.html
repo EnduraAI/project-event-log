@@ -77,6 +77,25 @@
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
   .catchip{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:3px 10px;font-size:11.5px;font-weight:600}
   .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .lm-overlay{position:fixed;inset:0;background:rgba(26,26,26,.45);display:flex;align-items:center;justify-content:center;z-index:200}
+  .lm-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;width:380px;max-width:92vw;box-shadow:0 16px 48px rgba(0,0,0,.22);overflow:hidden}
+  .lm-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);font-weight:700;font-size:15px;background:var(--panel2)}
+  .lm-head .lm-x{background:none;border:none;font-size:22px;line-height:1;color:var(--muted);cursor:pointer;padding:0 4px}
+  .lm-head .lm-x:hover{color:var(--txt)}
+  .lm-bd{padding:16px 18px 4px}
+  .lm-note{margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.45}
+  .lm-field{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--txt);margin-bottom:11px}
+  .lm-field input{font-size:14px;padding:8px 10px}
+  .lm-err{color:#c0392b;font-size:12px;font-weight:600;min-height:16px;padding:0 18px}
+  .lm-btns{display:flex;justify-content:flex-end;gap:8px;padding:8px 18px 16px}
+  .lockstatus{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:12px;margin-left:6px}
+  .lockstatus.locked{background:#fdecea;color:#c0392b;border:1px solid #f3c4bf}
+  .lockstatus.open{background:#eaf6ec;color:#1e7d34;border:1px solid #bfe3c6}
+  .lockstatus.unlocked{background:#fff4e8;color:#b9822b;border:1px solid #f0d8b8}
+  .locked-readonly .logtable input,.locked-readonly .logtable textarea,.locked-readonly .logtable select,
+  .locked-readonly #dayEnd{background:#f3f1ec !important;color:#7a7264 !important;cursor:not-allowed;pointer-events:none}
+  .locked-readonly .logtable .btn{opacity:.4;pointer-events:none}
+  .locked-readonly #lockBtn{opacity:1;pointer-events:auto}
   .lanewrap{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:6px;margin-top:10px}
   .bar24wrap{margin-top:4px}
   .bar24{position:relative;height:46px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;overflow:hidden}
@@ -195,6 +214,8 @@
       <button class="btn danger" onclick="deleteDay()">Delete Day</button>
       <label class="sub" style="margin-left:10px">Day ends:</label>
       <input id="dayEnd" style="width:80px" onchange="setEnd(this.value)">
+      <span id="lockStatus" class="lockstatus"></span>
+      <button class="btn" id="lockBtn" onclick="toggleLock()"></button>
       <div class="spacer"></div>
       <button class="btn primary" onclick="toggleImport(true)">Import / Paste raw</button>
       <button class="btn" onclick="exportCSV()">Export CSV</button>
@@ -208,6 +229,7 @@
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
       <span class="spacer"></span>
+      <button class="btn" onclick="openChangePassword()" title="Set or change the project unlock password">🔑 Password</button>
       <button class="btn" onclick="exportJSON()">Export data (.json)</button>
       <button class="btn" onclick="document.getElementById('jsonImport').click()">Import data (.json)</button>
       <input type="file" id="jsonImport" accept=".json,application/json" style="display:none" onchange="importJSON(this)">
@@ -407,6 +429,149 @@ var EMB=[["A100","As-found survey"],["A110","Cutting & recovery"],["A120","Struc
 var STORE="endura_pel_demo_v1";
 var WBSL=[];
 var data=load();
+
+/* ===================== Batch 3: day locking ===================== *
+ * A day is locked if it is manually locked (LOCKS[key]) OR it is a past
+ * day (before today). Locked days are read-only until the user unlocks
+ * them this session with the shared password. The lock set and the
+ * password hash ride in the cloud doc so every laptop agrees.
+ * NOTE: this is a workflow guard against accidental edits to a closed
+ * day — it is not tamper-proof security.                              */
+var LOCKS={};                 /* {dayKey:true} manually locked, persisted in cloud doc */
+var LOCKPW="";                /* hashed shared password, persisted in cloud doc ("" = not set) */
+var UNLOCKED={};              /* session-only: days the user has unlocked this session */
+function todayKey(){ return new Date().toISOString().slice(0,10); }
+function hashPw(s){ /* small non-crypto hash, adequate for a workflow guard */
+  s=String(s); var h=5381; for(var i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))>>>0; } return "h"+h.toString(36);
+}
+/* days between a YYYY-MM-DD key and today (positive = in the past) */
+function daysOld(key){
+  var a=new Date(key+"T00:00:00"), t=new Date(todayKey()+"T00:00:00");
+  return Math.round((t-a)/86400000);
+}
+var AUTO_LOCK_AFTER_DAYS=2;   /* today (0) and yesterday (1) stay open; 2+ days old auto-locks */
+function isAutoLocked(key){ return daysOld(key)>=AUTO_LOCK_AFTER_DAYS; }
+function isLocked(key){
+  if(UNLOCKED[key]) return false;          /* unlocked this session */
+  if(LOCKS[key]) return true;              /* manually locked */
+  if(isAutoLocked(key)) return true;      /* auto-lock days 2+ days old */
+  return false;
+}
+function lockReason(key){
+  if(LOCKS[key]) return "manually locked";
+  if(isAutoLocked(key)) return "auto-locked ("+daysOld(key)+" days old)";
+  return "";
+}
+/* Called by every mutator. Returns true if the action should be BLOCKED. */
+function guardLocked(key){
+  key=key||curKey();
+  if(!isLocked(key)) return false;
+  alert("Day "+fmtDay(key)+" is locked. Use the Unlock button to edit it.");
+  return true;
+}
+function toggleLock(){
+  var key=curKey();
+  if(isLocked(key)){
+    if(!LOCKPW) openLockModal("set", key);     /* first use: set the password */
+    else openLockModal("unlock", key);         /* enter password to unlock */
+  } else if(UNLOCKED[key]){
+    /* it's currently open only because the user unlocked it this session — just re-lock it */
+    delete UNLOCKED[key]; renderLog();
+  } else {
+    /* an editable (today/yesterday) day — manual lock */
+    if(!confirm("Lock "+fmtDay(key)+"?\n\nIt becomes read-only until unlocked with the project password.")) return;
+    LOCKS[key]=true; save(); renderLog();
+  }
+}
+/* ---- modal-driven password flow (set / unlock / change) ---- */
+var lockModalKey="";
+function openLockModal(mode, key){
+  lockModalKey=key||curKey();
+  var m=document.getElementById("lockModal"); if(!m) return;
+  var title=document.getElementById("lmTitle"), bodyEl=document.getElementById("lmBody"),
+      err=document.getElementById("lmError");
+  err.textContent="";
+  if(mode==="set"){
+    title.textContent="Set project password";
+    bodyEl.innerHTML=
+      '<p class="lm-note">No unlock password has been set for this project yet. Choose one now \u2014 it is shared by everyone on '+esc(curProject())+' and is needed to edit locked days.</p>'+
+      '<label class="lm-field">New password<input type="password" id="lmNew1" autocomplete="new-password"></label>'+
+      '<label class="lm-field">Confirm password<input type="password" id="lmNew2" autocomplete="new-password"></label>';
+    setLmButtons([["Cancel","closeLockModal()"],["Set password &amp; unlock","doSetPassword()","primary"]]);
+  } else if(mode==="unlock"){
+    title.textContent="Unlock "+fmtDay(lockModalKey);
+    bodyEl.innerHTML=
+      '<p class="lm-note">This day is '+esc(lockReason(lockModalKey))+'. Enter the project password to edit it for this session.</p>'+
+      '<label class="lm-field">Password<input type="password" id="lmPw" autocomplete="current-password"></label>';
+    setLmButtons([["Cancel","closeLockModal()"],["Unlock","doUnlock()","primary"]]);
+    setTimeout(function(){ var f=document.getElementById("lmPw"); if(f) f.focus(); },50);
+  } else if(mode==="change"){
+    title.textContent="Change project password";
+    if(!LOCKPW){
+      bodyEl.innerHTML='<p class="lm-note">No password is set yet. Set one from a locked day\u2019s Unlock button.</p>';
+      setLmButtons([["Close","closeLockModal()"]]);
+    } else {
+      bodyEl.innerHTML=
+        '<label class="lm-field">Current password<input type="password" id="lmCur" autocomplete="current-password"></label>'+
+        '<label class="lm-field">New password<input type="password" id="lmNew1" autocomplete="new-password"></label>'+
+        '<label class="lm-field">Confirm new password<input type="password" id="lmNew2" autocomplete="new-password"></label>';
+      setLmButtons([["Cancel","closeLockModal()"],["Update password","doChangePassword()","primary"]]);
+    }
+  }
+  m.style.display="flex";
+}
+function setLmButtons(btns){
+  var f=document.getElementById("lmButtons"); if(!f) return;
+  f.innerHTML=btns.map(function(b){ return '<button class="btn'+(b[2]?" "+b[2]:"")+'" onclick="'+b[1]+'">'+b[0]+'</button>'; }).join("");
+}
+function closeLockModal(){ var m=document.getElementById("lockModal"); if(m) m.style.display="none"; lockModalKey=""; }
+function lmErr(msg){ var e=document.getElementById("lmError"); if(e) e.textContent=msg; }
+function doSetPassword(){
+  var a=(document.getElementById("lmNew1").value||"").trim();
+  var b=(document.getElementById("lmNew2").value||"").trim();
+  if(a.length<4){ lmErr("Use at least 4 characters."); return; }
+  if(a!==b){ lmErr("Passwords do not match."); return; }
+  LOCKPW=hashPw(a); UNLOCKED[lockModalKey]=true; save();
+  closeLockModal(); renderLog();
+}
+function doUnlock(){
+  var v=(document.getElementById("lmPw").value||"").trim();
+  if(hashPw(v)!==LOCKPW){ lmErr("Incorrect password."); return; }
+  UNLOCKED[lockModalKey]=true; closeLockModal(); renderLog();
+}
+function doChangePassword(){
+  var cur=(document.getElementById("lmCur").value||"").trim();
+  var a=(document.getElementById("lmNew1").value||"").trim();
+  var b=(document.getElementById("lmNew2").value||"").trim();
+  if(hashPw(cur)!==LOCKPW){ lmErr("Current password is incorrect."); return; }
+  if(a.length<4){ lmErr("New password must be at least 4 characters."); return; }
+  if(a!==b){ lmErr("New passwords do not match."); return; }
+  LOCKPW=hashPw(a); save(); closeLockModal();
+  alert("Project password updated.");
+}
+function openChangePassword(){ openLockModal("change"); }
+function renderLockUI(key){
+  var st=document.getElementById("lockStatus"); var btn=document.getElementById("lockBtn");
+  if(!st||!btn) return;
+  var locked=isLocked(key);
+  var manual=!!LOCKS[key]; var sessionUnlocked=!!UNLOCKED[key];
+  if(locked){
+    var why=manual?"Locked manually":"Auto-locked ("+daysOld(key)+" days old)";
+    st.className="lockstatus locked"; st.innerHTML="&#128274; Locked";
+    st.title=why+" — click Unlock to edit";
+    btn.textContent="Unlock"; btn.className="btn"; btn.title="Enter the project password to edit this day";
+  } else if(sessionUnlocked){
+    st.className="lockstatus unlocked"; st.innerHTML="&#128275; Unlocked";
+    st.title="Unlocked for this session only — re-locks when the app reloads";
+    btn.textContent="Re-lock"; btn.className="btn"; btn.title="Lock this day again now";
+  } else {
+    var age=daysOld(key);
+    var hint=age<=0?"Today":(age===1?"Yesterday — stays editable":"Editable");
+    st.className="lockstatus open"; st.innerHTML="&#9679; Open";
+    st.title=hint+". Days 2+ days old lock automatically.";
+    btn.textContent="Lock day"; btn.className="btn"; btn.title="Lock this day now (becomes read-only)";
+  }
+}
 function mergeEmb(){ var have={}; WBSL.forEach(function(w){ have[String(w[0])]=1; }); var n=0; EMB.forEach(function(w){ if(!have[String(w[0])]){ WBSL.push([w[0],w[1]]); n++; } }); return n; }
 function loadDpr(){ var n=mergeEmb(); save(); renderWbs(); alert(n+" schedule activities loaded."); }
 function load(){ var d=JSON.parse(JSON.stringify(SEED)); if(WBSL.length<10) mergeEmb(); return d; }
@@ -498,6 +663,10 @@ function renderLog(){
   fillDaySelect();
   var key=curKey(); var day=data[key];
   document.getElementById("dayEnd").value=day.end;
+  /* Batch 3: reflect lock state — badge/button + read-only styling on the log section */
+  renderLockUI(key);
+  var logSec=document.getElementById("view-log");
+  if(logSec){ if(isLocked(key)) logSec.classList.add("locked-readonly"); else logSec.classList.remove("locked-readonly"); }
   var tb=document.getElementById("logBody"); tb.innerHTML="";
   var effA=effWbs(day.log);
   var flagged=flaggedSet(day);
@@ -565,21 +734,21 @@ function renderBreakdown(key){
   document.getElementById("axEnd").textContent=data[key].end;
 }
 
-function updL(i,f,v){ var r=data[curKey()].log[i]; r[f]=v; r[3]=curUser()||r[3]||""; save(); renderLog(); }
-function delL(i){ data[curKey()].log.splice(i,1); save(); renderLog(); }
-function addL(){ var L=data[curKey()].log; L.push([L.length?L[L.length-1][0]:"00:00","","",curUser()]); save(); renderLog(); }
-function updE(i,f,v){ var e=data[curKey()].ev[i]; e[f]=v; e[4]=curUser()||e[4]||""; save(); renderLog(); }
-function delE(i){ data[curKey()].ev.splice(i,1); save(); renderLog(); }
-function updEType(i,v){ var e=data[curKey()].ev[i]; if(v==="DT"||v==="NPT"||v==="OTHER") e[5]=v; else e[5]=undefined; e[4]=curUser()||e[4]||""; save(); renderLog(); }
-function addE(){ data[curKey()].ev.push(["Other","","","",curUser()]); save(); renderLog(); }
-function setEnd(v){ data[curKey()].end=v; save(); renderLog(); }
+function updL(i,f,v){ if(guardLocked()) return; var r=data[curKey()].log[i]; r[f]=v; r[3]=curUser()||r[3]||""; save(); renderLog(); }
+function delL(i){ if(guardLocked()) return; data[curKey()].log.splice(i,1); save(); renderLog(); }
+function addL(){ if(guardLocked()) return; var L=data[curKey()].log; L.push([L.length?L[L.length-1][0]:"00:00","","",curUser()]); save(); renderLog(); }
+function updE(i,f,v){ if(guardLocked()) return; var e=data[curKey()].ev[i]; e[f]=v; e[4]=curUser()||e[4]||""; save(); renderLog(); }
+function delE(i){ if(guardLocked()) return; data[curKey()].ev.splice(i,1); save(); renderLog(); }
+function updEType(i,v){ if(guardLocked()) return; var e=data[curKey()].ev[i]; if(v==="DT"||v==="NPT"||v==="OTHER") e[5]=v; else e[5]=undefined; e[4]=curUser()||e[4]||""; save(); renderLog(); }
+function addE(){ if(guardLocked()) return; data[curKey()].ev.push(["Other","","","",curUser()]); save(); renderLog(); }
+function setEnd(v){ if(guardLocked()) return; data[curKey()].end=v; save(); renderLog(); }
 function newDay(){ var d=prompt("New day (YYYY-MM-DD):", new Date().toISOString().slice(0,10)); if(!d) return; if(!data[d]) data[d]={end:"24:00",log:[["00:00",""]],ev:[]}; save(); fillDaySelect(); document.getElementById("daySelect").value=d; renderLog(); }
-function deleteDay(){ var key=curKey(); if(Object.keys(data).length<=1){ alert("Keep at least one day."); return; } if(confirm("Delete "+fmtDay(key)+"?")){ delete data[key]; save(); renderLog(); } }
+function deleteDay(){ var key=curKey(); if(guardLocked(key)) return; if(Object.keys(data).length<=1){ alert("Keep at least one day."); return; } if(confirm("Delete "+fmtDay(key)+"?")){ delete data[key]; save(); renderLog(); } }
 
 var KW=[["ROV - Asset 2",/rov ?2/i],["ROV - Asset 1",/rov ?1|\btms\b|\bt4\b|umbilical|tether/i],["Weather",/weather|\bwow\b|swell|wave|wind|storm|cyclone/i],["Crane",/crane|lift(ing)?|deck ops/i],["Vessel",/vessel|\bdp\b|engine|thruster|beacon|gangway|bridge/i],["Tooling",/tool|grinder|ring ?saw|cutter|blade|hose|fit ?up|hot ?stab|dredge|jetter/i],["Scheduling",/schedul|waiting|wait on|standby|stand ?by|delay|no work|permit/i]];
 function guessCat(t){ t=t||""; for(var i=0;i<KW.length;i++){ if(KW[i][1].test(t)) return KW[i][0]; } return "Other"; }
 function flagRow(i){
-  var key=curKey(); var L=data[key].log; var row=L[i]; var t=row[0]||""; var desc=(row[1]||"").slice(0,100);
+  var key=curKey(); if(guardLocked(key)) return; var L=data[key].log; var row=L[i]; var t=row[0]||""; var desc=(row[1]||"").slice(0,100);
   if(!t){ alert("Add a time to this line before flagging it."); return; }
   var ev=data[key].ev;
   /* UNFLAG: if this line already carries a srcId, remove the linked event and clear the id.
@@ -1173,7 +1342,7 @@ var SUPA_KEY = window.SUPA_KEY || "__SUPABASE_ANON_KEY__";
 var PROJK = "endura_pel_project";
 var sb=null, channel=null, saveTimer=null, applyingRemote=false, lastSavedJSON="", online=true;
 
-function payload(){ return JSON.stringify({app:"Endura Project Event Log",version:5,saved:new Date().toISOString(),days:data,wbs:WBSL,ctype:CTYPE},null,2); }
+function payload(){ return JSON.stringify({app:"Endura Project Event Log",version:5,saved:new Date().toISOString(),days:data,wbs:WBSL,ctype:CTYPE,locks:LOCKS,lockpw:LOCKPW},null,2); }
 
 function curProject(){ try{ return localStorage.getItem(PROJK)||"MEFF-SAR"; }catch(e){ return "MEFF-SAR"; } }
 function setProject(v){ v=(v||"").trim().slice(0,60)||"MEFF-SAR"; try{ localStorage.setItem(PROJK,v); }catch(e){} location.reload(); }
@@ -1191,7 +1360,9 @@ function adopt(txt){
   else { o=txt; }
   if(o&&o.days){
     data=o.days; WBSL=o.wbs||WBSL;
-    if(o.ctype){ for(var k in o.ctype){ if(o.ctype[k]==="DT"||o.ctype[k]==="NPT") CTYPE[k]=o.ctype[k]; } saveCtype(); }
+    if(o.ctype){ for(var k in o.ctype){ if(o.ctype[k]==="DT"||o.ctype[k]==="NPT"||o.ctype[k]==="OTHER") CTYPE[k]=o.ctype[k]; } saveCtype(); }
+    LOCKS=(o.locks&&typeof o.locks==="object")?o.locks:{};   /* Batch 3: restore lock set */
+    LOCKPW=(typeof o.lockpw==="string")?o.lockpw:"";          /* restore shared password hash */
   } else { data=o; }
 }
 
@@ -1203,7 +1374,7 @@ function scheduleCloudSave(){
 }
 async function cloudSave(){
   if(!sb){ try{ localStorage.setItem("endura_pel_offline_"+curProject(),payload()); }catch(e){} return; }
-  var body={ doc:{days:data,wbs:WBSL,ctype:CTYPE}, updated_at:new Date().toISOString(), updated_by:curUser()||"?" };
+  var body={ doc:{days:data,wbs:WBSL,ctype:CTYPE,locks:LOCKS,lockpw:LOCKPW}, updated_at:new Date().toISOString(), updated_by:curUser()||"?" };
   lastSavedJSON=JSON.stringify(body.doc);
   setSync("amber","saving\u2026");
   try{
@@ -1289,5 +1460,15 @@ document.getElementById("userTag").value=curUser();
 renderLog();
 initCloud();
 </script>
+
+  <!-- Batch 3: password modal -->
+  <div id="lockModal" class="lm-overlay noprint" style="display:none">
+    <div class="lm-card">
+      <div class="lm-head"><span id="lmTitle">Password</span><button class="lm-x" onclick="closeLockModal()">&times;</button></div>
+      <div id="lmBody" class="lm-bd"></div>
+      <div id="lmError" class="lm-err"></div>
+      <div id="lmButtons" class="lm-btns"></div>
+    </div>
+  </div>
 </body>
 </html>
