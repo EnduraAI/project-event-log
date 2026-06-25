@@ -45,21 +45,17 @@
   .logtable input,.logtable select,.logtable textarea{width:100%;background:var(--field);border:1px solid var(--line);color:var(--txt);border-radius:4px;padding:4px;font-size:12.5px;font-family:inherit}
   .logtable textarea{resize:vertical;min-height:30px;line-height:1.3}
   .logtable td{padding:3px}
-  /* B1: flagged log line (has a matching event) stands out */
   tr.flagged td{background:#fff4e8}
   tr.flagged td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
-  tr.flagged .flagbtn{background:var(--accent);color:#fff;border-color:var(--accent)}
   .flagbtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
-  /* B1: inherited WBS shown as real value (change 4) */
-  .wbsinherit{font-size:10px;line-height:1.2;max-width:175px;white-space:normal;color:var(--muted)}
-  .wbsinherit b{color:var(--txt);font-weight:700}
-  /* B1: sticky headers (change 5) */
-  nav{position:sticky;top:0;z-index:40}
-  .logtable thead th{position:sticky;top:46px;z-index:30}
-  .logtable thead th{background:var(--panel2)}
+  /* B1: inherited WBS shows as a near-solid muted value, not faint placeholder */
+  .logtable input.wbsinh::placeholder{color:#6a6256;opacity:1;font-weight:600}
   .tw{white-space:nowrap}
   .num{text-align:right;font-variant-numeric:tabular-nums}
   .tableScroll{overflow-x:auto}
+  /* B1 FIX 5: log table scrolls vertically within a capped box; header sticks to the top of that box */
+  .logScroll{max-height:60vh;overflow-y:auto;overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+  .logtable.stickyhead thead th{position:sticky;top:0;z-index:5;background:var(--panel2);box-shadow:inset 0 -1px 0 var(--line),inset 0 1px 0 var(--line)}
   .barwrap{display:flex;flex-direction:column;gap:8px}
   .barrow{display:grid;grid-template-columns:140px 1fr 86px;align-items:center;gap:10px}
   .barrow .lbl{color:var(--muted);font-size:12px}
@@ -158,8 +154,8 @@
 
     <div class="panel">
       <h3>Sequential daily log</h3>
-      <div class="tableScroll">
-        <table class="logtable">
+      <div class="tableScroll logScroll">
+        <table class="logtable stickyhead">
           <thead><tr><th class="tw" style="width:80px">Time</th><th>Entry</th><th class="tw" style="width:185px">WBS task</th><th class="tw noprint" style="width:46px">Flag</th><th class="tw noprint" style="width:40px"></th></tr></thead>
           <tbody id="logBody"></tbody>
         </table>
@@ -172,7 +168,7 @@
       <h3>Events <span class="sub">— tag start &amp; stop; blank End = ongoing (runs to day end); overlaps allowed</span></h3>
       <div class="tableScroll">
         <table class="logtable">
-          <thead><tr><th class="tw" style="width:150px">Category</th><th class="tw" style="width:74px">Start</th><th class="tw" style="width:74px">End</th><th class="tw" style="width:118px">Lost-time type</th><th class="tw num" style="width:58px">Dur</th><th>Description</th><th class="tw noprint" style="width:40px"></th></tr></thead>
+          <thead><tr><th class="tw" style="width:150px">Category</th><th class="tw" style="width:74px">Start</th><th class="tw" style="width:74px">End</th><th class="tw" style="width:120px">Lost-time type</th><th class="tw num" style="width:58px">Dur</th><th>Description</th><th class="tw noprint" style="width:40px"></th></tr></thead>
           <tbody id="evBody"></tbody>
         </table>
       </div>
@@ -277,8 +273,6 @@ function loadCtype(){ var o={}; for(var c in CTYPE_DEFAULT) o[c]=CTYPE_DEFAULT[c
   return o; }
 function saveCtype(){ try{ localStorage.setItem(CTYPEK,JSON.stringify(CTYPE)); }catch(e){} }
 function catType(c){ var v=CTYPE[c]; return (v==="NPT"||v==="OTHER")?v:"DT"; }
-/* B1 change 3+6: effective classification of a single EVENT.
-   Per-event override (e[5]) wins; otherwise fall back to the category default. */
 function evType(e){ var o=e&&e[5]; if(o==="DT"||o==="NPT"||o==="OTHER") return o; return catType(e?e[0]:""); }
 function setCtype(c,v){ CTYPE[c]=(v==="NPT"||v==="OTHER")?v:"DT"; saveCtype(); save(); renderLog(); var t=document.getElementById("tabDash"); if(t&&t.classList.contains("active")) renderDash(); }
 
@@ -327,7 +321,6 @@ function subIv(base,cut){ var out=[]; base.forEach(function(b){ var segs=[{s:b.s
 function dayStats(key){
   var day=data[key]; var len=(toMin(day.end)||1440)/60;
   var sp=evSpans(key); var u=unionH(sp);
-  /* B1 change 3+6: classify per event (override-aware). OTHER is excluded from both DT and NPT. */
   var dtIv=mergeIv(sp.filter(function(x){return x.type==="DT";}));
   var nptIv=subIv(mergeIv(sp.filter(function(x){return x.type==="NPT";})),dtIv);
   var dt=ivMin(dtIv)/60, npt=ivMin(nptIv)/60;
@@ -357,9 +350,8 @@ function curKey(){ return document.getElementById("daySelect").value; }
 
 /* B1: a log line is "flagged" when an event shares its start time */
 function flaggedSet(day){
-  var set={}; var times={};
-  day.ev.forEach(function(e){ if(e[1]) times[e[1]]=true; });
-  day.log.forEach(function(r,i){ if(r[0] && times[r[0]]) set[i]=true; });
+  var times={}; day.ev.forEach(function(e){ if(e[1]) times[e[1]]=true; });
+  var set={}; day.log.forEach(function(r,i){ if(r[0] && times[r[0]]) set[i]=true; });
   return set;
 }
 
@@ -377,7 +369,7 @@ function renderLog(){
     tr.innerHTML='<td class="tw"><input value="'+esc(r[0])+'" onchange="updL('+i+',0,this.value)">'+(r[3]?'<div class="sub" style="font-size:9px;text-align:center">'+esc(r[3])+'</div>':'')+'</td>'+
       '<td><textarea onchange="updL('+i+',1,this.value)">'+esc(r[1])+'</textarea></td>'+
       '<td class="tw">'+wbsSel(i,r[2],r[2]?"":effA[i])+'</td>'+
-      '<td class="tw noprint"><button class="btn flagbtn'+(flagged[i]?" on":"")+'" title="'+(flagged[i]?"This line is tagged as an event below":"Tag this line as an event")+'" onclick="flagRow('+i+')">⚑</button></td>'+
+      '<td class="tw noprint"><button class="btn flagbtn'+(flagged[i]?" on":"")+'" title="'+(flagged[i]?"Tagged as an event below — click to remove":"Tag this line as an event")+'" onclick="flagRow('+i+')">⚑</button></td>'+
       '<td class="noprint"><button class="btn danger" title="Delete" onclick="delL('+i+')">✕</button></td>';
     tb.appendChild(tr);
   });
@@ -388,9 +380,8 @@ function renderLog(){
     var dur=(s!=null)?(((en!=null&&en>s)?en:endMin)-s)/60:0;
     var opts=CATS.map(function(c){return '<option value="'+c+'"'+(c===e[0]?" selected":"")+'>'+c+'</option>';}).join("");
     var tr=document.createElement("tr");
-    var et=evType(e); var ovr=(e[5]==="DT"||e[5]==="NPT"||e[5]==="OTHER");
-    var typeSel='<select onchange="updEType('+i+',this.value)" title="Lost-time type for this event. \u2018Auto\u2019 follows the category default; pick one to override just this event." style="font-size:11px;padding:2px">'+
-      '<option value=""'+(ovr?"":" selected")+'>Auto ('+catType(e[0])+')</option>'+
+    var typeSel='<select onchange="updEType('+i+',this.value)" title="Lost-time type for this event. Auto follows the category default; pick one to set this event." style="font-size:11px;padding:2px">'+
+      '<option value=""'+((e[5]==="DT"||e[5]==="NPT"||e[5]==="OTHER")?"":" selected")+'>Auto ('+catType(e[0])+')</option>'+
       '<option value="DT"'+(e[5]==="DT"?" selected":"")+'>Downtime</option>'+
       '<option value="NPT"'+(e[5]==="NPT"?" selected":"")+'>NPT</option>'+
       '<option value="OTHER"'+(e[5]==="OTHER"?" selected":"")+'>Other</option></select>';
@@ -417,13 +408,7 @@ function renderBreakdown(key){
     '<div class="tbox"><div class="k">Events</div><div class="v">'+st.count+'</div></div>'+
     '<div class="tbox"><div class="k">Worst category</div><div class="v" style="font-size:14px;line-height:1.3;margin-top:7px">'+worstCat(st.cats)+'</div></div>';
   var lt=document.getElementById("ltClassify");
-  if(lt){ lt.innerHTML='<span class="sub" style="align-self:center;margin-right:2px">Lost-time type:</span>'+CATS.map(function(c){
-      return '<span class="catchip"><span class="dot" style="background:'+CCOL[c]+'"></span>'+esc(c)+
-        ' <select onchange="setCtype(this.getAttribute(\'data-c\'),this.value)" data-c="'+esc(c)+'" style="font-size:11px;padding:1px 3px;margin-left:4px;border-radius:4px">'+
-        '<option value="DT"'+(catType(c)==="DT"?" selected":"")+'>Downtime</option>'+
-        '<option value="NPT"'+(catType(c)==="NPT"?" selected":"")+'>NPT</option>'+
-        '<option value="OTHER"'+(catType(c)==="OTHER"?" selected":"")+'>Other</option></select></span>';
-    }).join(""); }
+  if(lt){ lt.innerHTML=""; }  /* B1: classification moved onto each event line (Lost-time type column) */
   var ch=document.getElementById("catChips"); ch.innerHTML="";
   CATS.forEach(function(c){ if(st.cats[c]){ ch.insertAdjacentHTML("beforeend",'<span class="catchip"><span class="dot" style="background:'+CCOL[c]+'"></span>'+c+' · '+r2(st.cats[c]).toFixed(1)+'h <span class="sub" style="font-size:10px">'+catType(c)+'</span></span>'); } });
   var wh=wbsHours(key); var wc=document.getElementById("wbsChips"); wc.innerHTML="";
@@ -457,9 +442,15 @@ var KW=[["ROV - Asset 2",/rov ?2/i],["ROV - Asset 1",/rov ?1|\btms\b|\bt4\b|umbi
 function guessCat(t){ t=t||""; for(var i=0;i<KW.length;i++){ if(KW[i][1].test(t)) return KW[i][0]; } return "Other"; }
 function flagRow(i){
   var key=curKey(); var L=data[key].log; var t=L[i][0]||"";
+  if(!t){ alert("Add a time to this line before flagging it."); return; }
+  /* B1 fix: toggle. If an event already exists at this line's time, clicking the flag removes it (unflag). */
+  var ev=data[key].ev;
+  var existing=-1;
+  for(var k=0;k<ev.length;k++){ if(ev[k][1]===t){ existing=k; break; } }
+  if(existing>=0){ ev.splice(existing,1); save(); renderLog(); return; }
   var tm=toMin(t); var end="";
   for(var j=0;j<L.length;j++){ var oj=toMin(L[j][0]); if(oj!=null&&tm!=null&&oj>tm){ end=L[j][0]; break; } }
-  data[key].ev.push([guessCat(L[i][1]),t,end,(L[i][1]||"").slice(0,100),curUser()]);
+  ev.push([guessCat(L[i][1]),t,end,(L[i][1]||"").slice(0,100),curUser()]);
   save(); renderLog();
 }
 
@@ -504,17 +495,20 @@ function setUser(v){ try{ localStorage.setItem(USERK,(v||"").trim().slice(0,8));
 function wbsName(id){ for(var i=0;i<WBSL.length;i++){ if(String(WBSL[i][0])===String(id)) return WBSL[i][1]||""; } return ""; }
 function wbsSel(i,v,eff){
   v=String(v||""); var nm=wbsName(v); var sub="";
-  if(v==="-") sub='<div class="sub" style="font-size:10px">span ended</div>';
-  else if(v) sub=nm?'<div class="sub" style="font-size:10px;line-height:1.2;max-width:175px;white-space:normal">'+esc(nm.slice(0,52))+'</div>':"";
-  else if(eff){
-    /* B1 change 4: show the actual inherited WBS instead of the words "inherits above" */
-    var enm=wbsName(eff)||"";
-    sub='<div class="wbsinherit"><b>'+esc(String(eff))+'</b>'+(enm?' · '+esc(enm.slice(0,42)):"")+'</div>';
+  if(v==="-"){
+    /* explicit end of span */
+    sub='<div class="sub" style="font-size:10px">span ended</div>';
+    return '<input list="wbsDL" value="'+esc(v)+'" placeholder="tag activity" onchange="updL('+i+',2,this.value)">'+sub;
   }
-  /* When a value is inherited we still leave the input empty (so the carry-forward logic is untouched),
-     but we DISPLAY the inherited id in the box via placeholder so it reads as the real task, not "inherits above". */
-  var ph = eff ? (esc(String(eff))+(wbsName(eff)?" "+esc((wbsName(eff)||"").slice(0,20)):"")) : "tag activity";
-  return '<input list="wbsDL" value="'+esc(v)+'" placeholder="'+ph+'" title="Empty = inherits the activity shown. Type an id to start a new activity, or - to end the span." onchange="updL('+i+',2,this.value)">'+sub;
+  if(v){
+    /* explicitly tagged on this line: show the activity name beneath */
+    sub=nm?'<div class="sub" style="font-size:10px;line-height:1.2;max-width:175px;white-space:normal">'+esc(nm.slice(0,52))+'</div>':"";
+    return '<input list="wbsDL" value="'+esc(v)+'" placeholder="tag activity" onchange="updL('+i+',2,this.value)">'+sub;
+  }
+  /* INHERITED: show the inherited id+name greyed INSIDE the box (so it reads as the real task),
+     leave the input value empty so carry-forward logic is untouched, and NO duplicate line below. */
+  var ph = eff ? (esc(String(eff))+(wbsName(eff)?" \u00b7 "+esc((wbsName(eff)||"").slice(0,30)):"")) : "tag activity";
+  return '<input list="wbsDL" class="wbsinh" value="" placeholder="'+ph+'" title="Inheriting the activity shown. Type a new id to start a different activity, or - to end the span." onchange="updL('+i+',2,this.value)">';
 }
 function buildDL(force){
   var dl=document.getElementById("wbsDL");
@@ -589,16 +583,16 @@ function renderWbs(){
 function updW(i,f,v){ WBSL[i][f]=v; save(); renderWbs(); }
 function delW(i){ WBSL.splice(i,1); save(); renderWbs(); }
 function addW(){
-  /* B1: ask for the new WBS id + name so the row is usable immediately
-     (a blank row otherwise sinks to the bottom of 1600+ activities and looks like nothing happened) */
+  /* B1 FIX 6: ask for id + name so the new activity is usable immediately.
+     (A blank row otherwise sorts to the bottom of 1600+ activities and looks like nothing happened.) */
   var id=prompt("New WBS / activity ID (e.g. 200 or TP-0065):","");
-  if(id===null) return; id=String(id).trim();
-  if(!id){ alert("No ID entered — nothing added."); return; }
+  if(id===null) return;
+  id=String(id).trim();
+  if(!id){ alert("No ID entered \u2014 nothing added."); return; }
   if(WBSL.some(function(w){ return String(w[0])===id; })){ alert("That WBS ID already exists."); return; }
   var nm=prompt("Activity name for "+id+":","")||"";
   WBSL.push([id,nm.trim()]); save();
-  /* show it by filtering to it so it's visible despite the hours-first sort */
-  var fEl=document.getElementById("wbsFilter"); if(fEl){ fEl.value=id; }
+  var fEl=document.getElementById("wbsFilter"); if(fEl){ fEl.value=id; }  /* filter to it so it's visible */
   renderWbs();
 }
 
