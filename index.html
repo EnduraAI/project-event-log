@@ -45,6 +45,18 @@
   .logtable input,.logtable select,.logtable textarea{width:100%;background:var(--field);border:1px solid var(--line);color:var(--txt);border-radius:4px;padding:4px;font-size:12.5px;font-family:inherit}
   .logtable textarea{resize:vertical;min-height:30px;line-height:1.3}
   .logtable td{padding:3px}
+  /* B1: flagged log line (has a matching event) stands out */
+  tr.flagged td{background:#fff4e8}
+  tr.flagged td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+  tr.flagged .flagbtn{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .flagbtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  /* B1: inherited WBS shown as real value (change 4) */
+  .wbsinherit{font-size:10px;line-height:1.2;max-width:175px;white-space:normal;color:var(--muted)}
+  .wbsinherit b{color:var(--txt);font-weight:700}
+  /* B1: sticky headers (change 5) */
+  nav{position:sticky;top:0;z-index:40}
+  .logtable thead th{position:sticky;top:46px;z-index:30}
+  .logtable thead th{background:var(--panel2)}
   .tw{white-space:nowrap}
   .num{text-align:right;font-variant-numeric:tabular-nums}
   .tableScroll{overflow-x:auto}
@@ -160,7 +172,7 @@
       <h3>Events <span class="sub">— tag start &amp; stop; blank End = ongoing (runs to day end); overlaps allowed</span></h3>
       <div class="tableScroll">
         <table class="logtable">
-          <thead><tr><th class="tw" style="width:150px">Category</th><th class="tw" style="width:74px">Start</th><th class="tw" style="width:74px">End</th><th class="tw num" style="width:58px">Dur</th><th>Description</th><th class="tw noprint" style="width:40px"></th></tr></thead>
+          <thead><tr><th class="tw" style="width:150px">Category</th><th class="tw" style="width:74px">Start</th><th class="tw" style="width:74px">End</th><th class="tw" style="width:118px">Lost-time type</th><th class="tw num" style="width:58px">Dur</th><th>Description</th><th class="tw noprint" style="width:40px"></th></tr></thead>
           <tbody id="evBody"></tbody>
         </table>
       </div>
@@ -257,15 +269,18 @@ var CCOL={"Weather":"#2f74c9","ROV - Asset 1":"#2fae54","ROV - Asset 2":"#dd3b40
    DT  = genuine stop, work cannot progress (breakdown, weather, asset/equipment/vessel failure).
    NPT = crew still working but not producing (tooling/consumable changeouts, waiting/standby).
    Defaults below are a starting point — adjust per category in the End-of-day breakdown. */
-var CTYPE_DEFAULT={"Weather":"DT","ROV - Asset 1":"DT","ROV - Asset 2":"DT","Tooling":"NPT","Scheduling":"NPT","Crane":"DT","Vessel":"DT","Other":"DT"};
+var CTYPE_DEFAULT={"Weather":"DT","ROV - Asset 1":"DT","ROV - Asset 2":"DT","Tooling":"NPT","Scheduling":"NPT","Crane":"DT","Vessel":"DT","Other":"OTHER"};
 var CTYPEK="endura_pel_ctype";
 var CTYPE=loadCtype();
 function loadCtype(){ var o={}; for(var c in CTYPE_DEFAULT) o[c]=CTYPE_DEFAULT[c];
-  try{ var s=localStorage.getItem(CTYPEK); if(s){ var p=JSON.parse(s); for(var k in p){ if(p[k]==="DT"||p[k]==="NPT") o[k]=p[k]; } } }catch(e){}
+  try{ var s=localStorage.getItem(CTYPEK); if(s){ var p=JSON.parse(s); for(var k in p){ if(p[k]==="DT"||p[k]==="NPT"||p[k]==="OTHER") o[k]=p[k]; } } }catch(e){}
   return o; }
 function saveCtype(){ try{ localStorage.setItem(CTYPEK,JSON.stringify(CTYPE)); }catch(e){} }
-function catType(c){ return CTYPE[c]==="NPT"?"NPT":"DT"; }
-function setCtype(c,v){ CTYPE[c]=(v==="NPT")?"NPT":"DT"; saveCtype(); save(); renderLog(); var t=document.getElementById("tabDash"); if(t&&t.classList.contains("active")) renderDash(); }
+function catType(c){ var v=CTYPE[c]; return (v==="NPT"||v==="OTHER")?v:"DT"; }
+/* B1 change 3+6: effective classification of a single EVENT.
+   Per-event override (e[5]) wins; otherwise fall back to the category default. */
+function evType(e){ var o=e&&e[5]; if(o==="DT"||o==="NPT"||o==="OTHER") return o; return catType(e?e[0]:""); }
+function setCtype(c,v){ CTYPE[c]=(v==="NPT"||v==="OTHER")?v:"DT"; saveCtype(); save(); renderLog(); var t=document.getElementById("tabDash"); if(t&&t.classList.contains("active")) renderDash(); }
 
 /* day = { end, log:[[time,text]], ev:[[category,start,end,description]] }  (blank event end = ongoing) */
 var SEED={
@@ -295,7 +310,7 @@ function evSpans(key){
     var s=toMin(e[1]); if(s==null) return null;
     var en=e[2]?toMin(e[2]):endMin; if(en==null||en<=s) en=endMin;
     s=Math.max(0,Math.min(s,endMin)); en=Math.max(0,Math.min(en,endMin));
-    return {cat:e[0],s:s,e:en,d:e[3]||"",by:e[4]||"",i:i,hrs:(en-s)/60,open:!e[2]};
+    return {cat:e[0],s:s,e:en,d:e[3]||"",by:e[4]||"",i:i,hrs:(en-s)/60,open:!e[2],type:evType(e)};
   }).filter(function(x){return !!x;}).sort(function(a,b){return a.s-b.s||a.e-b.e;});
 }
 function unionH(sp){
@@ -312,10 +327,13 @@ function subIv(base,cut){ var out=[]; base.forEach(function(b){ var segs=[{s:b.s
 function dayStats(key){
   var day=data[key]; var len=(toMin(day.end)||1440)/60;
   var sp=evSpans(key); var u=unionH(sp);
-  var dtIv=mergeIv(sp.filter(function(x){return catType(x.cat)==="DT";}));
-  var nptIv=subIv(mergeIv(sp.filter(function(x){return catType(x.cat)==="NPT";})),dtIv);
+  /* B1 change 3+6: classify per event (override-aware). OTHER is excluded from both DT and NPT. */
+  var dtIv=mergeIv(sp.filter(function(x){return x.type==="DT";}));
+  var nptIv=subIv(mergeIv(sp.filter(function(x){return x.type==="NPT";})),dtIv);
   var dt=ivMin(dtIv)/60, npt=ivMin(nptIv)/60;
-  return {len:len,union:u,dt:dt,npt:npt,clear:Math.max(0,len-dt-npt),count:sp.length,cats:catH(sp),sp:sp,endMin:(toMin(day.end)||1440)};
+  var otherIv=subIv(subIv(mergeIv(sp.filter(function(x){return x.type==="OTHER";})),dtIv),nptIv);
+  var other=ivMin(otherIv)/60;
+  return {len:len,union:u,dt:dt,npt:npt,other:other,clear:Math.max(0,len-dt-npt-other),count:sp.length,cats:catH(sp),sp:sp,endMin:(toMin(day.end)||1440)};
 }
 function worstCat(cats){ var w="",h=0; for(var c in cats){ if(cats[c]>h){ h=cats[c]; w=c; } } return w?w+" ("+r2(h)+"h)":"—"; }
 
@@ -336,6 +354,15 @@ function fillDaySelect(){
 }
 function curKey(){ return document.getElementById("daySelect").value; }
 
+
+/* B1: a log line is "flagged" when an event shares its start time */
+function flaggedSet(day){
+  var set={}; var times={};
+  day.ev.forEach(function(e){ if(e[1]) times[e[1]]=true; });
+  day.log.forEach(function(r,i){ if(r[0] && times[r[0]]) set[i]=true; });
+  return set;
+}
+
 function renderLog(){
   buildDL(false);
   fillDaySelect();
@@ -343,12 +370,14 @@ function renderLog(){
   document.getElementById("dayEnd").value=day.end;
   var tb=document.getElementById("logBody"); tb.innerHTML="";
   var effA=effWbs(day.log);
+  var flagged=flaggedSet(day);
   day.log.forEach(function(r,i){
     var tr=document.createElement("tr");
+    if(flagged[i]) tr.className="flagged";
     tr.innerHTML='<td class="tw"><input value="'+esc(r[0])+'" onchange="updL('+i+',0,this.value)">'+(r[3]?'<div class="sub" style="font-size:9px;text-align:center">'+esc(r[3])+'</div>':'')+'</td>'+
       '<td><textarea onchange="updL('+i+',1,this.value)">'+esc(r[1])+'</textarea></td>'+
       '<td class="tw">'+wbsSel(i,r[2],r[2]?"":effA[i])+'</td>'+
-      '<td class="tw noprint"><button class="btn" title="Tag this line as an event" onclick="flagRow('+i+')">⚑</button></td>'+
+      '<td class="tw noprint"><button class="btn flagbtn'+(flagged[i]?" on":"")+'" title="'+(flagged[i]?"This line is tagged as an event below":"Tag this line as an event")+'" onclick="flagRow('+i+')">⚑</button></td>'+
       '<td class="noprint"><button class="btn danger" title="Delete" onclick="delL('+i+')">✕</button></td>';
     tb.appendChild(tr);
   });
@@ -359,9 +388,16 @@ function renderLog(){
     var dur=(s!=null)?(((en!=null&&en>s)?en:endMin)-s)/60:0;
     var opts=CATS.map(function(c){return '<option value="'+c+'"'+(c===e[0]?" selected":"")+'>'+c+'</option>';}).join("");
     var tr=document.createElement("tr");
+    var et=evType(e); var ovr=(e[5]==="DT"||e[5]==="NPT"||e[5]==="OTHER");
+    var typeSel='<select onchange="updEType('+i+',this.value)" title="Lost-time type for this event. \u2018Auto\u2019 follows the category default; pick one to override just this event." style="font-size:11px;padding:2px">'+
+      '<option value=""'+(ovr?"":" selected")+'>Auto ('+catType(e[0])+')</option>'+
+      '<option value="DT"'+(e[5]==="DT"?" selected":"")+'>Downtime</option>'+
+      '<option value="NPT"'+(e[5]==="NPT"?" selected":"")+'>NPT</option>'+
+      '<option value="OTHER"'+(e[5]==="OTHER"?" selected":"")+'>Other</option></select>';
     tr.innerHTML='<td class="tw" style="box-shadow:inset 3px 0 0 '+(CCOL[e[0]]||"#999")+'"><select onchange="updE('+i+',0,this.value)">'+opts+'</select></td>'+
       '<td class="tw"><input value="'+esc(e[1])+'" onchange="updE('+i+',1,this.value)">'+(e[4]?'<div class="sub" style="font-size:9px;text-align:center">'+esc(e[4])+'</div>':'')+'</td>'+
       '<td class="tw"><input value="'+esc(e[2])+'" placeholder="ongoing" onchange="updE('+i+',2,this.value)"></td>'+
+      '<td class="tw">'+typeSel+'</td>'+
       '<td class="num">'+r2(dur).toFixed(2)+(e[2]?"":"&nbsp;→")+'</td>'+
       '<td><textarea onchange="updE('+i+',3,this.value)">'+esc(e[3])+'</textarea></td>'+
       '<td class="noprint"><button class="btn danger" title="Delete" onclick="delE('+i+')">✕</button></td>';
@@ -376,6 +412,7 @@ function renderBreakdown(key){
     '<div class="tbox"><div class="k">Day length</div><div class="v">'+r2(st.len).toFixed(2)+'<small> h</small></div></div>'+
     '<div class="tbox"><div class="k">Actual downtime</div><div class="v" style="color:#dd3b40">'+r2(st.dt).toFixed(2)+'<small> h</small></div></div>'+
     '<div class="tbox"><div class="k">Non-productive (NPT)</div><div class="v" style="color:#c98a2a">'+r2(st.npt).toFixed(2)+'<small> h</small></div></div>'+
+    '<div class="tbox"><div class="k">Other</div><div class="v" style="color:#7a7a7a">'+r2(st.other||0).toFixed(2)+'<small> h</small></div></div>'+
     '<div class="tbox"><div class="k">Clear running</div><div class="v" style="color:#0f9bad">'+r2(st.clear).toFixed(2)+'<small> h</small></div></div>'+
     '<div class="tbox"><div class="k">Events</div><div class="v">'+st.count+'</div></div>'+
     '<div class="tbox"><div class="k">Worst category</div><div class="v" style="font-size:14px;line-height:1.3;margin-top:7px">'+worstCat(st.cats)+'</div></div>';
@@ -384,7 +421,8 @@ function renderBreakdown(key){
       return '<span class="catchip"><span class="dot" style="background:'+CCOL[c]+'"></span>'+esc(c)+
         ' <select onchange="setCtype(this.getAttribute(\'data-c\'),this.value)" data-c="'+esc(c)+'" style="font-size:11px;padding:1px 3px;margin-left:4px;border-radius:4px">'+
         '<option value="DT"'+(catType(c)==="DT"?" selected":"")+'>Downtime</option>'+
-        '<option value="NPT"'+(catType(c)==="NPT"?" selected":"")+'>NPT</option></select></span>';
+        '<option value="NPT"'+(catType(c)==="NPT"?" selected":"")+'>NPT</option>'+
+        '<option value="OTHER"'+(catType(c)==="OTHER"?" selected":"")+'>Other</option></select></span>';
     }).join(""); }
   var ch=document.getElementById("catChips"); ch.innerHTML="";
   CATS.forEach(function(c){ if(st.cats[c]){ ch.insertAdjacentHTML("beforeend",'<span class="catchip"><span class="dot" style="background:'+CCOL[c]+'"></span>'+c+' · '+r2(st.cats[c]).toFixed(1)+'h <span class="sub" style="font-size:10px">'+catType(c)+'</span></span>'); } });
@@ -409,6 +447,7 @@ function delL(i){ data[curKey()].log.splice(i,1); save(); renderLog(); }
 function addL(){ var L=data[curKey()].log; L.push([L.length?L[L.length-1][0]:"00:00","","",curUser()]); save(); renderLog(); }
 function updE(i,f,v){ var e=data[curKey()].ev[i]; e[f]=v; e[4]=curUser()||e[4]||""; save(); renderLog(); }
 function delE(i){ data[curKey()].ev.splice(i,1); save(); renderLog(); }
+function updEType(i,v){ var e=data[curKey()].ev[i]; if(v==="DT"||v==="NPT"||v==="OTHER") e[5]=v; else e[5]=undefined; e[4]=curUser()||e[4]||""; save(); renderLog(); }
 function addE(){ data[curKey()].ev.push(["Other","","","",curUser()]); save(); renderLog(); }
 function setEnd(v){ data[curKey()].end=v; save(); renderLog(); }
 function newDay(){ var d=prompt("New day (YYYY-MM-DD):", new Date().toISOString().slice(0,10)); if(!d) return; if(!data[d]) data[d]={end:"24:00",log:[["00:00",""]],ev:[]}; save(); fillDaySelect(); document.getElementById("daySelect").value=d; renderLog(); }
@@ -467,8 +506,15 @@ function wbsSel(i,v,eff){
   v=String(v||""); var nm=wbsName(v); var sub="";
   if(v==="-") sub='<div class="sub" style="font-size:10px">span ended</div>';
   else if(v) sub=nm?'<div class="sub" style="font-size:10px;line-height:1.2;max-width:175px;white-space:normal">'+esc(nm.slice(0,52))+'</div>':"";
-  else if(eff) sub='<div class="sub" style="font-size:10px;line-height:1.2;max-width:175px;white-space:normal;opacity:.8">&#8627; '+esc(String(eff))+' · '+esc((wbsName(eff)||"").slice(0,42))+'</div>';
-  return '<input list="wbsDL" value="'+esc(v)+'" placeholder="inherits above" onchange="updL('+i+',2,this.value)">'+sub;
+  else if(eff){
+    /* B1 change 4: show the actual inherited WBS instead of the words "inherits above" */
+    var enm=wbsName(eff)||"";
+    sub='<div class="wbsinherit"><b>'+esc(String(eff))+'</b>'+(enm?' · '+esc(enm.slice(0,42)):"")+'</div>';
+  }
+  /* When a value is inherited we still leave the input empty (so the carry-forward logic is untouched),
+     but we DISPLAY the inherited id in the box via placeholder so it reads as the real task, not "inherits above". */
+  var ph = eff ? (esc(String(eff))+(wbsName(eff)?" "+esc((wbsName(eff)||"").slice(0,20)):"")) : "tag activity";
+  return '<input list="wbsDL" value="'+esc(v)+'" placeholder="'+ph+'" title="Empty = inherits the activity shown. Type an id to start a new activity, or - to end the span." onchange="updL('+i+',2,this.value)">'+sub;
 }
 function buildDL(force){
   var dl=document.getElementById("wbsDL");
@@ -542,7 +588,19 @@ function renderWbs(){
 }
 function updW(i,f,v){ WBSL[i][f]=v; save(); renderWbs(); }
 function delW(i){ WBSL.splice(i,1); save(); renderWbs(); }
-function addW(){ WBSL.push(["",""]); save(); renderWbs(); }
+function addW(){
+  /* B1: ask for the new WBS id + name so the row is usable immediately
+     (a blank row otherwise sinks to the bottom of 1600+ activities and looks like nothing happened) */
+  var id=prompt("New WBS / activity ID (e.g. 200 or TP-0065):","");
+  if(id===null) return; id=String(id).trim();
+  if(!id){ alert("No ID entered — nothing added."); return; }
+  if(WBSL.some(function(w){ return String(w[0])===id; })){ alert("That WBS ID already exists."); return; }
+  var nm=prompt("Activity name for "+id+":","")||"";
+  WBSL.push([id,nm.trim()]); save();
+  /* show it by filtering to it so it's visible despite the hours-first sort */
+  var fEl=document.getElementById("wbsFilter"); if(fEl){ fEl.value=id; }
+  renderWbs();
+}
 
 /* ===================== FILE UPLOAD (Excel / CSV) ===================== */
 /* ===================== FILE UPLOAD (Excel / CSV) ===================== *
