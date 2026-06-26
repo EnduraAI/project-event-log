@@ -6,6 +6,7 @@
 <title>Project Event Log — Endura Asset Intelligence</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
   :root{
     --bg:#FAF7F1; --panel:#ffffff; --panel2:#f2eee4; --line:#e3ddcf; --field:#fbfaf7;
@@ -203,6 +204,7 @@
   <button id="tabLog" class="active" onclick="showTab('log')">Daily Log</button>
   <button id="tabDash" onclick="showTab('dash')">Campaign Dashboard</button>
   <button id="tabWbs" onclick="showTab('wbs')">Schedule / WBS</button>
+  <button id="tabDpr" onclick="showTab('dpr')">DPR Check</button>
 </nav>
 
 <main>
@@ -230,6 +232,8 @@
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
       <span class="spacer"></span>
       <button class="btn" onclick="openChangePassword()" title="Set or change the project unlock password">🔑 Password</button>
+      <button class="btn" onclick="openBackups()" title="View and restore local backups of this project's data">💾 Backups</button>
+      <span id="backupNote" class="sub" style="font-size:11px"></span>
       <button class="btn" onclick="exportJSON()">Export data (.json)</button>
       <button class="btn" onclick="document.getElementById('jsonImport').click()">Import data (.json)</button>
       <input type="file" id="jsonImport" accept=".json,application/json" style="display:none" onchange="importJSON(this)">
@@ -384,6 +388,42 @@
       </div>
       <div class="row noprint" style="margin-top:10px"><div class="spacer"></div><button class="btn" onclick="exportWbsCSV()">Export WBS CSV</button></div>
       <div class="footnote">A log line's hours run until the next timed line (last line runs to day end). When two WBS elements are active in the same time slot, that slot is split <b>0.5 to each</b> (max two concurrent). To run two elements at once, add two lines at the same time, each tagged with its element; both carry forward until you re-tag or end the span with <b>-</b>.</div>
+    </div>
+  </section>
+  <section id="view-dpr" style="display:none">
+    <div class="panel">
+      <h3>Contractor DPR check</h3>
+      <p class="footnote" style="margin-top:0">Upload the contractor's Daily Progress Report (PDF) for a day. The app reads the downtime figures from the report and compares them against what was logged here, so you can see whether the contractor's DPR lines up with the Santos record. Nothing in the DPR is changed — this is read-only comparison.</p>
+      <div class="row" style="gap:12px;align-items:center;margin-top:8px">
+        <button class="btn primary" onclick="document.getElementById('dprFile').click()">Upload DPR (PDF)</button>
+        <input type="file" id="dprFile" accept=".pdf,application/pdf" style="display:none" onchange="onDprFile(this)">
+        <span id="dprFileName" class="sub"></span>
+        <div class="spacer"></div>
+        <span id="dprStatus" class="sub"></span>
+      </div>
+    </div>
+
+    <div class="panel" id="dprResultPanel" style="display:none">
+      <div class="row" style="margin-bottom:8px">
+        <h3 style="margin:0">Extracted from DPR</h3>
+        <div class="spacer"></div>
+        <span class="sub" id="dprMeta"></span>
+      </div>
+      <p class="footnote" style="margin-top:0">Check these figures against the PDF. If extraction missed or misread anything, correct it here before comparing — the comparison uses these values.</p>
+      <div class="cards" id="dprFields" style="margin-top:8px"></div>
+
+      <div class="row" style="margin-top:14px;gap:12px;align-items:center">
+        <label class="sub">Compare against logged day:</label>
+        <select id="dprMatchDay" onchange="renderDprCompare()"></select>
+        <span id="dprMatchNote" class="sub"></span>
+      </div>
+
+      <div id="dprCompare" style="margin-top:14px"></div>
+
+      <details style="margin-top:14px">
+        <summary class="sub" style="cursor:pointer">Show raw extracted text</summary>
+        <pre id="dprRaw" style="font-size:11px;white-space:pre-wrap;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:10px;max-height:240px;overflow:auto;margin-top:8px"></pre>
+      </details>
     </div>
   </section>
 </main>
@@ -575,7 +615,7 @@ function renderLockUI(key){
 function mergeEmb(){ var have={}; WBSL.forEach(function(w){ have[String(w[0])]=1; }); var n=0; EMB.forEach(function(w){ if(!have[String(w[0])]){ WBSL.push([w[0],w[1]]); n++; } }); return n; }
 function loadDpr(){ var n=mergeEmb(); save(); renderWbs(); alert(n+" schedule activities loaded."); }
 function load(){ var d=JSON.parse(JSON.stringify(SEED)); if(WBSL.length<10) mergeEmb(); return d; }
-function save(){ scheduleCloudSave(); }
+function save(){ writeLocalBackup(); scheduleCloudSave(); }
 
 function toMin(t){ if(!t) return null; var p=String(t).split(":"); if(p.length<2) return null; return (+p[0])*60+(+p[1]); }
 function r2(n){ return Math.round(n*100)/100; }
@@ -619,9 +659,11 @@ function showTab(t){
   document.getElementById("view-log").style.display=t==="log"?"":"none";
   document.getElementById("view-dash").style.display=t==="dash"?"":"none";
   document.getElementById("view-wbs").style.display=t==="wbs"?"":"none";
+  document.getElementById("view-dpr").style.display=t==="dpr"?"":"none";
   document.getElementById("tabLog").classList.toggle("active",t==="log");
   document.getElementById("tabDash").classList.toggle("active",t==="dash");
   document.getElementById("tabWbs").classList.toggle("active",t==="wbs");
+  document.getElementById("tabDpr").classList.toggle("active",t==="dpr");
   if(t==="dash") renderDash();
   if(t==="wbs") renderWbs();
 }
@@ -1372,6 +1414,53 @@ function scheduleCloudSave(){
   clearTimeout(saveTimer);
   saveTimer=setTimeout(cloudSave,500);
 }
+
+/* ===================== Level 3: rolling local backup ===================== *
+ * Every change writes a timestamped snapshot to this device. We keep the last
+ * few so a bad edit or a sync problem can always be rolled back. Local only,
+ * independent of the cloud \u2014 a genuine safety net, not the source of truth. */
+var BACKUP_KEEP=5;
+function backupKey(){ return "endura_pel_backups_"+curProject(); }
+function writeLocalBackup(){
+  try{
+    var list=JSON.parse(localStorage.getItem(backupKey())||"[]");
+    var snap={ t:new Date().toISOString(), by:(curUser()||"?"), doc:{days:data,wbs:WBSL,ctype:CTYPE,locks:LOCKS,lockpw:LOCKPW} };
+    /* skip if identical to the most recent backup (avoid churn) */
+    var sj=JSON.stringify(snap.doc);
+    if(list.length && JSON.stringify(list[0].doc)===sj) return;
+    list.unshift(snap);
+    while(list.length>BACKUP_KEEP) list.pop();
+    localStorage.setItem(backupKey(), JSON.stringify(list));
+    var el=document.getElementById("backupNote");
+    if(el) el.textContent="Last local backup "+new Date(snap.t).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+  }catch(e){ /* storage full or disabled \u2014 non-fatal */ }
+}
+function listBackups(){ try{ return JSON.parse(localStorage.getItem(backupKey())||"[]"); }catch(e){ return []; } }
+function openBackups(){
+  var list=listBackups();
+  var m=document.getElementById("lockModal"); if(!m) return;
+  document.getElementById("lmTitle").textContent="Local backups \u2014 "+curProject();
+  var body=document.getElementById("lmBody"), err=document.getElementById("lmError"); err.textContent="";
+  if(!list.length){ body.innerHTML='<p class="lm-note">No local backups yet. A backup is saved automatically on this device every time you make a change.</p>'; setLmButtons([["Close","closeLockModal()"]]); m.style.display="flex"; return; }
+  body.innerHTML='<p class="lm-note">These snapshots are stored on this device only. Restoring replaces the current data for '+esc(curProject())+' and syncs it to everyone. The current state is backed up first, so you can undo a restore.</p>'+
+    '<div style="max-height:260px;overflow:auto">'+list.map(function(b,i){
+      var days=b.doc&&b.doc.days?Object.keys(b.doc.days).length:0;
+      return '<div class="row" style="gap:8px;padding:7px 0;border-bottom:1px solid var(--line)"><div><div style="font-weight:600;font-size:13px">'+new Date(b.t).toLocaleString()+'</div><div class="sub" style="font-size:11px">'+days+' day'+(days===1?"":"s")+' \u00b7 by '+esc(b.by||"?")+'</div></div><div class="spacer"></div><button class="btn" onclick="restoreBackup('+i+')">Restore</button></div>';
+    }).join("")+'</div>';
+  setLmButtons([["Close","closeLockModal()"]]);
+  m.style.display="flex";
+}
+function restoreBackup(i){
+  var list=listBackups(); if(!list[i]) return;
+  if(!confirm("Restore the backup from "+new Date(list[i].t).toLocaleString()+"?\n\nThis replaces the current data and syncs it to everyone. The current state is backed up first.")) return;
+  writeLocalBackup();                       // snapshot current state before overwriting
+  var doc=list[i].doc;
+  applyingRemote=true; adopt(doc); applyingRemote=false;
+  closeLockModal(); renderLog();
+  if(typeof renderDash==="function") renderDash();
+  cloudSave();
+  alert("Backup restored.");
+}
 async function cloudSave(){
   if(!sb){ try{ localStorage.setItem("endura_pel_offline_"+curProject(),payload()); }catch(e){} return; }
   var body={ doc:{days:data,wbs:WBSL,ctype:CTYPE,locks:LOCKS,lockpw:LOCKPW}, updated_at:new Date().toISOString(), updated_by:curUser()||"?" };
@@ -1432,7 +1521,7 @@ async function initCloud(){
   if(!configured){
     setSync("grey","not configured \u2014 running local only (see setup note)");
     try{ var s=localStorage.getItem("endura_pel_local_"+curProject()); if(s) adopt(s); }catch(e){}
-    save=function(){ try{ localStorage.setItem("endura_pel_local_"+curProject(),payload()); }catch(e){} };
+    save=function(){ writeLocalBackup(); try{ localStorage.setItem("endura_pel_local_"+curProject(),payload()); }catch(e){} };
     renderLog();
     return;
   }
@@ -1451,6 +1540,199 @@ async function initCloud(){
     console.warn(e);
     renderLog();
   }
+}
+
+
+/* ===================== DPR Check (contractor PDF comparison) ===================== *
+ * Reads the downtime figures from a contractor Daily Progress Report PDF and
+ * compares them against the downtime logged in this app for the matching day.
+ * Read-only: the DPR is never modified. Uses pdf.js in the browser.            */
+var dprData=null;   /* last parsed DPR */
+
+function dprSetStatus(msg,color){ var e=document.getElementById("dprStatus"); if(e){ e.textContent=msg||""; e.style.color=color||"var(--muted)"; } }
+
+function onDprFile(inp){
+  var file=inp.files[0]; if(!file) return;
+  document.getElementById("dprFileName").textContent=file.name;
+  if(typeof pdfjsLib==="undefined"){
+    /* PDF reader unavailable (offline / CDN blocked). Fall back to manual entry so the
+       comparison still works \u2014 the user types the figures straight off the PDF. */
+    dprSetStatus("Automatic PDF reading is unavailable right now. You can still enter the DPR figures by hand below.","#b9822b");
+    dprData={ reportDate:"", reportNo:"", weatherDT:null, mechDT:null, vesselDT:null, rovDT:null, raw:[], manual:true, found:{} };
+    dprShowResult(dprData);
+    return;
+  }
+  dprSetStatus("Reading PDF\u2026");
+  var rd=new FileReader();
+  rd.onload=function(){
+    dprParse(rd.result).then(function(parsed){
+      dprData=parsed;
+      dprShowResult(parsed);
+      var n=parsed.foundCount;
+      if(n===0) dprSetStatus("Read the PDF, but couldn't find the downtime figures automatically \u2014 please enter them by hand below.","#c0392b");
+      else if(n<2) dprSetStatus("Read the PDF, but only found some figures \u2014 please check and complete them below.","#b9822b");
+      else dprSetStatus("Done \u2014 found "+n+" of 4 downtime figures. Please verify against the PDF.","#1e7d34");
+    }).catch(function(err){
+      console.warn(err);
+      dprSetStatus("Couldn't read that PDF automatically ("+(err&&err.message?err.message:err)+"). You can enter the figures by hand below.","#c0392b");
+      dprData={ reportDate:"", reportNo:"", weatherDT:null, mechDT:null, vesselDT:null, rovDT:null, raw:[], manual:true, found:{} };
+      dprShowResult(dprData);
+    });
+  };
+  rd.onerror=function(){ dprSetStatus("Could not open that file.","#c0392b"); };
+  rd.readAsArrayBuffer(file);
+  inp.value="";
+}
+
+/* PDF -> array of pages, each an array of reconstructed text lines */
+function dprPdfToLines(arrayBuffer){
+  try{ if(!pdfjsLib.GlobalWorkerOptions.workerSrc) pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; }catch(e){}
+  return pdfjsLib.getDocument({data:arrayBuffer}).promise.then(function(pdf){
+    var jobs=[];
+    for(var i=1;i<=pdf.numPages;i++) jobs.push(pdf.getPage(i));
+    return Promise.all(jobs).then(function(pages){
+      return Promise.all(pages.map(function(page){
+        return page.getTextContent().then(function(tc){
+          var items=tc.items.filter(function(it){return it.str.trim();}).map(function(it){
+            return {s:it.str, x:Math.round(it.transform[4]), y:Math.round(it.transform[5])};
+          });
+          items.sort(function(a,b){ return b.y-a.y || a.x-b.x; });
+          var rows=[]; var cur=null;
+          items.forEach(function(it){
+            if(!cur || Math.abs(cur.y-it.y)>3){ cur={y:it.y, items:[it]}; rows.push(cur); }
+            else cur.items.push(it);
+          });
+          return rows.map(function(r){ return r.items.sort(function(a,b){return a.x-b.x;}).map(function(it){return it.s;}).join(" ").replace(/\s+/g," ").trim(); }).filter(function(l){return l;});
+        });
+      }));
+    });
+  });
+}
+
+/* second decimal on a downtime row = the "Today" column (Prev Today Cum %) */
+function dprTodayHrs(line){
+  var nums=(line.match(/-?\d+\.\d+/g)||[]).map(Number);
+  if(nums.length>=2) return nums[1];
+  if(nums.length===1) return nums[0];
+  return null;
+}
+
+function dprParse(arrayBuffer){
+  return dprPdfToLines(arrayBuffer).then(function(pages){
+    var flat=[]; pages.forEach(function(lines){ lines.forEach(function(l){ flat.push(l); }); });
+    var r={ reportDate:"", reportNo:"", weatherDT:null, mechDT:null, vesselDT:null, rovDT:null,
+            raw:[], found:{}, foundCount:0, manual:false };
+
+    /* report identity \u2014 several phrasings tolerated */
+    flat.forEach(function(l){
+      var md=l.match(/Report\s*Date[:\s]+(\d{1,2}\/\d{1,2}\/\d{4})/i); if(md && !r.reportDate) r.reportDate=md[1];
+      var mn=l.match(/Report\s*(?:Number|No\.?)[:\s]+(\d+)/i); if(mn && !r.reportNo) r.reportNo=mn[1];
+    });
+    /* fallback: any dd/mm/yyyy near the top if no labelled date */
+    if(!r.reportDate){ for(var i=0;i<Math.min(flat.length,40);i++){ var m2=flat[i].match(/\b(\d{2}\/\d{2}\/\d{4})\b/); if(m2){ r.reportDate=m2[1]; break; } } }
+
+    /* downtime rows \u2014 take the FIRST clean match for each label.
+       Accept optional WBS code (WOW/MECH) between label and numbers. */
+    function grab(label, re){
+      for(var i=0;i<flat.length;i++){
+        if(re.test(flat[i])){
+          var v=dprTodayHrs(flat[i]);
+          if(v!==null){ r.raw.push(flat[i]); return v; }
+        }
+      }
+      return null;
+    }
+    r.weatherDT=grab("weather", /Weather\s+Downtime/i);
+    r.mechDT=grab("mech", /Mechanical\s+Downtime/i);
+    r.vesselDT=grab("vessel", /^Vessel\s+[-\d.]/i);
+    r.rovDT=grab("rov", /^ROV\s+[-\d.]/i);
+
+    r.found={ weather:r.weatherDT!==null, mech:r.mechDT!==null, vessel:r.vesselDT!==null, rov:r.rovDT!==null };
+    r.foundCount=(r.found.weather?1:0)+(r.found.mech?1:0)+(r.found.vessel?1:0)+(r.found.rov?1:0);
+    return r;
+  });
+}
+
+/* convert dd/mm/yyyy from the DPR to the app's yyyy-mm-dd key */
+function dprDateToKey(d){
+  var m=String(d||"").match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  return m? (m[3]+"-"+m[2]+"-"+m[1]) : "";
+}
+
+function dprShowResult(r){
+  document.getElementById("dprResultPanel").style.display="";
+  document.getElementById("dprMeta").textContent=(r.reportNo?"DPR "+r.reportNo+"  \u00b7  ":"")+(r.reportDate||"date not found");
+  /* editable extracted fields, each with a confidence cue:
+     green tick = read from the PDF, amber = not found / enter by hand */
+  var found=r.found||{};
+  function field(id,label,val,ok){
+    var cue=ok? '<span style="color:#1e7d34;font-size:10px;font-weight:700">&#10003; read from PDF</span>'
+              : '<span style="color:#b9822b;font-size:10px;font-weight:700">&#9888; enter by hand</span>';
+    var border=ok?'var(--line)':'#f0d8b8';
+    return '<div class="card" style="padding:10px;border-color:'+border+'"><div class="row" style="gap:6px"><div class="sub" style="font-size:10px;text-transform:uppercase;letter-spacing:.5px">'+label+'</div><div class="spacer"></div>'+cue+'</div>'+
+      '<input id="'+id+'" type="number" step="0.01" min="0" value="'+(val===null?"":val)+'" oninput="renderDprCompare()" style="width:100%;font-size:18px;font-weight:700;margin-top:3px" placeholder="enter hours"></div>';
+  }
+  document.getElementById("dprFields").innerHTML=
+    field("dprWeather","Weather DT (today)",r.weatherDT,found.weather)+
+    field("dprMech","Mechanical DT (today)",r.mechDT,found.mech)+
+    field("dprVessel","Vessel DT (today)",r.vesselDT,found.vessel)+
+    field("dprRov","ROV DT (today)",r.rovDT,found.rov);
+  document.getElementById("dprRaw").textContent=(r.raw.length?r.raw.join("\n"):"(no downtime lines matched)")+"\n\nReport date: "+(r.reportDate||"?")+"  Number: "+(r.reportNo||"?");
+
+  /* day matcher: default to the DPR's own date if we have that day logged */
+  var sel=document.getElementById("dprMatchDay");
+  var keys=Object.keys(data).sort();
+  sel.innerHTML='<option value="">\u2014 select day \u2014</option>'+keys.map(function(k){return '<option value="'+k+'">'+fmtDay(k)+'</option>';}).join("");
+  var autoKey=dprDateToKey(r.reportDate);
+  var note=document.getElementById("dprMatchNote");
+  if(autoKey && data[autoKey]){ sel.value=autoKey; note.textContent="Auto-matched to the DPR's report date."; note.style.color="#1e7d34"; }
+  else if(autoKey){ note.textContent="No logged day for "+r.reportDate+" \u2014 pick one to compare."; note.style.color="#b9822b"; }
+  else { note.textContent="Pick the day this DPR covers."; note.style.color="var(--muted)"; }
+  renderDprCompare();
+}
+
+function dprNum(id){ var el=document.getElementById(id); if(!el) return null; var v=el.value; return v===""?null:parseFloat(v); }
+
+function renderDprCompare(){
+  var out=document.getElementById("dprCompare"); if(!out) return;
+  var key=document.getElementById("dprMatchDay").value;
+  if(!key || !data[key]){ out.innerHTML='<div class="sub">Select a logged day above to compare.</div>'; return; }
+
+  var st=dayStats(key);
+  var appDT=r2(st.dt), appNPT=r2(st.npt);
+
+  /* DPR side: Weather+Mechanical are the headline downtime; Vessel+ROV are the ancillary equipment downtime. */
+  var w=dprNum("dprWeather"), me=dprNum("dprMech"), ve=dprNum("dprVessel"), ro=dprNum("dprRov");
+  var dprSummaryDT = (w||0)+(me||0);                 /* DPR "downtime" (weather+mechanical) */
+  var dprAncDT = (ve||0)+(ro||0);                    /* DPR ancillary equipment downtime */
+  var dprMaxDT = Math.max(dprSummaryDT, dprAncDT);   /* best single DPR downtime figure to compare to app DT */
+
+  function row(label, appVal, dprVal, note){
+    var diff=r2(Math.abs(appVal-dprVal));
+    var match=diff<0.01;
+    var near=!match && diff<=0.5;
+    var color=match?"#1e7d34":(near?"#b9822b":"#c0392b");
+    var tag=match?"&#10003; match":(near?"&#9679; close ("+diff.toFixed(2)+"h)":"&#9888; differs by "+diff.toFixed(2)+"h");
+    return '<tr>'+
+      '<td>'+label+'</td>'+
+      '<td class="num">'+appVal.toFixed(2)+'</td>'+
+      '<td class="num">'+dprVal.toFixed(2)+'</td>'+
+      '<td class="num" style="color:'+color+';font-weight:700">'+diff.toFixed(2)+'</td>'+
+      '<td style="color:'+color+';font-weight:600">'+tag+'</td>'+
+      '</tr>'+(note?'<tr><td colspan="5" class="sub" style="padding-top:0">'+note+'</td></tr>':'');
+  }
+
+  var anyDiff = Math.abs(appDT-dprSummaryDT)>=0.01 || Math.abs(appDT-dprAncDT)>=0.01;
+  var banner = anyDiff
+    ? '<div class="insight" style="margin-bottom:12px;background:#fdecea;border-left:3px solid #c0392b;padding:10px 12px;border-radius:0 4px 4px 0;color:#7a1f17">The app and the contractor DPR do not fully agree on downtime for '+fmtDay(key)+'. Review the rows flagged below.</div>'
+    : '<div class="insight" style="margin-bottom:12px;background:#eaf6ec;border-left:3px solid #1e7d34;padding:10px 12px;border-radius:0 4px 4px 0;color:#1e5b2a">The app and the contractor DPR agree on downtime for '+fmtDay(key)+'.</div>';
+
+  out.innerHTML=banner+
+    '<table><thead><tr><th>Comparison</th><th class="num">App (logged)</th><th class="num">DPR</th><th class="num">Diff (h)</th><th>Result</th></tr></thead><tbody>'+
+    row("Downtime vs DPR Weather+Mechanical", appDT, dprSummaryDT, "DPR summary downtime = Weather ("+(w||0).toFixed(2)+") + Mechanical ("+(me||0).toFixed(2)+").")+
+    row("Downtime vs DPR Vessel+ROV (ancillary)", appDT, dprAncDT, "DPR ancillary equipment downtime = Vessel ("+(ve||0).toFixed(2)+") + ROV ("+(ro||0).toFixed(2)+").")+
+    '<tr><td>NPT (app only)</td><td class="num">'+appNPT.toFixed(2)+'</td><td class="num sub">n/a</td><td class="num sub">\u2014</td><td class="sub">DPR has no separate NPT field; shown for reference.</td></tr>'+
+    '</tbody></table>';
 }
 
 function exportJSON(){ dl(payload(),"Project-Event-Log-data.json","application/json"); }
