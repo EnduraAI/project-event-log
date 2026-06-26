@@ -109,6 +109,7 @@
   .evspan{position:absolute;height:15px;border-radius:3px}
   .axis{display:flex;justify-content:space-between;color:var(--muted);font-size:10.5px;margin-top:3px}
   .printonly{display:none}
+  .dpr-print-only{display:none}
   @media print{
     @page{
       size:A4; margin:16mm 14mm 18mm 14mm;
@@ -116,6 +117,19 @@
     *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
     nav,.noprint{display:none!important}
     .printonly{display:block}
+    /* When printing a DPR record, show ONLY that record */
+    body.printing-dpr main, body.printing-dpr header{display:none!important}
+    body.printing-dpr #dprRecord{display:block!important}
+    #dprRecord{display:none}
+    #dprRecord .dpr-verdict{margin:12px 0;padding:10px 12px;border-radius:5px;font-weight:600;font-size:11pt}
+    #dprRecord .dpr-verdict.ok{background:#eaf6ec;border-left:4px solid #1e7d34;color:#1e5b2a}
+    #dprRecord .dpr-verdict.bad{background:#fdecea;border-left:4px solid #c0392b;color:#7a1f17}
+    #dprRecord .dpr-rec-table{width:100%;border-collapse:collapse;font-size:10pt;margin-top:6px}
+    #dprRecord .dpr-rec-table th{background:#1A1A1A!important;color:#fff!important;text-align:left;padding:6px 8px;font-size:8.5pt;text-transform:uppercase;letter-spacing:.4px}
+    #dprRecord .dpr-rec-table td{padding:6px 8px;border-bottom:1px solid #e3ddcf}
+    #dprRecord .dpr-rec-table .num{text-align:right;font-variant-numeric:tabular-nums}
+    #dprRecord .dpr-detail{font-size:9pt;color:#444;margin-top:10px}
+    #dprRecord .dpr-pilot{margin-top:16px;padding-top:8px;border-top:1px solid #ccc;font-size:8pt;color:#777;font-style:italic}
     html,body{background:#fff}
     body{font-family:Calibri,"Segoe UI",Helvetica,Arial,sans-serif;font-size:10.5pt;color:#2b2b2b;line-height:1.35}
     /* hide the app chrome header; the report has its own masthead */
@@ -397,10 +411,18 @@
       <div class="row" style="gap:12px;align-items:center;margin-top:8px">
         <button class="btn primary" onclick="document.getElementById('dprFile').click()">Upload DPR (PDF)</button>
         <input type="file" id="dprFile" accept=".pdf,application/pdf" style="display:none" onchange="onDprFile(this)">
+        <button class="btn" onclick="document.getElementById('dprBatch').click()" title="Check several DPRs at once">Batch check (several PDFs)</button>
+        <input type="file" id="dprBatch" accept=".pdf,application/pdf" multiple style="display:none" onchange="onDprBatch(this)">
         <span id="dprFileName" class="sub"></span>
         <div class="spacer"></div>
         <span id="dprStatus" class="sub"></span>
       </div>
+    </div>
+
+    <div class="panel" id="dprBatchPanel" style="display:none">
+      <div class="row" style="margin-bottom:8px"><h3 style="margin:0">Batch check results</h3><div class="spacer"></div><span class="sub" id="dprBatchMeta"></span></div>
+      <div class="tableScroll"><table class="logtable"><thead><tr><th>DPR</th><th class="tw">Date</th><th>Matched day</th><th class="num">App DT (h)</th><th class="num">DPR W+M (h)</th><th class="num">DPR V+ROV (h)</th><th>Result</th></tr></thead><tbody id="dprBatchBody"></tbody></table></div>
+      <div class="row noprint" style="margin-top:10px"><div class="spacer"></div><button class="btn" onclick="printDprBatch()">Save / print batch record (PDF)</button></div>
     </div>
 
     <div class="panel" id="dprResultPanel" style="display:none">
@@ -410,6 +432,7 @@
         <span class="sub" id="dprMeta"></span>
       </div>
       <p class="footnote" style="margin-top:0">Check these figures against the PDF. If extraction missed or misread anything, correct it here before comparing — the comparison uses these values.</p>
+      <div id="dprWarnings" style="display:none;background:#fff4e8;border:1px solid #f0d8b8;color:#8a5a16;border-radius:6px;padding:9px 12px;margin:8px 0;font-size:12px"></div>
       <div class="cards" id="dprFields" style="margin-top:8px"></div>
 
       <div class="row" style="margin-top:14px;gap:12px;align-items:center">
@@ -419,6 +442,11 @@
       </div>
 
       <div id="dprCompare" style="margin-top:14px"></div>
+
+      <div class="row noprint" style="margin-top:12px">
+        <div class="spacer"></div>
+        <button class="btn" onclick="printDprRecord()">Save / print check record (PDF)</button>
+      </div>
 
       <details style="margin-top:14px">
         <summary class="sub" style="cursor:pointer">Show raw extracted text</summary>
@@ -1551,6 +1579,99 @@ var dprData=null;   /* last parsed DPR */
 
 function dprSetStatus(msg,color){ var e=document.getElementById("dprStatus"); if(e){ e.textContent=msg||""; e.style.color=color||"var(--muted)"; } }
 
+var dprBatchResults=[];
+/* Process several DPR PDFs in sequence and show a one-row-per-DPR summary. */
+function onDprBatch(inp){
+  var files=[].slice.call(inp.files||[]); inp.value="";
+  if(!files.length) return;
+  if(typeof pdfjsLib==="undefined"){ dprSetStatus("Automatic PDF reading is unavailable \u2014 batch check needs the PDF reader. Try single uploads with manual entry.","#c0392b"); return; }
+  dprSetStatus("Reading "+files.length+" DPRs\u2026");
+  dprBatchResults=[];
+  var i=0;
+  function next(){
+    if(i>=files.length){ dprShowBatch(); dprSetStatus("Batch check complete: "+files.length+" DPRs.","#1e7d34"); return; }
+    var f=files[i++];
+    var rd=new FileReader();
+    rd.onload=function(){
+      dprParse(rd.result).then(function(parsed){
+        parsed.fileName=f.name; dprBatchResults.push(parsed); next();
+      }).catch(function(err){
+        dprBatchResults.push({fileName:f.name, error:String(err&&err.message?err.message:err)}); next();
+      });
+    };
+    rd.onerror=function(){ dprBatchResults.push({fileName:f.name, error:"could not open file"}); next(); };
+    rd.readAsArrayBuffer(f);
+  }
+  next();
+}
+
+function dprBatchRowResult(parsed){
+  var key=dprDateToKey(parsed.reportDate);
+  if(parsed.error) return {key:"", appDT:null, sum:null, anc:null, verdict:"error", detail:parsed.error};
+  if(!key || !data[key]) return {key:key, appDT:null, sum:r2((parsed.weatherDT||0)+(parsed.mechDT||0)), anc:r2((parsed.vesselDT||0)+(parsed.rovDT||0)), verdict:"noday", detail:"No logged day for "+(parsed.reportDate||"?")};
+  var st=dayStats(key); var appDT=r2(st.dt);
+  var sum=r2((parsed.weatherDT||0)+(parsed.mechDT||0)), anc=r2((parsed.vesselDT||0)+(parsed.rovDT||0));
+  var d1=Math.abs(appDT-sum), d2=Math.abs(appDT-anc);
+  var verdict = (d1<0.01 && d2<0.01) ? "match" : ((d1<=0.5 && d2<=0.5) ? "close" : "differ");
+  return {key:key, appDT:appDT, sum:sum, anc:anc, verdict:verdict, maxDiff:r2(Math.max(d1,d2))};
+}
+
+function dprShowBatch(){
+  document.getElementById("dprBatchPanel").style.display="";
+  var body=document.getElementById("dprBatchBody"); body.innerHTML="";
+  var nMatch=0,nDiff=0,nOther=0;
+  dprBatchResults.forEach(function(p){
+    var r=dprBatchRowResult(p);
+    var resCell, color;
+    if(r.verdict==="match"){ resCell="&#10003; Match"; color="#1e7d34"; nMatch++; }
+    else if(r.verdict==="close"){ resCell="&#9679; Close (\u00b1"+r.maxDiff.toFixed(2)+"h)"; color="#b9822b"; nOther++; }
+    else if(r.verdict==="differ"){ resCell="&#9888; Differs by "+r.maxDiff.toFixed(2)+"h"; color="#c0392b"; nDiff++; }
+    else if(r.verdict==="noday"){ resCell="No logged day"; color="#888"; nOther++; }
+    else { resCell="Read error"; color="#c0392b"; nOther++; }
+    body.insertAdjacentHTML("beforeend",
+      '<tr><td>'+esc(p.reportNo?("DPR "+p.reportNo):(p.fileName||"?"))+'</td>'+
+      '<td class="tw">'+esc(p.reportDate||"\u2014")+'</td>'+
+      '<td>'+(r.key&&data[r.key]?fmtDay(r.key):'<span class="sub">'+(r.detail||"\u2014")+'</span>')+'</td>'+
+      '<td class="num">'+(r.appDT===null?"\u2014":r.appDT.toFixed(2))+'</td>'+
+      '<td class="num">'+(r.sum===null?"\u2014":r.sum.toFixed(2))+'</td>'+
+      '<td class="num">'+(r.anc===null?"\u2014":r.anc.toFixed(2))+'</td>'+
+      '<td style="color:'+color+';font-weight:600">'+resCell+'</td></tr>');
+  });
+  document.getElementById("dprBatchMeta").textContent=dprBatchResults.length+" DPRs \u00b7 "+nMatch+" match \u00b7 "+nDiff+" differ \u00b7 "+nOther+" other";
+}
+
+function printDprBatch(){
+  if(!dprBatchResults.length){ alert("Run a batch check first."); return; }
+  var rec=document.getElementById("dprRecord"); if(!rec) return;
+  var gen=new Date();
+  var rows=dprBatchResults.map(function(p){
+    var r=dprBatchRowResult(p);
+    var res = r.verdict==="match"?'<span style="color:#1e7d34;font-weight:700">Match</span>'
+            : r.verdict==="close"?'<span style="color:#b9822b;font-weight:700">Close (\u00b1'+r.maxDiff.toFixed(2)+'h)</span>'
+            : r.verdict==="differ"?'<span style="color:#c0392b;font-weight:700">Differs by '+r.maxDiff.toFixed(2)+'h</span>'
+            : r.verdict==="noday"?'<span style="color:#888">No logged day</span>'
+            : '<span style="color:#c0392b">Read error</span>';
+    return '<tr><td>'+esc(p.reportNo?("DPR "+p.reportNo):(p.fileName||"?"))+'</td><td>'+esc(p.reportDate||"\u2014")+'</td>'+
+      '<td>'+(r.key&&data[r.key]?fmtDay(r.key):"\u2014")+'</td>'+
+      '<td class="num">'+(r.appDT===null?"\u2014":r.appDT.toFixed(2))+'</td>'+
+      '<td class="num">'+(r.sum===null?"\u2014":r.sum.toFixed(2))+'</td>'+
+      '<td class="num">'+(r.anc===null?"\u2014":r.anc.toFixed(2))+'</td>'+
+      '<td>'+res+'</td></tr>';
+  }).join("");
+  rec.innerHTML=
+    '<div class="rh-top"><div><div class="rh-brand">Project <span class="o">Event</span> Log</div><div class="rh-brandsub">ENDURA ASSET INTELLIGENCE</div></div>'+
+      '<div class="rh-doc"><div class="rh-doctype">DPR CHECK RECORD</div><div class="rh-title">Contractor Downtime Verification \u2014 Batch</div></div></div>'+
+    '<div class="rh-meta"><div class="m"><div class="mk">Project</div><div class="mv">'+esc(curProject())+'</div></div>'+
+      '<div class="m"><div class="mk">DPRs checked</div><div class="mv">'+dprBatchResults.length+'</div></div>'+
+      '<div class="m"><div class="mk">Checked</div><div class="mv">'+gen.toLocaleDateString("en-GB")+' '+gen.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})+'</div></div>'+
+      '<div class="m"><div class="mk">Comparison</div><div class="mv">DT vs DPR downtime</div></div></div>'+
+    '<table class="dpr-rec-table"><thead><tr><th>DPR</th><th>Date</th><th>Matched day</th><th class="num">App DT</th><th class="num">DPR W+M</th><th class="num">DPR V+ROV</th><th>Result</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<div class="dpr-pilot">Pilot tool. Downtime figures are read automatically from each contractor PDF. Figures should be verified against the source DPRs. Source of truth remains the contractor DPRs and the Santos event record.</div>';
+  document.body.classList.add("printing-dpr");
+  window.print();
+  setTimeout(function(){ document.body.classList.remove("printing-dpr"); }, 500);
+}
+
 function onDprFile(inp){
   var file=inp.files[0]; if(!file) return;
   document.getElementById("dprFileName").textContent=file.name;
@@ -1616,6 +1737,11 @@ function dprTodayHrs(line){
   if(nums.length===1) return nums[0];
   return null;
 }
+/* return {prev,today,cum} where available, for sanity checks */
+function dprRowNums(line){
+  var nums=(line.match(/-?\d+\.\d+/g)||[]).map(Number);
+  return { prev: nums.length>=1?nums[0]:null, today: nums.length>=2?nums[1]:null, cum: nums.length>=3?nums[2]:null, count:nums.length };
+}
 
 function dprParse(arrayBuffer){
   return dprPdfToLines(arrayBuffer).then(function(pages){
@@ -1632,20 +1758,30 @@ function dprParse(arrayBuffer){
     if(!r.reportDate){ for(var i=0;i<Math.min(flat.length,40);i++){ var m2=flat[i].match(/\b(\d{2}\/\d{2}\/\d{4})\b/); if(m2){ r.reportDate=m2[1]; break; } } }
 
     /* downtime rows \u2014 take the FIRST clean match for each label.
-       Accept optional WBS code (WOW/MECH) between label and numbers. */
+       Accept optional WBS code (WOW/MECH) between label and numbers.
+       Also keep the full {prev,today,cum} triple for a sanity check. */
+    r.triples={}; r.warnings=[];
     function grab(label, re){
       for(var i=0;i<flat.length;i++){
         if(re.test(flat[i])){
-          var v=dprTodayHrs(flat[i]);
-          if(v!==null){ r.raw.push(flat[i]); return v; }
+          var t=dprRowNums(flat[i]);
+          if(t.today!==null){
+            r.raw.push(flat[i]); r.triples[label]=t;
+            /* sanity: a 3-column row should read Prev Today Cum. If only 2 numbers were
+               found, "today" might actually be the cumulative \u2014 warn the user to check. */
+            if(t.count<3) r.warnings.push("The "+label+" row had fewer columns than expected \u2014 please confirm the Today value against the PDF.");
+            /* sanity: if today==cum and prev>0, that's the classic misread (grabbed cumulative). */
+            if(t.count>=3 && t.today===t.cum && t.prev>0 && t.today>0) r.warnings.push("The "+label+" Today value equals the cumulative \u2014 please confirm it is today's figure, not the running total.");
+            return t.today;
+          }
         }
       }
       return null;
     }
-    r.weatherDT=grab("weather", /Weather\s+Downtime/i);
-    r.mechDT=grab("mech", /Mechanical\s+Downtime/i);
-    r.vesselDT=grab("vessel", /^Vessel\s+[-\d.]/i);
-    r.rovDT=grab("rov", /^ROV\s+[-\d.]/i);
+    r.weatherDT=grab("Weather", /Weather\s+Downtime/i);
+    r.mechDT=grab("Mechanical", /Mechanical\s+Downtime/i);
+    r.vesselDT=grab("Vessel", /^Vessel\s+[-\d.]/i);
+    r.rovDT=grab("ROV", /^ROV\s+[-\d.]/i);
 
     r.found={ weather:r.weatherDT!==null, mech:r.mechDT!==null, vessel:r.vesselDT!==null, rov:r.rovDT!==null };
     r.foundCount=(r.found.weather?1:0)+(r.found.mech?1:0)+(r.found.vessel?1:0)+(r.found.rov?1:0);
@@ -1662,6 +1798,15 @@ function dprDateToKey(d){
 function dprShowResult(r){
   document.getElementById("dprResultPanel").style.display="";
   document.getElementById("dprMeta").textContent=(r.reportNo?"DPR "+r.reportNo+"  \u00b7  ":"")+(r.reportDate||"date not found");
+  /* parser safety warnings (cumulative-vs-today, missing columns) */
+  var warnEl=document.getElementById("dprWarnings");
+  if(warnEl){
+    var ws=(r.warnings||[]);
+    if(ws.length){
+      warnEl.style.display="";
+      warnEl.innerHTML='<strong>&#9888; Please double-check these figures:</strong><ul style="margin:6px 0 0;padding-left:18px">'+ws.map(function(w){return '<li>'+esc(w)+'</li>';}).join("")+'</ul>';
+    } else { warnEl.style.display="none"; warnEl.innerHTML=""; }
+  }
   /* editable extracted fields, each with a confidence cue:
      green tick = read from the PDF, amber = not found / enter by hand */
   var found=r.found||{};
@@ -1692,6 +1837,53 @@ function dprShowResult(r){
 }
 
 function dprNum(id){ var el=document.getElementById(id); if(!el) return null; var v=el.value; return v===""?null:parseFloat(v); }
+
+/* Build a clean, printable DPR check record (audit trail) and open the print dialog.
+   The pilot note appears only here, in the exported record. */
+function printDprRecord(){
+  var rec=document.getElementById("dprRecord"); if(!rec) return;
+  var key=document.getElementById("dprMatchDay").value;
+  if(!key || !data[key]){ alert("Select a logged day to compare before saving a record."); return; }
+  var st=dayStats(key);
+  var appDT=r2(st.dt), appNPT=r2(st.npt);
+  var w=dprNum("dprWeather")||0, me=dprNum("dprMech")||0, ve=dprNum("dprVessel")||0, ro=dprNum("dprRov")||0;
+  var dprSummary=r2(w+me), dprAnc=r2(ve+ro);
+  var d=dprData||{};
+  var gen=new Date();
+  function resCell(appVal,dprVal){
+    var diff=r2(Math.abs(appVal-dprVal));
+    if(diff<0.01) return '<span style="color:#1e7d34;font-weight:700">Match</span>';
+    if(diff<=0.5) return '<span style="color:#b9822b;font-weight:700">Close (\u00b1'+diff.toFixed(2)+'h)</span>';
+    return '<span style="color:#c0392b;font-weight:700">Differs by '+diff.toFixed(2)+'h</span>';
+  }
+  var agree = Math.abs(appDT-dprSummary)<0.01 && Math.abs(appDT-dprAnc)<0.01;
+  rec.innerHTML=
+    '<div class="rh-top">'+
+      '<div><div class="rh-brand">Project <span class="o">Event</span> Log</div><div class="rh-brandsub">ENDURA ASSET INTELLIGENCE</div></div>'+
+      '<div class="rh-doc"><div class="rh-doctype">DPR CHECK RECORD</div><div class="rh-title">Contractor Downtime Verification</div></div>'+
+    '</div>'+
+    '<div class="rh-meta">'+
+      '<div class="m"><div class="mk">Project</div><div class="mv">'+esc(curProject())+'</div></div>'+
+      '<div class="m"><div class="mk">DPR</div><div class="mv">'+esc(d.reportNo?("No. "+d.reportNo):"\u2014")+'</div></div>'+
+      '<div class="m"><div class="mk">DPR date</div><div class="mv">'+esc(d.reportDate||"\u2014")+'</div></div>'+
+      '<div class="m"><div class="mk">Checked</div><div class="mv">'+gen.toLocaleDateString("en-GB")+' '+gen.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})+'</div></div>'+
+    '</div>'+
+    '<div class="dpr-verdict '+(agree?"ok":"bad")+'">'+(agree
+        ? "The contractor DPR and the Santos record AGREE on downtime for "+fmtDay(key)+"."
+        : "The contractor DPR and the Santos record DO NOT fully agree on downtime for "+fmtDay(key)+". See the comparison below.")+'</div>'+
+    '<table class="dpr-rec-table"><thead><tr><th>Comparison</th><th class="num">Santos record (h)</th><th class="num">Contractor DPR (h)</th><th>Result</th></tr></thead><tbody>'+
+      '<tr><td>Downtime vs DPR Weather + Mechanical</td><td class="num">'+appDT.toFixed(2)+'</td><td class="num">'+dprSummary.toFixed(2)+'</td><td>'+resCell(appDT,dprSummary)+'</td></tr>'+
+      '<tr><td>Downtime vs DPR Vessel + ROV (ancillary)</td><td class="num">'+appDT.toFixed(2)+'</td><td class="num">'+dprAnc.toFixed(2)+'</td><td>'+resCell(appDT,dprAnc)+'</td></tr>'+
+      '<tr><td>Non-productive time (Santos record)</td><td class="num">'+appNPT.toFixed(2)+'</td><td class="num" style="color:#888">n/a</td><td style="color:#888">DPR has no separate NPT field</td></tr>'+
+    '</tbody></table>'+
+    '<div class="dpr-detail"><strong>DPR figures used (today):</strong> Weather '+w.toFixed(2)+'h \u00b7 Mechanical '+me.toFixed(2)+'h \u00b7 Vessel '+ve.toFixed(2)+'h \u00b7 ROV '+ro.toFixed(2)+'h</div>'+
+    ((d.warnings&&d.warnings.length)?'<div class="dpr-detail" style="color:#8a5a16"><strong>Verification notes:</strong> '+d.warnings.map(esc).join(" ")+'</div>':"")+
+    '<div class="dpr-pilot">Pilot tool. Downtime figures are read automatically from the contractor PDF and verified by the checker before comparison. This record reflects the figures shown at the time of checking. Source of truth remains the contractor DPR and the Santos event record.</div>';
+
+  document.body.classList.add("printing-dpr");
+  window.print();
+  setTimeout(function(){ document.body.classList.remove("printing-dpr"); }, 500);
+}
 
 function renderDprCompare(){
   var out=document.getElementById("dprCompare"); if(!out) return;
@@ -1752,5 +1944,7 @@ initCloud();
       <div id="lmButtons" class="lm-btns"></div>
     </div>
   </div>
+  <!-- print-only DPR check record (outside main so print can isolate it) -->
+  <div id="dprRecord" class="dpr-print-only"></div>
 </body>
 </html>
