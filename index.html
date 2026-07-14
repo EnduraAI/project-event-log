@@ -1,9 +1,12 @@
 <!doctype html>
+<!-- Endura Project Event Log - build 2026-07-14.2 - deploy check string: PEL-BUILD-2026-07-14.2 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Project Event Log — Endura Asset Intelligence</title>
+<meta name="theme-color" content="#E87722">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231A1A1A'/%3E%3Cpath d='M18 14h28v7H26v8h17v7H26v7h20v7H18z' fill='%23E87722'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -59,6 +62,14 @@
   .tw{white-space:nowrap}
   .num{text-align:right;font-variant-numeric:tabular-nums}
   .tableScroll{overflow-x:auto}
+  .tableScroll thead th{position:sticky;top:0;z-index:3}
+  .tableScroll tbody tr:nth-child(even) td{background:rgba(26,26,26,.03)}
+  #view-dash .tableScroll table{min-width:1040px}
+  td.num,th.num{font-variant-numeric:tabular-nums}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel2)}
+  .segbtn{border:0;background:transparent;padding:5px 12px;font:inherit;font-size:12px;color:var(--muted);cursor:pointer;line-height:1.2}
+  .segbtn.active{background:#E87722;color:#fff;font-weight:600}
+  .segbtn:not(.active):hover{background:rgba(26,26,26,.06)}
   /* B1 FIX 5: log table scrolls vertically within a capped box; header sticks to the top of that box */
   .logScroll{max-height:60vh;overflow-y:auto;overflow-x:auto;border:1px solid var(--line);border-radius:8px}
   .logtable.stickyhead thead th{position:sticky;top:0;z-index:5;background:var(--panel2);box-shadow:inset 0 -1px 0 var(--line),inset 0 1px 0 var(--line)}
@@ -110,6 +121,9 @@
   .axis{display:flex;justify-content:space-between;color:var(--muted);font-size:10.5px;margin-top:3px}
   .printonly{display:none}
   .dpr-print-only{display:none}
+  .rovlanewrap{display:flex;align-items:center;gap:8px;margin:3px 0}
+  .rovlanelabel{width:44px;flex:none;text-align:right;font-size:11px}
+  .bar24.rovlane{flex:1;height:16px}
   @media print{
     @page{
       size:A4; margin:16mm 14mm 18mm 14mm;
@@ -121,6 +135,18 @@
     body.printing-dpr main, body.printing-dpr header{display:none!important}
     body.printing-dpr #dprRecord{display:block!important}
     #dprRecord{display:none}
+    /* Daily record print (D2) - mirrors the DPR record pattern */
+    body.printing-day main, body.printing-day header{display:none!important}
+    body.printing-day #dayRecord{display:block!important}
+    body.printing-day #reportHeader{display:none!important}
+    #dayRecord{display:none}
+    #dayRecord table{width:100%;border-collapse:collapse;font-size:9.5pt;margin:4px 0 12px}
+    #dayRecord th{background:#1A1A1A!important;color:#fff!important;text-align:left;padding:5px 7px;font-size:8pt;text-transform:uppercase;letter-spacing:.4px}
+    #dayRecord td{padding:5px 7px;border-bottom:1px solid #e3ddcf;vertical-align:top}
+    #dayRecord .num{text-align:right;font-variant-numeric:tabular-nums}
+    #dayRecord .drTotals{margin:8px 0 14px;font-size:10pt}
+    #dayRecord .drTotals b{font-weight:700}
+    #dayRecord .drFoot{margin-top:14px;padding-top:8px;border-top:1px solid #ccc;font-size:8pt;color:#777}
     #dprRecord .dpr-verdict{margin:12px 0;padding:10px 12px;border-radius:5px;font-weight:600;font-size:11pt}
     #dprRecord .dpr-verdict.ok{background:#eaf6ec;border-left:4px solid #1e7d34;color:#1e5b2a}
     #dprRecord .dpr-verdict.bad{background:#fdecea;border-left:4px solid #c0392b;color:#7a1f17}
@@ -235,7 +261,7 @@
       <div class="spacer"></div>
       <button class="btn primary" onclick="toggleImport(true)">Import / Paste raw</button>
       <button class="btn" onclick="exportCSV()">Export CSV</button>
-      <button class="btn" onclick="window.print()">Print / PDF</button>
+      <button class="btn" onclick="printDayRecord()" title="Print this day's log and events as a formatted daily record">Print / PDF</button>
     </div>
 
     <div class="row noprint" style="padding:8px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px">
@@ -244,13 +270,17 @@
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-07-14.2</span>
       <span class="spacer"></span>
+      <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
+      <span id="adminTools" style="display:none">
       <button class="btn" onclick="openChangePassword()" title="Set or change the project unlock password">🔑 Password</button>
       <button class="btn" onclick="openBackups()" title="View and restore local backups of this project's data">💾 Backups</button>
       <span id="backupNote" class="sub" style="font-size:11px"></span>
       <button class="btn" onclick="exportJSON()">Export data (.json)</button>
       <button class="btn" onclick="document.getElementById('jsonImport').click()">Import data (.json)</button>
       <input type="file" id="jsonImport" accept=".json,application/json" style="display:none" onchange="importJSON(this)">
+      </span>
     </div>
 
     <div id="importPanel" class="panel noprint" style="display:none">
@@ -286,7 +316,7 @@
       <h3>Events <span class="sub">— tag start &amp; stop; blank End = ongoing (runs to day end); overlaps allowed</span></h3>
       <div class="tableScroll">
         <table class="logtable">
-          <thead><tr><th class="tw" style="width:150px">Category</th><th class="tw" style="width:74px">Start</th><th class="tw" style="width:74px">End</th><th class="tw" style="width:120px">Lost-time type</th><th class="tw num" style="width:58px">Dur</th><th>Description</th><th class="tw noprint" style="width:40px"></th></tr></thead>
+          <thead><tr><th class="tw" style="width:150px">Category</th><th class="tw" style="width:74px">Start</th><th class="tw" style="width:74px">End</th><th class="tw" style="width:120px">Lost-time type</th><th class="tw" style="width:78px" title="Which ROV this event takes out. Drives the ROV availability view on the dashboard.">ROV impact</th><th class="tw num" style="width:58px">Dur</th><th>Description</th><th class="tw noprint" style="width:40px"></th></tr></thead>
           <tbody id="evBody"></tbody>
         </table>
       </div>
@@ -301,7 +331,7 @@
       <div id="wbsChips" class="chips"></div>
       <div id="laneWrap" class="lanewrap"></div>
       <div class="axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span id="axEnd">24:00</span></div>
-      <div class="footnote"><b>Actual downtime + NPT + clear running = day length</b> (overlaps merged, no double-counting; where a downtime and an NPT event overlap, that minute counts as actual downtime). Each bar is one event, drawn on its own lane so overlapping events are visible side by side. Set whether a category is genuine downtime or non-productive time using the controls above.</div>
+      <div class="footnote"><b>Actual downtime + maintenance + NPT + clear running = day length</b> (overlaps merged, no double-counting; where events overlap, a minute counts once, in the order downtime, then maintenance, then NPT). Each bar is one event, drawn on its own lane so overlapping events are visible side by side. Set whether a category is genuine downtime or non-productive time using the controls above.</div>
     </div>
   </section>
 
@@ -345,11 +375,11 @@
     </div>
 
     <div class="panel chartPanel">
-      <h3>Downtime by category — campaign (hours)</h3>
+      <h3>Downtime by category — campaign (hours) <span class="sub">(maintenance allowance shown separately)</span></h3>
       <div id="paretoChart" class="barwrap"></div>
     </div>
     <div class="panel chartPanel">
-      <h3>Daily downtime by category</h3>
+      <h3>Daily downtime by category <span class="sub">(maintenance allowance shown separately)</span></h3>
       <div id="catLegend" class="chips" style="margin:0 0 10px"></div>
       <div id="dailyChart" class="barwrap"></div>
       <div class="footnote">Bar length is hours attributed per category (overlapping events count in each of their categories). The figure at right is the day's merged downtime.</div>
@@ -360,11 +390,13 @@
       <h3>Daily rollup</h3>
       <div class="tableScroll">
         <table>
-          <thead><tr><th>Day</th><th class="num">Day h</th><th class="num">Events</th><th class="num">Actual DT h</th><th class="num">NPT h</th><th class="num">Other h</th><th class="num">Clear h</th><th>Worst category</th></tr></thead>
+          <thead><tr><th>Day</th><th class="num">Day h</th><th class="num">Events</th><th class="num">Actual DT h</th><th class="num">NPT h</th><th class="num">Other h</th><th class="num">Clear h</th><th class="num" title="Maintenance hours logged this day (category Maintenance)">Maint h</th><th class="num" title="Maintenance allowance used this calendar month to date. Only accrued hours can be used.">MA used</th><th class="num" title="Accrued allowance minus used, this calendar month. Accrues 2 h per logged day, capped at 48 h, resets monthly.">MA bal</th><th>Worst category</th></tr></thead>
           <tbody id="rollupBody"></tbody>
           <tfoot id="rollupFoot"></tfoot>
         </table>
       </div>
+      <div id="maBanner"></div>
+      <div class="footnote">Maintenance allowance per contract clause 1.8: accrues 2 hours for each logged day of offshore operations, capped at 48 hours per calendar month, and the balance resets each month. Unused hours are not compensated. Hours only, at vessel standby rate off-app. Maintenance covered by the allowance is not counted as downtime; hours beyond the accrued balance are flagged and stand as downtime. Calendar-month basis is a working decision to be confirmed with Jed.</div>
     </div>
 
     <!-- Per-day breakdown with events listed -->
@@ -372,6 +404,14 @@
       <div class="rpt-section-h printonly">Per-day breakdown</div>
       <div id="perDayLegend" class="printonly"></div>
       <h3>Per-day breakdown</h3>
+      <div class="row noprint" style="margin:2px 0 8px;align-items:center">
+        <span class="sub">Downtime view:</span>
+        <span class="seg" id="view24Seg" role="tablist" aria-label="Downtime view">
+          <button type="button" class="segbtn" data-v="cp" onclick="setView24('cp')" title="One merged bar: downtime, maintenance, NPT and other, no double counting">Critical path</button>
+          <button type="button" class="segbtn" data-v="rov" onclick="setView24('rov')" title="Two lanes, one per ROV: green working, red not working">ROV availability</button>
+        </span>
+        <span class="sub" id="view24Note" style="font-size:11px"></span>
+      </div>
       <div id="perDay"></div>
     </div>
   </section>
@@ -468,8 +508,9 @@
   g.innerHTML=s;
 })();
 
-var CATS=["Weather","ROV - Asset 1","ROV - Asset 2","Tooling","Scheduling","Crane","Vessel","Other"];
-var CCOL={"Weather":"#2f74c9","ROV - Asset 1":"#2fae54","ROV - Asset 2":"#dd3b40","Tooling":"#c98a2a","Scheduling":"#b23bb0","Crane":"#7d54d6","Vessel":"#0f9bad","Other":"#8C8C8C"};
+var APP_BUILD="2026-07-14.2";
+var CATS=["Weather","ROV - Asset 1","ROV - Asset 2","Tooling","Scheduling","Crane","Vessel","Maintenance","Other"];
+var CCOL={"Weather":"#2f74c9","ROV - Asset 1":"#2fae54","ROV - Asset 2":"#dd3b40","Tooling":"#c98a2a","Scheduling":"#b23bb0","Crane":"#7d54d6","Vessel":"#0f9bad","Maintenance":"#4c9a6a","Other":"#8C8C8C"};
 
 /* Lost-time classification: each event category is either Actual Downtime ("DT") or Non-Productive Time ("NPT").
    DT  = genuine stop, work cannot progress (breakdown, weather, asset/equipment/vessel failure).
@@ -482,11 +523,17 @@ function loadCtype(){ var o={}; for(var c in CTYPE_DEFAULT) o[c]=CTYPE_DEFAULT[c
   try{ var s=localStorage.getItem(CTYPEK); if(s){ var p=JSON.parse(s); for(var k in p){ if(p[k]==="DT"||p[k]==="NPT"||p[k]==="OTHER") o[k]=p[k]; } } }catch(e){}
   return o; }
 function saveCtype(){ try{ localStorage.setItem(CTYPEK,JSON.stringify(CTYPE)); }catch(e){} }
-function catType(c){ var v=CTYPE[c]; return (v==="NPT"||v==="OTHER")?v:"DT"; }
-function evType(e){ var o=e&&e[5]; if(o==="DT"||o==="NPT"||o==="OTHER") return o; return catType(e?e[0]:""); }
+function catType(c){ if(c==="Maintenance") return "MAINT"; var v=CTYPE[c]; return (v==="NPT"||v==="OTHER")?v:"DT"; }
+function evType(e){ if(e&&e[0]==="Maintenance") return "MAINT"; var o=e&&e[5]; if(o==="DT"||o==="NPT"||o==="OTHER") return o; return catType(e?e[0]:""); }
+/* W1: which ROV(s) an event takes out. Explicit value at ev[7] wins; otherwise derived from category. */
+function evAffDefault(cat){ if(cat==="ROV - Asset 1") return "R1"; if(cat==="ROV - Asset 2") return "R2"; if(cat==="Weather"||cat==="Vessel") return "BOTH"; return "NONE"; }
+function evAffects(e){ var a=e&&e[7]; if(a==="R1"||a==="R2"||a==="BOTH"||a==="NONE") return a; return evAffDefault(e?e[0]:""); }
 function setCtype(c,v){ CTYPE[c]=(v==="NPT"||v==="OTHER")?v:"DT"; saveCtype(); save(); renderLog(); var t=document.getElementById("tabDash"); if(t&&t.classList.contains("active")) renderDash(); }
 
-/* day = { end, log:[[time,text]], ev:[[category,start,end,description]] }  (blank event end = ongoing) */
+/* day = { end, log:[[time,entry,wbs,author,srcId?]], ev:[[category,start,end,desc,author,ctype?,srcId?,rovImpact?]] }
+   blank event end = ongoing. ctype index 5: DT | NPT | OTHER. srcId index 6.
+   rovImpact index 7: R1 | R2 | BOTH | NONE; absent means auto from category.
+   Category "Maintenance" is the clause 1.8 allowance and always classifies as MAINT. */
 var SEED={
  "2026-06-01":{end:"24:00",
   log:[["00:00","Vessel on DP at worksite - ROV ops commence","A100","DEMO"],["06:30","WOW - swell above ROV launch limits","","DEMO"],["09:15","Ops resume - cutting and recovery","A110","DEMO"],["14:00","Crane over side - lift #1 to deck","A120","DEMO"]],
@@ -655,9 +702,13 @@ function evSpans(key){
   var day=data[key]; var endMin=toMin(day.end)||1440;
   return day.ev.map(function(e,i){
     var s=toMin(e[1]); if(s==null) return null;
-    var en=e[2]?toMin(e[2]):endMin; if(en==null||en<=s) en=endMin;
+    /* A typed end that is not after the start (reversed or zero-length) is a data-entry
+       error. It is excluded from every total and flagged in the events table, rather than
+       silently ballooning to the end of the day and fabricating downtime. Blank end is a
+       legitimate ongoing event and still runs to day end. */
+    var en; if(e[2]){ var enT=toMin(e[2]); if(enT==null||enT<=s) return null; en=enT; } else { en=endMin; }
     s=Math.max(0,Math.min(s,endMin)); en=Math.max(0,Math.min(en,endMin));
-    return {cat:e[0],s:s,e:en,d:e[3]||"",by:e[4]||"",i:i,hrs:(en-s)/60,open:!e[2],type:evType(e)};
+    return {cat:e[0],s:s,e:en,d:e[3]||"",by:e[4]||"",i:i,hrs:(en-s)/60,open:!e[2],type:evType(e),aff:evAffects(e)};
   }).filter(function(x){return !!x;}).sort(function(a,b){return a.s-b.s||a.e-b.e;});
 }
 function unionH(sp){
@@ -674,15 +725,24 @@ function subIv(base,cut){ var out=[]; base.forEach(function(b){ var segs=[{s:b.s
 function dayStats(key){
   var day=data[key]; var len=(toMin(day.end)||1440)/60;
   var sp=evSpans(key); var u=unionH(sp);
+  /* Precedence when spans overlap: DT > MAINT > NPT > OTHER.
+     A minute of maintenance inside a downtime stop stays downtime (maintenance done during
+     WOW does not affect the Work, so it does not draw the clause 1.8 allowance). */
   var dtIv=mergeIv(sp.filter(function(x){return x.type==="DT";}));
-  var nptIv=subIv(mergeIv(sp.filter(function(x){return x.type==="NPT";})),dtIv);
-  var dt=ivMin(dtIv)/60, npt=ivMin(nptIv)/60;
-  var otherIv=subIv(subIv(mergeIv(sp.filter(function(x){return x.type==="OTHER";})),dtIv),nptIv);
+  var maintIv=subIv(mergeIv(sp.filter(function(x){return x.type==="MAINT";})),dtIv);
+  var nptIv=subIv(subIv(mergeIv(sp.filter(function(x){return x.type==="NPT";})),dtIv),maintIv);
+  var dt=ivMin(dtIv)/60, maint=ivMin(maintIv)/60, npt=ivMin(nptIv)/60;
+  var otherIv=subIv(subIv(subIv(mergeIv(sp.filter(function(x){return x.type==="OTHER";})),dtIv),maintIv),nptIv);
   var other=ivMin(otherIv)/60;
-  return {len:len,union:u,dt:dt,npt:npt,other:other,clear:Math.max(0,len-dt-npt-other),count:sp.length,cats:catH(sp),sp:sp,endMin:(toMin(day.end)||1440)};
+  return {len:len,union:u,dt:dt,maint:maint,npt:npt,other:other,clear:Math.max(0,len-dt-maint-npt-other),count:sp.length,cats:catH(sp),sp:sp,endMin:(toMin(day.end)||1440)};
 }
-function worstCat(cats){ var w="",h=0; for(var c in cats){ if(cats[c]>h){ h=cats[c]; w=c; } } return w?w+" ("+r2(h)+"h)":"—"; }
+/* Worst LOST-TIME category. Maintenance is allowance-covered planned work (clause 1.8),
+   so it never competes for "worst". */
+function worstCat(cats){ var w="",h=0; for(var c in cats){ if(c==="Maintenance") continue; if(cats[c]>h){ h=cats[c]; w=c; } } return w?w+" ("+r2(h)+"h)":"—"; }
 
+var VIEW24K="endura_pel_view24";
+var VIEW24=(function(){ try{ return localStorage.getItem(VIEW24K)==="rov"?"rov":"cp"; }catch(e){ return "cp"; } })();
+function setView24(v){ VIEW24=(v==="rov")?"rov":"cp"; try{ localStorage.setItem(VIEW24K,VIEW24); }catch(e){} renderDash(); }
 function showTab(t){
   document.getElementById("view-log").style.display=t==="log"?"":"none";
   document.getElementById("view-dash").style.display=t==="dash"?"":"none";
@@ -754,19 +814,32 @@ function renderLog(){
   var endMin=toMin(day.end)||1440;
   day.ev.forEach(function(e,i){
     var s=toMin(e[1]); var en=e[2]?toMin(e[2]):null;
-    var dur=(s!=null)?(((en!=null&&en>s)?en:endMin)-s)/60:0;
+    var badEnd=!!(e[2]&&(en==null||(s!=null&&en<=s)));
+    var dur=badEnd?0:((s!=null)?(((en!=null&&en>s)?en:endMin)-s)/60:0);
     var opts=CATS.map(function(c){return '<option value="'+c+'"'+(c===e[0]?" selected":"")+'>'+c+'</option>';}).join("");
     var tr=document.createElement("tr");
-    var typeSel='<select onchange="updEType('+i+',this.value)" title="Lost-time type for this event. Auto follows the category default; pick one to set this event." style="font-size:11px;padding:2px">'+
+    var typeSel=(e[0]==="Maintenance")
+      ? '<span class="sub" title="Maintenance allowance events are classified under contract clause 1.8. Covered hours are not downtime.">Maintenance<br>(clause 1.8)</span>'
+      : '<select onchange="updEType('+i+',this.value)" title="Lost-time type for this event. Auto follows the category default; pick one to set this event." style="font-size:11px;padding:2px">'+
       '<option value=""'+((e[5]==="DT"||e[5]==="NPT"||e[5]==="OTHER")?"":" selected")+'>Auto ('+catType(e[0])+')</option>'+
       '<option value="DT"'+(e[5]==="DT"?" selected":"")+'>Downtime</option>'+
       '<option value="NPT"'+(e[5]==="NPT"?" selected":"")+'>NPT</option>'+
       '<option value="OTHER"'+(e[5]==="OTHER"?" selected":"")+'>Other</option></select>';
+    var affD=evAffDefault(e[0]);
+    var affV=(e[7]==="R1"||e[7]==="R2"||e[7]==="BOTH"||e[7]==="NONE")?e[7]:"";
+    var affLbl={R1:"R1",R2:"R2",BOTH:"Both",NONE:"\u2013"};
+    var affSel='<select onchange="updE('+i+',7,this.value)" title="Which ROV this event takes out. Drives the ROV availability view on the dashboard. Auto follows the category." style="font-size:11px;padding:2px">'+
+      '<option value=""'+(affV===""?" selected":"")+'>Auto ('+affLbl[affD]+')</option>'+
+      '<option value="R1"'+(affV==="R1"?" selected":"")+'>R1</option>'+
+      '<option value="R2"'+(affV==="R2"?" selected":"")+'>R2</option>'+
+      '<option value="BOTH"'+(affV==="BOTH"?" selected":"")+'>Both</option>'+
+      '<option value="NONE"'+(affV==="NONE"?" selected":"")+'>None</option></select>';
     tr.innerHTML='<td class="tw" style="box-shadow:inset 3px 0 0 '+(CCOL[e[0]]||"#999")+'"><select onchange="updE('+i+',0,this.value)">'+opts+'</select></td>'+
       '<td class="tw"><input value="'+esc(e[1])+'" onchange="updE('+i+',1,this.value)">'+(e[4]?'<div class="sub" style="font-size:9px;text-align:center">'+esc(e[4])+'</div>':'')+'</td>'+
       '<td class="tw"><input value="'+esc(e[2])+'" placeholder="ongoing" onchange="updE('+i+',2,this.value)"></td>'+
       '<td class="tw">'+typeSel+'</td>'+
-      '<td class="num">'+r2(dur).toFixed(2)+(e[2]?"":"&nbsp;→")+'</td>'+
+      '<td class="tw">'+affSel+'</td>'+
+      '<td class="num">'+r2(dur).toFixed(2)+(badEnd?' <span style="color:#c0392b;font-weight:700" title="End is not after start. This event is excluded from all totals until fixed.">check</span>':(e[2]?"":"&nbsp;→"))+'</td>'+
       '<td><textarea onchange="updE('+i+',3,this.value)">'+esc(e[3])+'</textarea></td>'+
       '<td class="noprint"><button class="btn danger" title="Delete" onclick="delE('+i+')">✕</button></td>';
     eb.appendChild(tr);
@@ -779,6 +852,7 @@ function renderBreakdown(key){
   document.getElementById("dayTally").innerHTML=
     '<div class="tbox"><div class="k">Day length</div><div class="v">'+r2(st.len).toFixed(2)+'<small> h</small></div></div>'+
     '<div class="tbox"><div class="k">Actual downtime</div><div class="v" style="color:#dd3b40">'+r2(st.dt).toFixed(2)+'<small> h</small></div></div>'+
+    '<div class="tbox"><div class="k">Maintenance</div><div class="v" style="color:#4c9a6a">'+r2(st.maint||0).toFixed(2)+'<small> h</small></div></div>'+
     '<div class="tbox"><div class="k">Non-productive (NPT)</div><div class="v" style="color:#c98a2a">'+r2(st.npt).toFixed(2)+'<small> h</small></div></div>'+
     '<div class="tbox"><div class="k">Other</div><div class="v" style="color:#7a7a7a">'+r2(st.other||0).toFixed(2)+'<small> h</small></div></div>'+
     '<div class="tbox"><div class="k">Clear running</div><div class="v" style="color:#0f9bad">'+r2(st.clear).toFixed(2)+'<small> h</small></div></div>'+
@@ -787,7 +861,7 @@ function renderBreakdown(key){
   var lt=document.getElementById("ltClassify");
   if(lt){ lt.innerHTML=""; }  /* B1: classification moved onto each event line (Lost-time type column) */
   var ch=document.getElementById("catChips"); ch.innerHTML="";
-  CATS.forEach(function(c){ if(st.cats[c]){ ch.insertAdjacentHTML("beforeend",'<span class="catchip"><span class="dot" style="background:'+CCOL[c]+'"></span>'+c+' · '+r2(st.cats[c]).toFixed(1)+'h <span class="sub" style="font-size:10px">'+catType(c)+'</span></span>'); } });
+  CATS.forEach(function(c){ if(st.cats[c]){ ch.insertAdjacentHTML("beforeend",'<span class="catchip"><span class="dot" style="background:'+CCOL[c]+'"></span>'+c+' · '+r2(st.cats[c]).toFixed(1)+'h'+(catType(c)==="MAINT"?"":' <span class="sub" style="font-size:10px">'+catType(c)+'</span>')+'</span>'); } });
   var wh=wbsHours(key); var wc=document.getElementById("wbsChips"); wc.innerHTML="";
   Object.keys(wh).sort().forEach(function(w){ var nm=wbsName(w); wc.insertAdjacentHTML("beforeend",'<span class="catchip" title="'+esc(nm)+'"><b>WBS '+esc(w)+'</b>&nbsp;· '+r2(wh[w]).toFixed(1)+'h</span>'); });
   var lw=document.getElementById("laneWrap"); lw.innerHTML="";
@@ -815,7 +889,7 @@ function setEnd(v){ if(guardLocked()) return; data[curKey()].end=v; save(); rend
 function newDay(){ var d=prompt("New day (YYYY-MM-DD):", new Date().toISOString().slice(0,10)); if(!d) return; if(!data[d]) data[d]={end:"24:00",log:[["00:00",""]],ev:[]}; save(); fillDaySelect(); document.getElementById("daySelect").value=d; renderLog(); }
 function deleteDay(){ var key=curKey(); if(guardLocked(key)) return; if(Object.keys(data).length<=1){ alert("Keep at least one day."); return; } if(confirm("Delete "+fmtDay(key)+"?")){ delete data[key]; save(); renderLog(); } }
 
-var KW=[["ROV - Asset 2",/rov ?2/i],["ROV - Asset 1",/rov ?1|\btms\b|\bt4\b|umbilical|tether/i],["Weather",/weather|\bwow\b|swell|wave|wind|storm|cyclone/i],["Crane",/crane|lift(ing)?|deck ops/i],["Vessel",/vessel|\bdp\b|engine|thruster|beacon|gangway|bridge/i],["Tooling",/tool|grinder|ring ?saw|cutter|blade|hose|fit ?up|hot ?stab|dredge|jetter/i],["Scheduling",/schedul|waiting|wait on|standby|stand ?by|delay|no work|permit/i]];
+var KW=[["Maintenance",/maintenan|preventat|greas|lubric|servic/i],["ROV - Asset 2",/rov ?2/i],["ROV - Asset 1",/rov ?1|\btms\b|\bt4\b|umbilical|tether/i],["Weather",/weather|\bwow\b|swell|wave|wind|storm|cyclone/i],["Crane",/crane|lift(ing)?|deck ops/i],["Vessel",/vessel|\bdp\b|engine|thruster|beacon|gangway|bridge/i],["Tooling",/tool|grinder|ring ?saw|cutter|blade|hose|fit ?up|hot ?stab|dredge|jetter/i],["Scheduling",/schedul|waiting|wait on|standby|stand ?by|delay|no work|permit/i]];
 function guessCat(t){ t=t||""; for(var i=0;i<KW.length;i++){ if(KW[i][1].test(t)) return KW[i][0]; } return "Other"; }
 function flagRow(i){
   var key=curKey(); if(guardLocked(key)) return; var L=data[key].log; var row=L[i]; var t=row[0]||""; var desc=(row[1]||"").slice(0,100);
@@ -879,24 +953,51 @@ function setRangePreset(p){
   renderDash();
 }
 /* Build the 24-hour timeline for one day: DT / NPT / Other laid on the clock, gaps = clear running. */
-function build24Bar(key,compact){
+function build24Bar(key,compact,mode){
   if(!key||!data[key]) return '<div class="sub">No day selected.</div>';
   var st=dayStats(key); var endMin=st.endMin||1440;
-  /* classify each minute-span by effective type using the event spans already computed */
-  var dtIv=mergeIv(st.sp.filter(function(x){return x.type==="DT";}));
-  var nptIv=subIv(mergeIv(st.sp.filter(function(x){return x.type==="NPT";})),dtIv);
-  var othIv=subIv(subIv(mergeIv(st.sp.filter(function(x){return x.type==="OTHER";})),dtIv),nptIv);
   function segs(iv,color,label){ return iv.map(function(v){
     var left=v.s/endMin*100, w=(v.e-v.s)/endMin*100;
     return '<div class="seg24" style="left:'+left+'%;width:'+w+'%;background:'+color+'" title="'+label+' '+min2t(v.s)+'–'+min2t(v.e)+'"></div>';
   }).join(""); }
-  var bars=segs(dtIv,"#dd3b40","Downtime")+segs(nptIv,"#c98a2a","NPT")+segs(othIv,"#8C8C8C","Other");
-  /* hour gridlines every 2h */
   var grid=""; for(var h=2;h<24;h+=2){ grid+='<i style="left:'+(h*60/endMin*100)+'%"></i>'; }
   var axis='<div class="bar24axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>'+min2t(endMin)+'</span></div>';
+  if(mode==="rov"){
+    /* W1: ROV availability view. A lane is red where any event whose ROV impact covers that
+       ROV is running (any lost-time type), green where the ROV is working. */
+    function downIv(lane){ return mergeIv(st.sp.filter(function(x){ return x.aff===lane||x.aff==="BOTH"; })); }
+    function comp(iv){ return subIv([{s:0,e:endMin}],iv); }
+    function ivInt(a,b){ return subIv(a,comp(b)); }
+    var d1=downIv("R1"), d2=downIv("R2");
+    var w1=comp(d1), w2=comp(d2);
+    var both=ivInt(w1,w2), none=ivInt(d1,d2);
+    var bothH=ivMin(both)/60, noneH=ivMin(none)/60;
+    var oneH=Math.max(0,(endMin/60)-bothH-noneH);
+    function lane(label,wIv,dIv){
+      return '<div class="rovlanewrap"><span class="rovlanelabel sub">'+label+'</span>'+
+        '<div class="bar24 rovlane"><div class="bar24grid">'+grid+'</div>'+
+        segs(wIv,"#2fae54",label+" working")+segs(dIv,"#dd3b40",label+" down")+
+        '</div></div>';
+    }
+    var lanes=lane("ROV 1",w1,d1)+lane("ROV 2",w2,d2);
+    var tot='<div class="bar24tot">'+
+      '<div class="tbox"><div class="k">2 ROVs working</div><div class="v" style="color:#1e7d34">'+r2(bothH).toFixed(2)+'<small> h</small></div></div>'+
+      '<div class="tbox"><div class="k">1 ROV working</div><div class="v" style="color:#b9822b">'+r2(oneH).toFixed(2)+'<small> h</small></div></div>'+
+      '<div class="tbox"><div class="k">No ROV working</div><div class="v" style="color:#c0392b">'+r2(noneH).toFixed(2)+'<small> h</small></div></div>'+
+      '</div>';
+    if(compact) return '<div class="bar24wrap">'+lanes+axis+'</div>';
+    return '<div class="bar24wrap">'+lanes+axis+tot+'</div>';
+  }
+  /* Critical path view: classify each minute-span by effective type. Precedence DT > MAINT > NPT > OTHER. */
+  var dtIv=mergeIv(st.sp.filter(function(x){return x.type==="DT";}));
+  var maintIv=subIv(mergeIv(st.sp.filter(function(x){return x.type==="MAINT";})),dtIv);
+  var nptIv=subIv(subIv(mergeIv(st.sp.filter(function(x){return x.type==="NPT";})),dtIv),maintIv);
+  var othIv=subIv(subIv(subIv(mergeIv(st.sp.filter(function(x){return x.type==="OTHER";})),dtIv),maintIv),nptIv);
+  var bars=segs(dtIv,"#dd3b40","Downtime")+segs(maintIv,"#4c9a6a","Maintenance")+segs(nptIv,"#c98a2a","NPT")+segs(othIv,"#8C8C8C","Other");
   var tot='<div class="bar24tot">'+
     '<div class="tbox"><div class="k">Day length</div><div class="v">'+r2(st.len).toFixed(2)+'<small> h</small></div></div>'+
     '<div class="tbox"><div class="k">Actual downtime</div><div class="v" style="color:#dd3b40">'+r2(st.dt).toFixed(2)+'<small> h</small></div></div>'+
+    '<div class="tbox"><div class="k">Maintenance</div><div class="v" style="color:#4c9a6a">'+r2(st.maint||0).toFixed(2)+'<small> h</small></div></div>'+
     '<div class="tbox"><div class="k">NPT</div><div class="v" style="color:#c98a2a">'+r2(st.npt).toFixed(2)+'<small> h</small></div></div>'+
     '<div class="tbox"><div class="k">Other</div><div class="v" style="color:#7a7a7a">'+r2(st.other||0).toFixed(2)+'<small> h</small></div></div>'+
     '<div class="tbox"><div class="k">Clear running</div><div class="v" style="color:#0f9bad">'+r2(st.clear).toFixed(2)+'<small> h</small></div></div>'+
@@ -905,6 +1006,35 @@ function build24Bar(key,compact){
   return '<div class="bar24wrap"><div class="bar24"><div class="bar24grid">'+grid+'</div>'+bars+'</div>'+axis+tot+'</div>';
 }
 
+/* W2: maintenance allowance per contract clause 1.8, calendar-month basis.
+   DECISION POINT (Shaun, 14 Jul 2026, to be confirmed with Jed): periods are calendar
+   months, not rolling 30-day windows. If Jed rules rolling, only this function changes.
+   Rules implemented:
+   - accrues 2 h for each logged day of offshore operations, in date order;
+   - accrual capped at 48 h per calendar month;
+   - balance resets at the start of each calendar month, unused hours lapse;
+   - maintenance draws only what has accrued to date (no retrospective cover);
+   - hours only, no rates;
+   - month maintenance beyond accrued or beyond the 48 h cap is flagged. */
+function maCalc(){
+  var keys=allDayKeys();
+  var days={}, months={};
+  var mon=null, idx=0, usedCum=0, maintCum=0, accrued=0;
+  keys.forEach(function(k){
+    var m=k.slice(0,7);
+    if(m!==mon){ mon=m; idx=0; usedCum=0; maintCum=0; }
+    idx++;
+    accrued=Math.min(2*idx,48);
+    var mt=r2(dayStats(k).maint||0);
+    var covered=Math.min(mt, Math.max(0, r2(accrued-usedCum)));
+    usedCum=r2(usedCum+covered);
+    maintCum=r2(maintCum+mt);
+    var excess=r2(Math.max(0,maintCum-usedCum));
+    days[k]={maint:mt, accrued:accrued, used:usedCum, bal:r2(accrued-usedCum), excess:excess, overAccr:excess>0.005, over48:maintCum>48.005};
+    months[m]={accrued:accrued, maint:maintCum, used:usedCum, excess:excess, overAccr:excess>0.005, over48:maintCum>48.005, days:idx};
+  });
+  return {days:days, months:months};
+}
 function renderDash(){
   /* Batch 2: populate the 24h bar day-picker (default to latest logged day) */
   var allKeys=allDayKeys();
@@ -916,7 +1046,7 @@ function renderDash(){
     else if(allKeys.length) bd.value=allKeys[allKeys.length-1];   /* latest by default */
   }
   var barKey=bd?bd.value:(allKeys.length?allKeys[allKeys.length-1]:"");
-  var db=document.getElementById("dayBar24"); if(db) db.innerHTML=build24Bar(barKey);
+  var db=document.getElementById("dayBar24"); if(db) db.innerHTML=build24Bar(barKey,false,VIEW24);
 
   /* Batch 2: everything below respects the date range */
   var keys=keysInRange();
@@ -925,34 +1055,55 @@ function renderDash(){
     if(!RANGE.from && !RANGE.to) rs.textContent=keys.length+" day"+(keys.length===1?"":"s")+" · full campaign";
     else rs.textContent=keys.length+" day"+(keys.length===1?"":"s")+" · "+(RANGE.from?fmtDay(RANGE.from):"start")+" → "+(RANGE.to?fmtDay(RANGE.to):"latest");
   }
+  var sg=document.getElementById("view24Seg");
+  if(sg){ Array.prototype.forEach.call(sg.querySelectorAll(".segbtn"),function(b){ b.classList.toggle("active",b.getAttribute("data-v")===VIEW24); }); }
+  var vn=document.getElementById("view24Note");
+  if(vn) vn.textContent=(VIEW24==="rov")?"Green is working, red is not working. Set each event's ROV impact in the ROV column on the Daily Log.":"";
+  var MA=maCalc();
   var stats=keys.map(function(k){ var s=dayStats(k); s.k=k; return s; });
-  var tU=0,tDT=0,tNPT=0,tC=0,tE=0,agg={};
-  stats.forEach(function(s){ tU+=s.union; tDT+=s.dt; tNPT+=s.npt; tC+=s.clear; tE+=s.count; for(var c in s.cats) agg[c]=(agg[c]||0)+s.cats[c]; });
+  var tU=0,tDT=0,tM=0,tNPT=0,tC=0,tE=0,agg={};
+  stats.forEach(function(s){ tU+=s.union; tDT+=s.dt; tM+=(s.maint||0); tNPT+=s.npt; tC+=s.clear; tE+=s.count; for(var c in s.cats) agg[c]=(agg[c]||0)+s.cats[c]; });
   document.getElementById("kpiCards").innerHTML=
     kpi("Days logged",keys.length,"")+
     kpi("Actual downtime",r2(tDT).toFixed(1)+"<small> h</small>","#dd3b40")+
+    kpi("Maintenance",r2(tM).toFixed(1)+"<small> h</small>","#4c9a6a")+
     kpi("Non-productive (NPT)",r2(tNPT).toFixed(1)+"<small> h</small>","#c98a2a")+
     kpi("Clear running",r2(tC).toFixed(1)+"<small> h</small>","#0f9bad")+
     kpi("Events logged",tE,"")+
     kpi("Worst category",'<span style="font-size:15px">'+worstCat(agg)+'</span>',"");
-  var pares=Object.keys(agg).map(function(c){return [c,agg[c]];}).sort(function(a,b){return b[1]-a[1];});
+  var pares=Object.keys(agg).filter(function(c){return c!=="Maintenance";}).map(function(c){return [c,agg[c]];}).sort(function(a,b){return b[1]-a[1];});
   var maxP=pares.length?pares[0][1]:1;
   var pc=document.getElementById("paretoChart"); pc.innerHTML="";
   if(!pares.length) pc.innerHTML='<div class="sub">No events logged.</div>';
   pares.forEach(function(p){ pc.appendChild(htmlRow(p[0],'<div class="track"><div class="seg" style="width:'+(p[1]/maxP*100)+'%;background:'+(CCOL[p[0]]||"#999")+'"></div></div>',r2(p[1]).toFixed(1)+"h")); });
   var lg=document.getElementById("catLegend"); lg.innerHTML="";
-  CATS.forEach(function(c){ if(agg[c]) lg.insertAdjacentHTML("beforeend",'<span class="catchip"><span class="dot" style="background:'+CCOL[c]+'"></span>'+c+'</span>'); });
+  CATS.forEach(function(c){ if(c!=="Maintenance"&&agg[c]) lg.insertAdjacentHTML("beforeend",'<span class="catchip"><span class="dot" style="background:'+CCOL[c]+'"></span>'+c+'</span>'); });
   var dc=document.getElementById("dailyChart"); dc.innerHTML="";
   stats.forEach(function(s){
     var sum=0; for(var c in s.cats) sum+=s.cats[c];
     var scale=Math.max(s.len,sum)||1; var segsH="";
-    CATS.forEach(function(c){ if(s.cats[c]) segsH+='<div class="seg" style="width:'+(s.cats[c]/scale*100)+'%;background:'+CCOL[c]+'" title="'+c+' '+r2(s.cats[c])+'h"></div>'; });
+    CATS.forEach(function(c){ if(c==="Maintenance") return; if(s.cats[c]) segsH+='<div class="seg" style="width:'+(s.cats[c]/scale*100)+'%;background:'+CCOL[c]+'" title="'+c+' '+r2(s.cats[c])+'h"></div>'; });
     dc.appendChild(htmlRow(fmtDay(s.k),'<div class="stack">'+segsH+'</div>',r2(s.dt).toFixed(1)+" DT / "+r2(s.npt).toFixed(1)+" NPT"));
   });
   var rb=document.getElementById("rollupBody"); rb.innerHTML="";
-  stats.forEach(function(s){ rb.insertAdjacentHTML("beforeend",'<tr><td>'+fmtDay(s.k)+'</td><td class="num">'+r2(s.len).toFixed(2)+'</td><td class="num">'+s.count+'</td><td class="num">'+r2(s.dt).toFixed(2)+'</td><td class="num">'+r2(s.npt).toFixed(2)+'</td><td class="num">'+r2(s.other||0).toFixed(2)+'</td><td class="num">'+r2(s.clear).toFixed(2)+'</td><td>'+worstCat(s.cats)+'</td></tr>'); });
+  stats.forEach(function(s){
+    var md=MA.days[s.k]||{maint:0,used:0,bal:0,overAccr:false,over48:false};
+    var flag=md.overAccr?' <span style="color:#c0392b;font-weight:700" title="Maintenance this month exceeds the accrued allowance. Excess hours are not covered by clause 1.8.">&#9650;</span>':"";
+    var usedStyle=md.over48?' style="color:#c0392b;font-weight:700"':'';
+    rb.insertAdjacentHTML("beforeend",'<tr><td>'+fmtDay(s.k)+'</td><td class="num">'+r2(s.len).toFixed(2)+'</td><td class="num">'+s.count+'</td><td class="num">'+r2(s.dt).toFixed(2)+'</td><td class="num">'+r2(s.npt).toFixed(2)+'</td><td class="num">'+r2(s.other||0).toFixed(2)+'</td><td class="num">'+r2(s.clear).toFixed(2)+'</td><td class="num">'+r2(md.maint).toFixed(2)+'</td><td class="num"'+usedStyle+'>'+r2(md.used).toFixed(2)+'</td><td class="num">'+r2(md.bal).toFixed(2)+flag+'</td><td>'+worstCat(s.cats)+'</td></tr>');
+  });
   var tL=0,tO=0; stats.forEach(function(s){ tL+=s.len; tO+=(s.other||0); });
-  document.getElementById("rollupFoot").innerHTML='<tr style="font-weight:800"><td>TOTAL</td><td class="num">'+r2(tL).toFixed(2)+'</td><td class="num">'+tE+'</td><td class="num">'+r2(tDT).toFixed(2)+'</td><td class="num">'+r2(tNPT).toFixed(2)+'</td><td class="num">'+r2(tO).toFixed(2)+'</td><td class="num">'+r2(tC).toFixed(2)+'</td><td>'+worstCat(agg)+'</td></tr>';
+  document.getElementById("rollupFoot").innerHTML='<tr style="font-weight:800"><td>TOTAL</td><td class="num">'+r2(tL).toFixed(2)+'</td><td class="num">'+tE+'</td><td class="num">'+r2(tDT).toFixed(2)+'</td><td class="num">'+r2(tNPT).toFixed(2)+'</td><td class="num">'+r2(tO).toFixed(2)+'</td><td class="num">'+r2(tC).toFixed(2)+'</td><td class="num">'+r2(tM).toFixed(2)+'</td><td class="num sub" title="Used and balance are month-to-date figures; read them on the day rows">&ndash;</td><td class="num sub" title="Used and balance are month-to-date figures; read them on the day rows">&ndash;</td><td>'+worstCat(agg)+'</td></tr>';
+  var mb=document.getElementById("maBanner");
+  if(mb){
+    var flagged=[]; var seenM={};
+    keys.forEach(function(k){ var m=k.slice(0,7); if(seenM[m]) return; seenM[m]=1; var mm=MA.months[m]; if(mm&&mm.overAccr) flagged.push({m:m,mm:mm}); });
+    mb.innerHTML=flagged.length? flagged.map(function(f){
+      var MN=["January","February","March","April","May","June","July","August","September","October","November","December"];
+      var lbl=MN[parseInt(f.m.slice(5,7),10)-1]+" "+f.m.slice(0,4);
+      return '<div class="insight" style="margin-top:8px;background:#fdecea;border-left:3px solid #c0392b;padding:10px 12px;border-radius:0 4px 4px 0;color:#7a1f17"><b>Maintenance allowance exceeded, '+esc(lbl)+':</b> '+r2(f.mm.maint).toFixed(1)+' h of maintenance against '+r2(f.mm.accrued).toFixed(0)+' h accrued (cap 48 h per calendar month). The excess '+r2(f.mm.excess).toFixed(1)+' h is not covered by clause 1.8 and stands as downtime for Santos reporting.</div>';
+    }).join("") : "";
+  }
 
   /* Batch 2: per-day breakdown (with events listed) for the selected range */
   renderPerDay(stats);
@@ -965,18 +1116,19 @@ function renderPerDay(stats){
   if(!stats.length){ pd.innerHTML='<div class="sub">No days in the selected period.</div>'; }
   else {
     pd.innerHTML=stats.map(function(s){
-      var bar=build24Bar(s.k, true);   /* compact bar, no totals grid */
+      var bar=build24Bar(s.k, true, VIEW24);   /* compact bar, no totals grid */
       var evs=(data[s.k]&&data[s.k].ev)?data[s.k].ev.slice():[];
       evs.sort(function(a,b){ return (toMin(a[1])||0)-(toMin(b[1])||0); });
       var rows=evs.length? evs.map(function(e){
         var s2=toMin(e[1]), en=e[2]?toMin(e[2]):(s.endMin||1440);
-        var dur=(en!=null&&s2!=null)?((en>s2?en:(s.endMin||1440))-s2)/60:0;
-        var ty=evType(e);
-        return '<tr><td class="tw">'+esc(e[1]||"")+'</td><td class="tw">'+esc(e[2]||"ongoing")+'</td><td>'+esc(e[0]||"")+'</td><td class="tw">'+ty+'</td><td class="num">'+r2(dur).toFixed(2)+'</td><td>'+esc(e[3]||"")+'</td></tr>';
+        var badEnd=!!(e[2]&&(en==null||(s2!=null&&en<=s2)));
+        var dur=badEnd?0:((en!=null&&s2!=null)?((en>s2?en:(s.endMin||1440))-s2)/60:0);
+        var ty={DT:"DT",NPT:"NPT",MAINT:"Maint",OTHER:"Other"}[evType(e)]||evType(e);
+        return '<tr><td class="tw">'+esc(e[1]||"")+'</td><td class="tw">'+esc(e[2]||"ongoing")+'</td><td>'+esc(e[0]||"")+'</td><td class="tw">'+ty+'</td><td class="num">'+r2(dur).toFixed(2)+(badEnd?' <span style="color:#c0392b" title="End is not after start; excluded from totals">check</span>':'')+'</td><td>'+esc(e[3]||"")+'</td></tr>';
       }).join("") : '<tr><td colspan="6" class="sub">No events logged.</td></tr>';
       return '<div class="perday-day">'+
         '<h4>'+fmtDay(s.k)+'</h4>'+
-        '<div class="pd-tot">Day '+r2(s.len).toFixed(2)+'h · DT '+r2(s.dt).toFixed(2)+'h · NPT '+r2(s.npt).toFixed(2)+'h · Other '+r2(s.other||0).toFixed(2)+'h · Clear '+r2(s.clear).toFixed(2)+'h · '+s.count+' event'+(s.count===1?"":"s")+'</div>'+
+        '<div class="pd-tot">Day '+r2(s.len).toFixed(2)+'h · DT '+r2(s.dt).toFixed(2)+'h · Maint '+r2(s.maint||0).toFixed(2)+'h · NPT '+r2(s.npt).toFixed(2)+'h · Other '+r2(s.other||0).toFixed(2)+'h · Clear '+r2(s.clear).toFixed(2)+'h · '+s.count+' event'+(s.count===1?"":"s")+'</div>'+
         bar+
         '<table style="margin-top:8px"><thead><tr><th class="tw">Start</th><th class="tw">End</th><th>Category</th><th class="tw">Type</th><th class="num">Dur h</th><th>Description</th></tr></thead><tbody>'+rows+'</tbody></table>'+
         '</div>';
@@ -995,8 +1147,8 @@ function buildReportBlocks(){
   var genStr=gen.toLocaleDateString("en-GB")+" "+gen.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
 
   /* aggregate totals across the range */
-  var tL=0,tDT=0,tNPT=0,tO=0,tC=0,tE=0,agg={};
-  keys.forEach(function(k){ var st=dayStats(k); tL+=st.len; tDT+=st.dt; tNPT+=st.npt; tO+=(st.other||0); tC+=st.clear; tE+=st.count;
+  var tL=0,tDT=0,tM=0,tNPT=0,tO=0,tC=0,tE=0,agg={};
+  keys.forEach(function(k){ var st=dayStats(k); tL+=st.len; tDT+=st.dt; tM+=(st.maint||0); tNPT+=st.npt; tO+=(st.other||0); tC+=st.clear; tE+=st.count;
     for(var c in st.cats) agg[c]=(agg[c]||0)+st.cats[c]; });
   var lostTotal=tDT+tNPT+tO;
   var dtPct=tL>0?(tDT/tL*100):0, lostPct=tL>0?(lostTotal/tL*100):0;
@@ -1031,6 +1183,7 @@ function buildReportBlocks(){
       '<div class="sumstrip">'+
         '<div class="s"><div class="sk">Period hours</div><div class="sv">'+r2(tL).toFixed(1)+'<small> h</small></div></div>'+
         '<div class="s"><div class="sk">Actual downtime</div><div class="sv" style="color:#c0392b">'+r2(tDT).toFixed(1)+'<small> h</small></div></div>'+
+        '<div class="s"><div class="sk">Maintenance</div><div class="sv" style="color:#3a7a52">'+r2(tM).toFixed(1)+'<small> h</small></div></div>'+
         '<div class="s"><div class="sk">NPT</div><div class="sv" style="color:#b9822b">'+r2(tNPT).toFixed(1)+'<small> h</small></div></div>'+
         '<div class="s"><div class="sk">Other</div><div class="sv" style="color:#666">'+r2(tO).toFixed(1)+'<small> h</small></div></div>'+
         '<div class="s"><div class="sk">Clear running</div><div class="sv" style="color:#0f7d8a">'+r2(tC).toFixed(1)+'<small> h</small></div></div>'+
@@ -1050,14 +1203,74 @@ function buildReportBlocks(){
   /* ----- per-day bar legend ----- */
   var pl=document.getElementById("perDayLegend");
   if(pl){
-    pl.innerHTML='<div class="barlegend">'+
-      '<span class="lg"><span class="sw" style="background:#dd3b40"></span>Actual downtime</span>'+
-      '<span class="lg"><span class="sw" style="background:#c98a2a"></span>Non-productive (NPT)</span>'+
-      '<span class="lg"><span class="sw" style="background:#8C8C8C"></span>Other</span>'+
-      '<span class="lg"><span class="sw" style="background:#f2eee4;border:1px solid #d8d2c4"></span>Clear running</span>'+
-      '</div>';
+    pl.innerHTML=(VIEW24==="rov")
+      ? '<div class="barlegend">'+
+        '<span class="lg"><span class="sw" style="background:#2fae54"></span>ROV working</span>'+
+        '<span class="lg"><span class="sw" style="background:#dd3b40"></span>ROV not working</span>'+
+        '</div>'
+      : '<div class="barlegend">'+
+        '<span class="lg"><span class="sw" style="background:#dd3b40"></span>Actual downtime</span>'+
+        '<span class="lg"><span class="sw" style="background:#4c9a6a"></span>Maintenance</span>'+
+        '<span class="lg"><span class="sw" style="background:#c98a2a"></span>Non-productive (NPT)</span>'+
+        '<span class="lg"><span class="sw" style="background:#8C8C8C"></span>Other</span>'+
+        '<span class="lg"><span class="sw" style="background:#f2eee4;border:1px solid #d8d2c4"></span>Clear running</span>'+
+        '</div>';
   }
 
+}
+
+/* D2: build and print a formatted record of one day's log and events.
+   Client-facing text: Australian English, plain prose, no em dashes. */
+function buildDayRecord(key){
+  var rec=document.getElementById("dayRecord"); if(!rec) return false;
+  var day=data[key]; if(!day) return false;
+  var st=dayStats(key);
+  var effA=effWbs(day.log);
+  var gen=new Date();
+  var genStr=gen.toLocaleDateString("en-GB")+" "+gen.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+  var tmap={DT:"Downtime",NPT:"NPT",MAINT:"Maintenance",OTHER:"Other"};
+  var logRows=day.log.map(function(r,i){
+    var w=String(r[2]||"").trim(); var shown=w?esc(w):(effA[i]?('<span class="sub">&#8627; '+esc(effA[i])+'</span>'):"");
+    return '<tr><td class="num" style="white-space:nowrap">'+esc(r[0]||"")+'</td><td>'+esc(r[1]||"")+'</td><td style="white-space:nowrap">'+shown+'</td><td>'+esc(r[3]||"")+'</td></tr>';
+  }).join("") || '<tr><td colspan="4" class="sub">No log lines.</td></tr>';
+  var evs=day.ev.slice().map(function(e,i){return {e:e,i:i};});
+  evs.sort(function(a,b){ return (toMin(a.e[1])||0)-(toMin(b.e[1])||0); });
+  var endMin=st.endMin||1440;
+  var evRows=evs.map(function(o){ var e=o.e;
+    var s=toMin(e[1]); var en=e[2]?toMin(e[2]):null;
+    var badEnd=!!(e[2]&&(en==null||(s!=null&&en<=s)));
+    var dur=badEnd?0:((s!=null)?((((en!=null&&en>s)?en:endMin))-s)/60:0);
+    return '<tr><td>'+esc(e[0]||"")+'</td><td class="num">'+esc(e[1]||"")+'</td><td class="num">'+(e[2]?esc(e[2]):"ongoing")+'</td><td>'+(tmap[evType(e)]||"")+'</td><td class="num">'+r2(dur).toFixed(2)+(badEnd?' (end not after start; excluded)':'')+'</td><td>'+esc(e[3]||"")+'</td><td>'+esc(e[4]||"")+'</td></tr>';
+  }).join("") || '<tr><td colspan="7" class="sub">No events logged.</td></tr>';
+  var lockNote=isLocked(key)?" &middot; day locked at time of printing":"";
+  rec.innerHTML=
+    '<div class="rh-top">'+
+      '<div><div class="rh-brand">Project <span class="o">Event</span> Log</div>'+
+      '<div class="rh-brandsub">ENDURA ASSET INTELLIGENCE</div></div>'+
+      '<div class="rh-doc"><div class="rh-doctype">DAILY EVENT RECORD</div>'+
+      '<div class="rh-title">'+esc(fmtDay(key))+'</div></div>'+
+    '</div>'+
+    '<div class="rh-meta">'+
+      '<div class="m"><div class="mk">Project</div><div class="mv">'+esc(curProject())+'</div></div>'+
+      '<div class="m"><div class="mk">Day</div><div class="mv">'+esc(fmtDay(key))+'</div></div>'+
+      '<div class="m"><div class="mk">Day ends</div><div class="mv">'+esc(day.end||"24:00")+'</div></div>'+
+      '<div class="m"><div class="mk">Generated</div><div class="mv">'+esc(genStr)+'</div></div>'+
+    '</div>'+
+    '<h3 style="margin:14px 0 2px;font-size:11pt">Sequential daily log</h3>'+
+    '<table><thead><tr><th style="width:60px">Time</th><th>Entry</th><th style="width:90px">WBS</th><th style="width:56px">By</th></tr></thead><tbody>'+logRows+'</tbody></table>'+
+    '<h3 style="margin:10px 0 2px;font-size:11pt">Events</h3>'+
+    '<table><thead><tr><th style="width:110px">Category</th><th style="width:56px">Start</th><th style="width:62px">End</th><th style="width:86px">Type</th><th style="width:52px">Dur h</th><th>Description</th><th style="width:56px">By</th></tr></thead><tbody>'+evRows+'</tbody></table>'+
+    '<div class="drTotals">Day length <b>'+r2(st.len).toFixed(2)+' h</b> &middot; Actual downtime <b>'+r2(st.dt).toFixed(2)+' h</b> &middot; Maintenance <b>'+r2(st.maint||0).toFixed(2)+' h</b> &middot; NPT <b>'+r2(st.npt).toFixed(2)+' h</b> &middot; Other <b>'+r2(st.other||0).toFixed(2)+' h</b> &middot; Clear running <b>'+r2(st.clear).toFixed(2)+' h</b></div>'+
+    '<div class="drFoot">Official daily record produced from the Endura Asset Intelligence Project Event Log &middot; build '+APP_BUILD+lockNote+'. Times are vessel local. Maintenance hours are handled under contract clause 1.8 and are reported separately from downtime.</div>';
+  return true;
+}
+function printDayRecord(){
+  var key=curKey();
+  if(!key||!data[key]){ alert("No day selected."); return; }
+  if(!buildDayRecord(key)) return;
+  document.body.classList.add("printing-day");
+  window.print();
+  setTimeout(function(){ document.body.classList.remove("printing-day"); }, 500);
 }
 
 /* Apply chart preference and open the print dialog. */
@@ -1334,15 +1547,11 @@ function exportWbsCSV(){
   WBSL.forEach(function(w){ csv+=[w[0],q(w[1]),r2(t.tot[w[0]]||0),(t.days[w[0]]||0)].join(",")+"\n"; });
   dl(csv,"WBS_hours.csv");
 }
-function guessWbs(t){
-  t=" "+(t||"").toLowerCase()+" ";
-  for(var i=0;i<WBSL.length;i++){ var id=String(WBSL[i][0]||"").toLowerCase(); if(!id) continue;
-    var rx=new RegExp("(^|[^a-z0-9])"+id.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"([^a-z0-9]|$)");
-    if(rx.test(t)) return WBSL[i][0]; }
-  return "";
-}
+/* guessWbs removed (D1). Bare-integer MS Project IDs matched fragments like "@50%" and
+   "Lift #1", silently mis-tagging imported lines and corrupting WBS hour attribution. */
 
 var impParsed=[];
+function toggleAdmin(){ var a=document.getElementById("adminTools"); if(!a) return; a.style.display=(a.style.display==="none")?"":"none"; }
 function toggleImport(show){ document.getElementById("importPanel").style.display=show?"":"none"; if(show) document.getElementById("impPreview").innerHTML=""; }
 function pad2(h){ return String(+h).padStart(2,"0"); }
 function parseRaw(text){
@@ -1370,7 +1579,9 @@ function applyImport(){
   if(!impParsed.length) parsePreview();
   if(!impParsed.length) return;
   var key=curKey(); var clone=JSON.parse(JSON.stringify(impParsed));
-  clone.forEach(function(e){ e[2]=guessWbs(e[1]); e[3]=curUser(); });
+  /* D1 fix: WBS is never inferred from entry text. A WBS carried in from an upload column
+     is preserved; otherwise the field is left blank for the user to tag deliberately. */
+  clone.forEach(function(e){ e[2]=e[2]||""; e[3]=curUser(); });
   if(document.getElementById("impMode").value==="replace") data[key].log=clone;
   else clone.forEach(function(e){ data[key].log.push(e); });
   save(); document.getElementById("impText").value=""; impParsed=[]; toggleImport(false); renderLog();
@@ -1383,9 +1594,9 @@ function exportCSV(){
   var csv="LOG\nTime,Entry,WBS,By\n";
   var effA=effWbs(day.log);
   day.log.forEach(function(r,i){ csv+=r[0]+","+q(r[1])+","+(effA[i]||"")+","+(r[3]||"")+"\n"; });
-  csv+="\nEVENTS\nCategory,Start,End,Duration_h,Description,By\n";
-  st.sp.forEach(function(x){ csv+=[x.cat,min2t(x.s),(x.open?"ongoing":min2t(x.e)),r2(x.hrs),q(x.d),x.by||""].join(",")+"\n"; });
-  csv+="\nSUMMARY\nDay length h,"+r2(st.len)+"\nActual downtime h,"+r2(st.dt)+"\nNon-productive (NPT) h,"+r2(st.npt)+"\nClear h,"+r2(st.clear)+"\n";
+  csv+="\nEVENTS\nCategory,Start,End,Duration_h,Description,By,ROV_impact\n";
+  st.sp.forEach(function(x){ var e=day.ev[x.i]; var a=(e&&(e[7]==="R1"||e[7]==="R2"||e[7]==="BOTH"||e[7]==="NONE"))?e[7]:("auto:"+evAffDefault(x.cat)); csv+=[x.cat,min2t(x.s),(x.open?"ongoing":min2t(x.e)),r2(x.hrs),q(x.d),x.by||"",a].join(",")+"\n"; });
+  csv+="\nSUMMARY\nDay length h,"+r2(st.len)+"\nActual downtime h,"+r2(st.dt)+"\nMaintenance h,"+r2(st.maint||0)+"\nNon-productive (NPT) h,"+r2(st.npt)+"\nClear h,"+r2(st.clear)+"\n";
   for(var c in st.cats) csv+=c+" h,"+r2(st.cats[c])+"\n";
   var wh=wbsHours(key); var wk=Object.keys(wh);
   if(wk.length){ csv+="\nWBS HOURS\nWBS_ID,Activity,Hours\n"; wk.sort().forEach(function(w){ csv+=w+","+q(wbsName(w))+","+r2(wh[w])+"\n"; }); }
@@ -1394,8 +1605,11 @@ function exportCSV(){
 function exportRollupCSV(){
   /* Batch 2: export the SAME date range shown on the dashboard */
   var keys=keysInRange();
-  var csv="Day,Day_h,Events,Actual_DT_h,NPT_h,Other_h,Clear_h,"+CATS.join("_h,")+"_h\n";
-  keys.forEach(function(k){ var s=dayStats(k); var row=[fmtDay(k),r2(s.len),s.count,r2(s.dt),r2(s.npt),r2(s.other||0),r2(s.clear)]; CATS.forEach(function(c){ row.push(r2(s.cats[c]||0)); }); csv+=row.join(",")+"\n"; });
+  var MA=maCalc();
+  var csv="Day,Day_h,Events,Actual_DT_h,NPT_h,Other_h,Clear_h,Maint_h,MA_used_h,MA_balance_h,MA_flag,"+CATS.join("_h,")+"_h\n";
+  keys.forEach(function(k){ var s=dayStats(k); var md=MA.days[k]||{maint:0,used:0,bal:0,overAccr:false};
+    var row=[fmtDay(k),r2(s.len),s.count,r2(s.dt),r2(s.npt),r2(s.other||0),r2(s.clear),r2(md.maint),r2(md.used),r2(md.bal),(md.overAccr?"OVER":"")];
+    CATS.forEach(function(c){ row.push(r2(s.cats[c]||0)); }); csv+=row.join(",")+"\n"; });
   var tag=(RANGE.from||RANGE.to)?("_"+(RANGE.from||"start")+"_to_"+(RANGE.to||"latest")):"_full_campaign";
   dl(csv,"Events_rollup"+tag+".csv");
 }
@@ -1892,6 +2106,7 @@ function renderDprCompare(){
 
   var st=dayStats(key);
   var appDT=r2(st.dt), appNPT=r2(st.npt);
+  var maintNote=(st.maint>0.005)?'<div class="sub" style="margin:-4px 0 10px">Note: '+r2(st.maint).toFixed(2)+' h of maintenance on this day is excluded from app downtime under clause 1.8. If the contractor booked that time as downtime, expect the difference.</div>':"";
 
   /* DPR side: Weather+Mechanical are the headline downtime; Vessel+ROV are the ancillary equipment downtime. */
   var w=dprNum("dprWeather"), me=dprNum("dprMech"), ve=dprNum("dprVessel"), ro=dprNum("dprRov");
@@ -1919,7 +2134,7 @@ function renderDprCompare(){
     ? '<div class="insight" style="margin-bottom:12px;background:#fdecea;border-left:3px solid #c0392b;padding:10px 12px;border-radius:0 4px 4px 0;color:#7a1f17">The app and the contractor DPR do not fully agree on downtime for '+fmtDay(key)+'. Review the rows flagged below.</div>'
     : '<div class="insight" style="margin-bottom:12px;background:#eaf6ec;border-left:3px solid #1e7d34;padding:10px 12px;border-radius:0 4px 4px 0;color:#1e5b2a">The app and the contractor DPR agree on downtime for '+fmtDay(key)+'.</div>';
 
-  out.innerHTML=banner+
+  out.innerHTML=banner+maintNote+
     '<table><thead><tr><th>Comparison</th><th class="num">App (logged)</th><th class="num">DPR</th><th class="num">Diff (h)</th><th>Result</th></tr></thead><tbody>'+
     row("Downtime vs DPR Weather+Mechanical", appDT, dprSummaryDT, "DPR summary downtime = Weather ("+(w||0).toFixed(2)+") + Mechanical ("+(me||0).toFixed(2)+").")+
     row("Downtime vs DPR Vessel+ROV (ancillary)", appDT, dprAncDT, "DPR ancillary equipment downtime = Vessel ("+(ve||0).toFixed(2)+") + ROV ("+(ro||0).toFixed(2)+").")+
@@ -1946,5 +2161,6 @@ initCloud();
   </div>
   <!-- print-only DPR check record (outside main so print can isolate it) -->
   <div id="dprRecord" class="dpr-print-only"></div>
+  <div id="dayRecord" class="dpr-print-only"></div>
 </body>
 </html>
