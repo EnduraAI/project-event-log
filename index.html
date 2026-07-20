@@ -2164,7 +2164,7 @@ initCloud();
   <div id="dayRecord" class="dpr-print-only"></div>
 <!-- ============ PEL AGENT START (paste this whole block just before </body>) ============ -->
 <!-- "Ask the log" agent panel. Endura Asset Intelligence. Self-contained: scoped styles,
-     no app changes required. Talks only to /.netlify/functions/agent on this site. -->
+     no app changes required. Talks only to /api/agent on this site. -->
 <style>
 #pelA-btn{position:fixed;right:18px;bottom:18px;z-index:9998;width:52px;height:52px;border-radius:50%;
   border:none;background:#1A1A1A;color:#FAF7F1;font:700 11px/1.1 ui-monospace,Menlo,Consolas,monospace;
@@ -2226,8 +2226,8 @@ initCloud();
 <script>
 (function(){
   "use strict";
-  var ENDPOINT="/.netlify/functions/agent";
-  var MAX_DAYS=7;              // most recent days sent as context
+  var ENDPOINT="/api/agent";
+  var MAX_DAYS=7;               // most recent days sent as context
   var CLIENT_CTX_CAP=700000;    // char cap before we trim days client-side
   var hist=[];                  // {role, content} pairs for this page session
 
@@ -2314,7 +2314,7 @@ initCloud();
   }
 
   var busy=false;
-  function ask(q){
+  async function ask(q){
     q=(q||input.value).trim();
     if(!q||busy) return;
     input.value="";
@@ -2323,19 +2323,58 @@ initCloud();
     busy=true; send.disabled=true;
 
     var payload={ question:q, history:hist.slice(-12), context:collectContext() };
-    fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
-      .then(function(r){ return r.json().then(function(j){ return {ok:r.ok,j:j}; }); })
-      .then(function(res){
+    try{
+      var r=await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+      var ct=(r.headers.get("content-type")||"");
+      if(!r.ok || ct.indexOf("text/event-stream")<0){
+        var j=null; try{ j=await r.json(); }catch(e){}
         think.remove();
-        if(!res.ok || res.j.error){ add("pelA-err","Agent: "+(res.j.error||"request failed")); }
-        else{
-          add("pelA-m pelA-a",null,md(res.j.answer));
-          hist.push({role:"user",content:q},{role:"assistant",content:res.j.answer});
-          useEl.textContent=fmtUsage(res.j.usage)+(res.j.truncated?" \u00B7 older days trimmed":"");
+        add("pelA-err","Agent: "+((j&&j.error)||("request failed ("+r.status+")")));
+        return;
+      }
+      think.remove();
+      var bubble=add("pelA-m pelA-a",null,"");
+      var reader=r.body.getReader(), dec=new TextDecoder();
+      var buf="", full="", inTok=null, outTok=null, stopReason=null;
+      for(;;){
+        var step=await reader.read();
+        if(step.done) break;
+        buf+=dec.decode(step.value,{stream:true});
+        var parts=buf.split("\n\n"); buf=parts.pop();
+        for(var pi=0; pi<parts.length; pi++){
+          var lines=parts[pi].split("\n");
+          for(var li=0; li<lines.length; li++){
+            var line=lines[li];
+            if(line.indexOf("data:")!==0) continue;
+            var payloadStr=line.slice(5).trim();
+            if(!payloadStr) continue;
+            var ev; try{ ev=JSON.parse(payloadStr); }catch(e){ continue; }
+            if(ev.type==="message_start" && ev.message && ev.message.usage){ inTok=ev.message.usage.input_tokens; }
+            else if(ev.type==="content_block_delta" && ev.delta && ev.delta.type==="text_delta"){
+              full+=ev.delta.text; bubble.innerHTML=md(full); msgs.scrollTop=msgs.scrollHeight;
+            }
+            else if(ev.type==="message_delta"){
+              if(ev.usage && ev.usage.output_tokens!=null) outTok=ev.usage.output_tokens;
+              if(ev.delta && ev.delta.stop_reason) stopReason=ev.delta.stop_reason;
+            }
+            else if(ev.type==="error"){
+              full+=(full?"\n\n":"")+"[stream error: "+((ev.error&&ev.error.message)||"unknown")+"]";
+              bubble.innerHTML=md(full);
+            }
+          }
         }
-      })
-      .catch(function(){ think.remove(); add("pelA-err","Agent: network error"); })
-      .finally(function(){ busy=false; send.disabled=false; input.focus(); });
+      }
+      if(stopReason==="max_tokens"){ full+="\n\n[answer hit the length limit]"; bubble.innerHTML=md(full); }
+      if(!full){ bubble.remove(); add("pelA-err","Agent: empty stream"); }
+      else{
+        hist.push({role:"user",content:q},{role:"assistant",content:full});
+        if(inTok!=null) useEl.textContent=fmtUsage({input_tokens:inTok,output_tokens:(outTok||0)});
+      }
+    }catch(e){
+      think.remove(); add("pelA-err","Agent: network error");
+    }finally{
+      busy=false; send.disabled=false; input.focus();
+    }
   }
 
   send.addEventListener("click",function(){ ask(); });
