@@ -2227,7 +2227,7 @@ initCloud();
 (function(){
   "use strict";
   var ENDPOINT="/.netlify/functions/agent";
-  var MAX_DAYS=14;              // most recent days sent as context
+  var MAX_DAYS=7;              // most recent days sent as context
   var CLIENT_CTX_CAP=700000;    // char cap before we trim days client-side
   var hist=[];                  // {role, content} pairs for this page session
 
