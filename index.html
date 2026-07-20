@@ -2162,5 +2162,191 @@ initCloud();
   <!-- print-only DPR check record (outside main so print can isolate it) -->
   <div id="dprRecord" class="dpr-print-only"></div>
   <div id="dayRecord" class="dpr-print-only"></div>
+<!-- ============ PEL AGENT START (paste this whole block just before </body>) ============ -->
+<!-- "Ask the log" agent panel. Endura Asset Intelligence. Self-contained: scoped styles,
+     no app changes required. Talks only to /.netlify/functions/agent on this site. -->
+<style>
+#pelA-btn{position:fixed;right:18px;bottom:18px;z-index:9998;width:52px;height:52px;border-radius:50%;
+  border:none;background:#1A1A1A;color:#FAF7F1;font:700 11px/1.1 ui-monospace,Menlo,Consolas,monospace;
+  cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.28);letter-spacing:.5px}
+#pelA-btn i{display:block;width:8px;height:8px;margin:0 auto 4px;border-radius:50%;background:#E87722}
+#pelA-btn:hover{background:#000}
+#pelA{position:fixed;top:0;right:0;bottom:0;width:380px;max-width:94vw;z-index:9999;background:#FAF7F1;
+  border-left:1px solid #E5DECB;box-shadow:-8px 0 24px rgba(0,0,0,.18);display:flex;flex-direction:column;
+  transform:translateX(105%);transition:transform .22s ease;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#1A1A1A}
+#pelA.open{transform:translateX(0)}
+#pelA header{padding:12px 14px;border-bottom:2px solid #E87722;display:flex;align-items:center;gap:8px}
+#pelA header b{font:700 13px ui-monospace,Menlo,Consolas,monospace;letter-spacing:1.5px}
+#pelA header i{width:8px;height:8px;border-radius:50%;background:#E87722}
+#pelA header .pelA-x{margin-left:auto;background:none;border:none;font-size:16px;cursor:pointer;color:#8C8C8C}
+#pelA-quick{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 2px}
+#pelA-quick button{border:1px solid #D8A87C;background:#FDFBF7;border-radius:12px;padding:4px 9px;
+  font-size:11px;cursor:pointer;color:#1A1A1A}
+#pelA-quick button:hover{background:#FEF3E9;border-color:#E87722}
+#pelA-msgs{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:10px}
+.pelA-m{max-width:92%;padding:8px 11px;border-radius:10px;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word}
+.pelA-q{align-self:flex-end;background:#1A1A1A;color:#FAF7F1;border-bottom-right-radius:3px}
+.pelA-a{align-self:flex-start;background:#fff;border:1px solid #E5DECB;border-bottom-left-radius:3px}
+.pelA-a b{color:#B45309}
+.pelA-err{align-self:flex-start;background:#fff;border:1px solid #dd3b40;color:#a02020;font-size:12px;padding:8px 11px;border-radius:10px}
+.pelA-think{align-self:flex-start;color:#8C8C8C;font:11px ui-monospace,monospace;padding:2px 4px}
+#pelA-use{padding:0 14px 4px;font:10px ui-monospace,monospace;color:#8C8C8C;min-height:14px}
+#pelA-inrow{display:flex;gap:8px;padding:8px 12px;border-top:1px solid #E5DECB;background:#fff}
+#pelA-in{flex:1;resize:none;border:1px solid #D8D2C4;border-radius:8px;padding:8px 10px;font-size:12.5px;
+  font-family:inherit;height:44px;background:#FAF7F1}
+#pelA-in:focus{outline:none;border-color:#E87722}
+#pelA-send{border:none;background:#E87722;color:#fff;border-radius:8px;padding:0 14px;font-weight:700;cursor:pointer}
+#pelA-send:disabled{background:#D8A87C;cursor:wait}
+#pelA footer{padding:6px 14px 10px;font:10px ui-monospace,monospace;color:#8C8C8C;border-top:1px solid #F4EFE3;display:flex;justify-content:space-between;gap:8px}
+#pelA footer button{background:none;border:none;color:#8C8C8C;cursor:pointer;font:10px ui-monospace,monospace;text-decoration:underline}
+</style>
+
+<button id="pelA-btn" title="Ask the log" aria-label="Ask the log"><i></i>ASK</button>
+
+<aside id="pelA" aria-hidden="true">
+  <header><i></i><b>ASK&nbsp;THE&nbsp;LOG</b><button class="pelA-x" id="pelA-close" aria-label="Close">&#10005;</button></header>
+  <div id="pelA-quick">
+    <button data-q="How was performance today?">Performance today</button>
+    <button data-q="Total DT and NPT this week, and the main causes?">DT / NPT this week</button>
+    <button data-q="What happened on night shift last night, 00:00 to 06:00?">Night shift</button>
+    <button data-q="Draft a three-line shift summary for the project manager.">Draft PM summary</button>
+  </div>
+  <div id="pelA-msgs"></div>
+  <div id="pelA-use"></div>
+  <div id="pelA-inrow">
+    <textarea id="pelA-in" placeholder="Ask about the logged record&hellip;"></textarea>
+    <button id="pelA-send">&#8594;</button>
+  </div>
+  <footer>
+    <span>Answers from logged events only &middot; no claiming or completion figures</span>
+    <button id="pelA-clear" title="Clear conversation">clear</button>
+  </footer>
+</aside>
+
+<script>
+(function(){
+  "use strict";
+  var ENDPOINT="/.netlify/functions/agent";
+  var MAX_DAYS=14;              // most recent days sent as context
+  var CLIENT_CTX_CAP=700000;    // char cap before we trim days client-side
+  var hist=[];                  // {role, content} pairs for this page session
+
+  var btn=document.getElementById("pelA-btn"), panel=document.getElementById("pelA"),
+      msgs=document.getElementById("pelA-msgs"), input=document.getElementById("pelA-in"),
+      send=document.getElementById("pelA-send"), useEl=document.getElementById("pelA-use");
+
+  function open(v){ panel.classList.toggle("open",v); panel.setAttribute("aria-hidden",v?"false":"true");
+    try{ sessionStorage.setItem("pelA_open", v?"1":"0"); }catch(e){}
+    if(v) input.focus(); }
+  btn.addEventListener("click",function(){ open(!panel.classList.contains("open")); });
+  document.getElementById("pelA-close").addEventListener("click",function(){ open(false); });
+  document.addEventListener("keydown",function(e){ if(e.key==="Escape") open(false); });
+  try{ if(sessionStorage.getItem("pelA_open")==="1") open(true); }catch(e){}
+
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function md(s){ return esc(s).replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>"); }
+  function add(cls,text,html){ var d=document.createElement("div"); d.className=cls;
+    if(html) d.innerHTML=html; else d.textContent=text; msgs.appendChild(d);
+    msgs.scrollTop=msgs.scrollHeight; return d; }
+
+  // ---- context collection: wired to the app's real functions, degrading honestly ----
+  function tryCall(name){ try{ var f=window[name]; if(typeof f==="function") return f(); }catch(e){} return undefined; }
+  function stripStats(st){ if(!st||typeof st!=="object") return null;
+    return { len:st.len, dt:st.dt, npt:st.npt, other:st.other, clear:st.clear, count:st.count, cats:st.cats }; }
+
+  function collectContext(){
+    var missing=[], ctx={ generatedAt:new Date().toISOString(), meta:{} };
+    ctx.project = tryCall("curProject"); if(ctx.project===undefined){ ctx.project=null; missing.push("project"); }
+    ctx.user    = tryCall("curUser");    if(ctx.user===undefined) ctx.user=null;
+    ctx.currentDay = tryCall("curKey") || null; if(!ctx.currentDay) missing.push("currentDay");
+    ctx.cats  = (typeof window.CATS!=="undefined")?window.CATS:null;
+    ctx.ctype = (typeof window.CTYPE!=="undefined")?window.CTYPE:null;
+    if(!ctx.ctype) missing.push("ctype");
+
+    var keys = tryCall("allDayKeys");
+    ctx.days={};
+    if(Array.isArray(keys) && typeof window.data==="object"){
+      keys = keys.slice().sort();
+      var recent = keys.slice(-MAX_DAYS);
+      ctx.meta.days_available = keys.length;
+      ctx.meta.days_sent = recent.length;
+      recent.forEach(function(k){
+        var day = window.data[k]||{};
+        var st=null, wbs=null;
+        try{ if(typeof window.dayStats==="function") st=stripStats(window.dayStats(k)); }catch(e){}
+        try{ if(typeof window.wbsHours==="function") wbs=window.wbsHours(k); }catch(e){}
+        if(st===null && missing.indexOf("dayStats")<0) missing.push("dayStats");
+        ctx.days[k]={ end:day.end||null, log:day.log||[], ev:day.ev||[], stats:st, wbs:wbs };
+      });
+    } else { missing.push("days"); }
+
+    try{ if(typeof window.wbsTotals==="function") ctx.totals=window.wbsTotals(); }catch(e){}
+
+    // optional hooks: ROV availability + clause 1.8 allowance, if the build exposes them
+    var rovNames=["rovState","rovAvail","rovAvailability","ROV_STATE","getRovState"];
+    var alwNames=["allowanceState","maintAllowance","maintAllowanceState","clause18State","getAllowanceState","MAINT_STATE"];
+    function probe(names){
+      for(var i=0;i<names.length;i++){ var n=names[i];
+        try{ var v=window[n]; if(typeof v==="function") v=v();
+             if(v!==undefined && v!==null) return v; }catch(e){} }
+      return undefined; }
+    var rov=probe(rovNames);   if(rov!==undefined) ctx.rov=rov;       else missing.push("rov");
+    var alw=probe(alwNames);   if(alw!==undefined) ctx.allowance=alw; else missing.push("allowance");
+
+    ctx.meta.missing=missing;
+
+    // client-side size guard: trim oldest sent days if enormous
+    var s=JSON.stringify(ctx), dks=Object.keys(ctx.days).sort();
+    while(s.length>CLIENT_CTX_CAP && dks.length>1){
+      delete ctx.days[dks.shift()];
+      ctx.meta.trimmed_client=true;
+      s=JSON.stringify(ctx);
+    }
+    return ctx;
+  }
+  // exposed for testing
+  window.pelACollectContext = collectContext;
+
+  function fmtUsage(u){
+    if(!u||u.input_tokens==null) return "";
+    var usd=(u.input_tokens/1e6)*2 + (u.output_tokens/1e6)*10; // Sonnet 5 intro rates
+    return u.input_tokens+" in / "+u.output_tokens+" out \u00B7 ~$"+usd.toFixed(3)+" (intro pricing)";
+  }
+
+  var busy=false;
+  function ask(q){
+    q=(q||input.value).trim();
+    if(!q||busy) return;
+    input.value="";
+    add("pelA-m pelA-q",q);
+    var think=add("pelA-think","asking the log\u2026");
+    busy=true; send.disabled=true;
+
+    var payload={ question:q, history:hist.slice(-12), context:collectContext() };
+    fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+      .then(function(r){ return r.json().then(function(j){ return {ok:r.ok,j:j}; }); })
+      .then(function(res){
+        think.remove();
+        if(!res.ok || res.j.error){ add("pelA-err","Agent: "+(res.j.error||"request failed")); }
+        else{
+          add("pelA-m pelA-a",null,md(res.j.answer));
+          hist.push({role:"user",content:q},{role:"assistant",content:res.j.answer});
+          useEl.textContent=fmtUsage(res.j.usage)+(res.j.truncated?" \u00B7 older days trimmed":"");
+        }
+      })
+      .catch(function(){ think.remove(); add("pelA-err","Agent: network error"); })
+      .finally(function(){ busy=false; send.disabled=false; input.focus(); });
+  }
+
+  send.addEventListener("click",function(){ ask(); });
+  input.addEventListener("keydown",function(e){
+    if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); ask(); } });
+  document.getElementById("pelA-quick").addEventListener("click",function(e){
+    var q=e.target&&e.target.getAttribute("data-q"); if(q) ask(q); });
+  document.getElementById("pelA-clear").addEventListener("click",function(){
+    hist=[]; msgs.innerHTML=""; useEl.textContent=""; input.focus(); });
+})();
+</script>
+<!-- ============ PEL AGENT END ============ -->
 </body>
 </html>
