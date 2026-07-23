@@ -2333,8 +2333,7 @@ initCloud();
         add("pelA-err","Agent: "+((j&&j.error)||("request failed ("+r.status+")")));
         return;
       }
-      think.remove();
-      var bubble=add("pelA-m pelA-a",null,"");
+      var bubble=null;
       var reader=r.body.getReader(), dec=new TextDecoder();
       var buf="", full="", inTok=null, outTok=null, stopReason=null;
       for(;;){
@@ -2352,6 +2351,7 @@ initCloud();
             var ev; try{ ev=JSON.parse(payloadStr); }catch(e){ continue; }
             if(ev.type==="message_start" && ev.message && ev.message.usage){ inTok=ev.message.usage.input_tokens; }
             else if(ev.type==="content_block_delta" && ev.delta && ev.delta.type==="text_delta"){
+              if(!bubble){ think.remove(); bubble=add("pelA-m pelA-a",null,""); }
               full+=ev.delta.text; bubble.innerHTML=md(full); msgs.scrollTop=msgs.scrollHeight;
             }
             else if(ev.type==="message_delta"){
@@ -2365,8 +2365,8 @@ initCloud();
           }
         }
       }
-      if(stopReason==="max_tokens"){ full+="\n\n[answer hit the length limit. Say 'continue' for the rest]"; bubble.innerHTML=md(full); }
-      if(!full){ bubble.remove(); add("pelA-err","Agent: empty stream"); }
+      if(stopReason==="max_tokens" && bubble){ full+="\n\n[answer hit the length limit. Say 'continue' for the rest]"; bubble.innerHTML=md(full); }
+      if(!full){ try{think.remove();}catch(e){} if(bubble) bubble.remove(); add("pelA-err","Agent: the model returned no text. Ask again, or narrow the question."); }
       else{
         hist.push({role:"user",content:q},{role:"assistant",content:full});
         if(inTok!=null) useEl.textContent=fmtUsage({input_tokens:inTok,output_tokens:(outTok||0)});
