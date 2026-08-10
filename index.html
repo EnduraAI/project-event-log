@@ -2172,7 +2172,7 @@ initCloud();
   cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.28);letter-spacing:.5px}
 #pelA-btn i{display:block;width:8px;height:8px;margin:0 auto 4px;border-radius:50%;background:#E87722}
 #pelA-btn:hover{background:#000}
-#pelA{position:fixed;top:0;right:0;bottom:0;width:380px;max-width:94vw;z-index:9999;background:#FAF7F1;
+#pelA{position:fixed;top:0;right:0;bottom:0;width:440px;max-width:94vw;z-index:9999;background:#FAF7F1;
   border-left:1px solid #E5DECB;box-shadow:-8px 0 24px rgba(0,0,0,.18);display:flex;flex-direction:column;
   transform:translateX(105%);transition:transform .22s ease;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#1A1A1A}
 #pelA.open{transform:translateX(0)}
@@ -2202,6 +2202,22 @@ initCloud();
 #pelA footer button{background:none;border:none;color:#8C8C8C;cursor:pointer;font:10px ui-monospace,monospace;text-decoration:underline}
 .pelA-chartwrap{overflow-x:auto;background:#fff;border:1px solid #E5DECB;border-radius:8px;padding:6px 8px;margin:6px 0}
 .pelA-chartbad{font:10px ui-monospace,monospace;color:#a02020;padding:4px 2px}
+.pelA-h{font:700 12.5px ui-monospace,Menlo,monospace;letter-spacing:.4px;margin:8px 0 3px;color:#1A1A1A}
+.pelA-p{margin:4px 0}
+.pelA-ul,.pelA-ol{margin:4px 0 4px 18px;padding:0}
+.pelA-ul li,.pelA-ol li{margin:2px 0}
+.pelA-tbl{border-collapse:collapse;margin:6px 0;font-size:11.5px;width:100%}
+.pelA-tbl th{text-align:left;font:700 10px ui-monospace,monospace;color:#8C8C8C;border-bottom:1.5px solid #E87722;padding:3px 8px 3px 0}
+.pelA-tbl td{border-bottom:1px solid #F4EFE3;padding:3px 8px 3px 0;font-family:ui-monospace,Menlo,monospace;font-size:11px}
+.pelA-a code{background:#F4EFE3;border-radius:3px;padding:0 4px;font-size:11px}
+.pelA-next{display:flex;flex-wrap:wrap;gap:5px;margin:2px 0 4px;align-self:flex-start}
+.pelA-next button{border:1px solid #D8A87C;background:#FDFBF7;border-radius:11px;padding:3px 9px;font-size:10.5px;cursor:pointer;color:#1A1A1A}
+.pelA-next button:hover{background:#FEF3E9;border-color:#E87722}
+.pelA-copy{position:absolute;top:4px;right:6px;background:none;border:none;color:#C9C2B2;cursor:pointer;font-size:11px;padding:2px}
+.pelA-copy:hover{color:#E87722}
+.pelA-a{position:relative;padding-right:24px}
+.pelA-retry{background:none;border:none;color:#a02020;cursor:pointer;font:10px ui-monospace,monospace;text-decoration:underline;padding:0;margin-left:6px}
+#pelA-send.stopping{background:#1A1A1A}
 </style>
 
 <button id="pelA-btn" title="Ask the log" aria-label="Ask the log"><i></i>ASK</button>
@@ -2230,9 +2246,21 @@ initCloud();
 (function(){
   "use strict";
   var ENDPOINT="/api/agent";
-  var MAX_DAYS=7;               // most recent days sent as context
+  var MAX_DAYS=14;              // most recent days sent as context
   var CLIENT_CTX_CAP=700000;    // char cap before we trim days client-side
   var hist=[];                  // {role, content} pairs for this page session
+  var thread=[];                // [{q, a}] raw transcript for restore
+  var HKEY="pelA_hist_v2", TKEY="pelA_thread_v2";
+  function saveThread(){ try{
+    sessionStorage.setItem(HKEY, JSON.stringify(hist.slice(-24)));
+    sessionStorage.setItem(TKEY, JSON.stringify(thread.slice(-20)));
+  }catch(e){} }
+  function chartPlaceholders(t){
+    return t.replace(FENCE_RE, function(_,j){
+      var title="chart"; try{ var o=JSON.parse(j); if(o&&o.title) title=String(o.title).slice(0,60); }catch(e){}
+      return "[chart shown: "+title+"]";
+    });
+  }
 
   var btn=document.getElementById("pelA-btn"), panel=document.getElementById("pelA"),
       msgs=document.getElementById("pelA-msgs"), input=document.getElementById("pelA-in"),
@@ -2248,6 +2276,67 @@ initCloud();
 
   function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
   function md(s){ return esc(s).replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>"); }
+// mdRender(text) -> safe HTML for agent answers.
+// Escape-first design: ALL input is HTML-escaped before any structural
+// transform, and only whitelisted tags are ever emitted. Supports:
+// headings (##/###), bullet and numbered lists, pipe tables, inline
+// code, bold, italic, paragraphs. No links by design (offshore app,
+// no external navigation from agent output).
+function mdRender(text){
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function inline(s){
+    s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
+    s=s.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');
+    s=s.replace(/(^|[\s(])\*([^*\s][^*]*)\*(?=[\s).,;:!?]|$)/g,'$1<i>$2</i>');
+    return s;
+  }
+  var lines=esc(String(text)).split("\n");
+  var out=[], i=0;
+  function isTableRow(l){ return /^\s*\|.*\|\s*$/.test(l); }
+  function isSepRow(l){ return /^\s*\|[\s:|-]+\|\s*$/.test(l) && /-/.test(l); }
+  while(i<lines.length){
+    var l=lines[i];
+    if(/^\s*$/.test(l)){ i++; continue; }
+    var h=l.match(/^\s*(#{2,4})\s+(.*)$/);
+    if(h){ out.push('<div class="pelA-h">'+inline(h[2])+'</div>'); i++; continue; }
+    if(isTableRow(l) && i+1<lines.length && isSepRow(lines[i+1])){
+      var head=l.trim().replace(/^\||\|$/g,"").split("|");
+      var rows=[]; i+=2;
+      while(i<lines.length && isTableRow(lines[i])){
+        rows.push(lines[i].trim().replace(/^\||\|$/g,"").split("|")); i++;
+      }
+      var t='<table class="pelA-tbl"><thead><tr>';
+      head.forEach(function(c){ t+='<th>'+inline(c.trim())+'</th>'; });
+      t+='</tr></thead><tbody>';
+      rows.forEach(function(r){ t+='<tr>'; r.forEach(function(c){ t+='<td>'+inline(c.trim())+'</td>'; }); t+='</tr>'; });
+      t+='</tbody></table>'; out.push(t); continue;
+    }
+    if(/^\s*[-*]\s+/.test(l)){
+      var ul='<ul class="pelA-ul">';
+      while(i<lines.length && /^\s*[-*]\s+/.test(lines[i])){
+        ul+='<li>'+inline(lines[i].replace(/^\s*[-*]\s+/,""))+'</li>'; i++;
+      }
+      out.push(ul+'</ul>'); continue;
+    }
+    if(/^\s*\d+[.)]\s+/.test(l)){
+      var ol='<ol class="pelA-ol">';
+      while(i<lines.length && /^\s*\d+[.)]\s+/.test(lines[i])){
+        ol+='<li>'+inline(lines[i].replace(/^\s*\d+[.)]\s+/,""))+'</li>'; i++;
+      }
+      out.push(ol+'</ol>'); continue;
+    }
+    var para=[l];
+    i++;
+    while(i<lines.length && !/^\s*$/.test(lines[i]) && !/^\s*(#{2,4})\s+/.test(lines[i]) &&
+          !/^\s*[-*]\s+/.test(lines[i]) && !/^\s*\d+[.)]\s+/.test(lines[i]) &&
+          !(isTableRow(lines[i]) && i+1<lines.length && isSepRow(lines[i+1]))){
+      para.push(lines[i]); i++;
+    }
+    out.push('<p class="pelA-p">'+inline(para.join("<br>"))+'</p>');
+  }
+  return out.join("");
+}
+
 // pelChart(spec) -> SVG-in-div string, or null if the spec is unusable.
 // Types: bar (grouped, optional dashed mean per group), line (single series).
 // Brand: ember #E87722 bars/line, ink #1A1A1A means/values, grey #8C8C8C labels,
@@ -2327,11 +2416,18 @@ function pelChart(spec){
 }
 
   var FENCE_RE=/```pelchart\s*\n?([\s\S]*?)```/g;
+  function stripNext(txt){
+    var m=txt.match(/\n?NEXT:\s*([^\n]+)\s*$/);
+    if(!m) return {text:txt, next:[]};
+    var next=m[1].split("|").map(function(x){return x.trim();}).filter(Boolean).slice(0,3);
+    return {text:txt.slice(0,m.index), next:next};
+  }
   function renderAnswer(txt){
+    txt=stripNext(txt).text;
     var out="", last=0, m;
     FENCE_RE.lastIndex=0;
     while((m=FENCE_RE.exec(txt))){
-      out+=md(txt.slice(last,m.index));
+      out+=mdRender(txt.slice(last,m.index));
       var svg=null;
       try{ svg=pelChart(JSON.parse(m[1])); }catch(e){}
       out+= svg? svg : '<div class="pelA-chartbad">[chart data invalid]</div>';
@@ -2340,8 +2436,8 @@ function pelChart(spec){
     var rest=txt.slice(last);
     var open=rest.lastIndexOf("```pelchart");
     if(open>=0 && rest.indexOf("```", open+11)<0){
-      out+=md(rest.slice(0,open))+'<div class="pelA-think" style="padding:6px 2px">drawing chart&hellip;</div>';
-    } else { out+=md(rest); }
+      out+=mdRender(rest.slice(0,open))+'<div class="pelA-think" style="padding:6px 2px">drawing chart&hellip;</div>';
+    } else { out+=mdRender(rest); }
     return out;
   }
 
@@ -2359,6 +2455,8 @@ function pelChart(spec){
     ctx.project = tryCall("curProject"); if(ctx.project===undefined){ ctx.project=null; missing.push("project"); }
     ctx.user    = tryCall("curUser");    if(ctx.user===undefined) ctx.user=null;
     ctx.currentDay = tryCall("curKey") || null; if(!ctx.currentDay) missing.push("currentDay");
+    ctx.selectedDay = ctx.currentDay;
+    ctx.todayDate = new Date().toISOString().slice(0,10);
     ctx.cats  = (typeof window.CATS!=="undefined")?window.CATS:null;
     ctx.ctype = (typeof window.CTYPE!=="undefined")?window.CTYPE:null;
     if(!ctx.ctype) missing.push("ctype");
@@ -2368,6 +2466,7 @@ function pelChart(spec){
     if(Array.isArray(keys) && typeof window.data==="object"){
       keys = keys.slice().sort();
       var recent = keys.slice(-MAX_DAYS);
+      ctx.latestLoggedDay = keys[keys.length-1] || null;
       ctx.meta.days_available = keys.length;
       ctx.meta.days_sent = recent.length;
       recent.forEach(function(k){
@@ -2413,18 +2512,30 @@ function pelChart(spec){
     return u.input_tokens+" in / "+u.output_tokens+" out \u00B7 ~$"+usd.toFixed(3)+" (intro pricing)";
   }
 
-  var busy=false;
+  function attachCopy(bubble, raw){
+    var c=document.createElement("button"); c.className="pelA-copy"; c.title="Copy answer"; c.innerHTML="&#10064;";
+    c.addEventListener("click",function(){ try{ navigator.clipboard.writeText(stripNext(raw).text); c.innerHTML="&#10003;"; setTimeout(function(){c.innerHTML="&#10064;";},900); }catch(e){} });
+    bubble.appendChild(c);
+  }
+  function showNextChips(nextQs){
+    if(!nextQs||!nextQs.length) return;
+    var w=document.createElement("div"); w.className="pelA-next";
+    nextQs.forEach(function(nq){ var bt=document.createElement("button"); bt.textContent=nq;
+      bt.addEventListener("click",function(){ w.remove(); ask(nq); }); w.appendChild(bt); });
+    msgs.appendChild(w); msgs.scrollTop=msgs.scrollHeight;
+  }
+  var busy=false, aborter=null;
   async function ask(q){
     q=(q||input.value).trim();
     if(!q||busy) return;
     input.value="";
     add("pelA-m pelA-q",q);
     var think=add("pelA-think","asking the log\u2026");
-    busy=true; send.disabled=true;
+    busy=true; aborter=new AbortController(); send.innerHTML="&#9632;"; send.classList.add("stopping"); send.title="Stop";
 
-    var payload={ question:q, history:hist.slice(-12), context:collectContext() };
+    var payload={ question:q, history:hist.slice(-24), context:collectContext() };
     try{
-      var r=await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+      var r=await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:aborter.signal});
       var ct=(r.headers.get("content-type")||"");
       if(!r.ok || ct.indexOf("text/event-stream")<0){
         var j=null; try{ j=await r.json(); }catch(e){}
@@ -2467,23 +2578,51 @@ function pelChart(spec){
       if(stopReason==="max_tokens" && bubble){ full+="\n\n[answer hit the length limit. Say 'continue' for the rest]"; bubble.innerHTML=renderAnswer(full); }
       if(!full){ try{think.remove();}catch(e){} if(bubble) bubble.remove(); add("pelA-err","Agent: the model returned no text. Ask again, or narrow the question."); }
       else{
-        hist.push({role:"user",content:q},{role:"assistant",content:full});
+        var parts=stripNext(full);
+        hist.push({role:"user",content:q},{role:"assistant",content:chartPlaceholders(parts.text)});
+        thread.push({q:q, a:full});
+        saveThread();
+        if(bubble) attachCopy(bubble, full);
+        showNextChips(parts.next);
         if(inTok!=null) useEl.textContent=fmtUsage({input_tokens:inTok,output_tokens:(outTok||0)});
       }
     }catch(e){
-      think.remove(); add("pelA-err","Agent: network error");
+      try{think.remove();}catch(_){}
+      if(e && e.name==="AbortError"){
+        if(typeof full==="string" && full){
+          var pa=stripNext(full);
+          hist.push({role:"user",content:q},{role:"assistant",content:chartPlaceholders(pa.text)+"\n[stopped by user]"});
+          thread.push({q:q, a:full+"\n\n[stopped]"}); saveThread();
+        }
+      } else {
+        var eb=add("pelA-err","Agent: network error");
+        var rb=document.createElement("button"); rb.className="pelA-retry"; rb.textContent="retry";
+        rb.addEventListener("click",function(){ eb.remove(); ask(q); }); eb.appendChild(rb);
+      }
     }finally{
-      busy=false; send.disabled=false; input.focus();
+      busy=false; aborter=null; send.classList.remove("stopping"); send.innerHTML="&#8594;"; send.title=""; input.focus();
     }
   }
 
-  send.addEventListener("click",function(){ ask(); });
+  send.addEventListener("click",function(){ if(busy&&aborter){ aborter.abort(); return; } ask(); });
   input.addEventListener("keydown",function(e){
     if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); ask(); } });
   document.getElementById("pelA-quick").addEventListener("click",function(e){
     var q=e.target&&e.target.getAttribute("data-q"); if(q) ask(q); });
   document.getElementById("pelA-clear").addEventListener("click",function(){
-    hist=[]; msgs.innerHTML=""; useEl.textContent=""; input.focus(); });
+    hist=[]; thread=[]; try{sessionStorage.removeItem(HKEY);sessionStorage.removeItem(TKEY);}catch(e){}
+    msgs.innerHTML=""; useEl.textContent=""; input.focus(); });
+
+  // restore prior thread once everything above is defined
+  try{
+    hist=JSON.parse(sessionStorage.getItem(HKEY)||"[]");
+    thread=JSON.parse(sessionStorage.getItem(TKEY)||"[]");
+    thread.forEach(function(t){
+      add("pelA-m pelA-q", t.q);
+      var b=add("pelA-m pelA-a", null, renderAnswer(t.a));
+      attachCopy(b, t.a);
+    });
+  }catch(e){ hist=[]; thread=[]; }
 })();
 </script>
 <!-- ============ PEL AGENT END ============ -->
