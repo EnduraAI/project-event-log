@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-07-14.2 - deploy check string: PEL-BUILD-2026-07-14.2 -->
+<!-- Endura Project Event Log - build 2026-08-10.4 - deploy check string: PEL-BUILD-2026-08-10.4 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -270,7 +270,7 @@
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-07-14.2</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-08-10.4</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -331,7 +331,7 @@
       <div id="wbsChips" class="chips"></div>
       <div id="laneWrap" class="lanewrap"></div>
       <div class="axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span id="axEnd">24:00</span></div>
-      <div class="footnote"><b>Actual downtime + maintenance + NPT + clear running = day length</b> (overlaps merged, no double-counting; where events overlap, a minute counts once, in the order downtime, then maintenance, then NPT). Each bar is one event, drawn on its own lane so overlapping events are visible side by side. Set whether a category is genuine downtime or non-productive time using the controls above.</div>
+      <div class="footnote"><b>Actual downtime + maintenance + NPT + other + clear running = day length</b> (overlaps merged, no double-counting; where events overlap, a minute counts once, in the order downtime, then maintenance, then NPT). Each bar is one event, drawn on its own lane so overlapping events are visible side by side. Set whether a category is genuine downtime or non-productive time using the controls above.</div>
     </div>
   </section>
 
@@ -508,7 +508,7 @@
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-07-14.2";
+var APP_BUILD="2026-08-10.4";
 var CATS=["Weather","ROV - Asset 1","ROV - Asset 2","Tooling","Scheduling","Crane","Vessel","Maintenance","Other"];
 var CCOL={"Weather":"#2f74c9","ROV - Asset 1":"#2fae54","ROV - Asset 2":"#dd3b40","Tooling":"#c98a2a","Scheduling":"#b23bb0","Crane":"#7d54d6","Vessel":"#0f9bad","Maintenance":"#4c9a6a","Other":"#8C8C8C"};
 
@@ -692,7 +692,7 @@ function loadDpr(){ var n=mergeEmb(); save(); renderWbs(); alert(n+" schedule ac
 function load(){ var d=JSON.parse(JSON.stringify(SEED)); if(WBSL.length<10) mergeEmb(); return d; }
 function save(){ writeLocalBackup(); scheduleCloudSave(); }
 
-function toMin(t){ if(!t) return null; var p=String(t).split(":"); if(p.length<2) return null; return (+p[0])*60+(+p[1]); }
+function toMin(t){ if(!t) return null; var m=String(t).trim().match(/^(\d{1,2}):(\d{2})$/); if(!m) return null; var h=+m[1], mm=+m[2]; if(mm>59||h>24||(h===24&&mm>0)) return null; return h*60+mm; }
 function r2(n){ return Math.round(n*100)/100; }
 function hm(n){ if(n==null||isNaN(n)) return "0m"; var neg=n<0; var t=Math.round(Math.abs(n)*60); var h=Math.floor(t/60), m=t%60; var out=(h>0?h+"h":"")+(h>0&&m>0?" ":"")+((m>0||h===0)?m+"m":""); return (neg?"-":"")+out; }
 function fmtDay(k){ var a=k.split("-"); return a[2]+"/"+a[1]+"/"+a[0]; }
@@ -910,8 +910,8 @@ function flagRow(i){
   if(hadLegacy){ save(); renderLog(); return; }
   /* FLAG: create the event and link it to this line with a fresh srcId. */
   var sid2=newSrcId();
-  var tm=toMin(t); var end="";
-  for(var j=0;j<L.length;j++){ var oj=toMin(L[j][0]); if(oj!=null&&tm!=null&&oj>tm){ end=L[j][0]; break; } }
+  var tm=toMin(t); var end=""; var best=null;
+  for(var j=0;j<L.length;j++){ var oj=toMin(L[j][0]); if(oj!=null&&tm!=null&&oj>tm&&(best==null||oj<best)){ best=oj; end=L[j][0]; } }
   row[4]=sid2;
   ev.push([guessCat(row[1]),t,end,desc,curUser(),undefined,sid2]);
   save(); renderLog();
@@ -943,7 +943,7 @@ function setRangePreset(p){
   var from="", to=last;
   if(p==="all"){ from=""; to=""; }
   else if(p==="7"){
-    var d=new Date(last+"T00:00:00"); d.setDate(d.getDate()-6);
+    var dp=last.split("-"); var d=new Date(Date.UTC(+dp[0],+dp[1]-1,+dp[2]-6));
     from=d.toISOString().slice(0,10);
   } else if(p==="month"){
     from=last.slice(0,7)+"-01";
@@ -983,8 +983,8 @@ function build24Bar(key,compact,mode){
     var lanes=lane("ROV 1",w1,d1)+lane("ROV 2",w2,d2);
     var tot='<div class="bar24tot">'+
       '<div class="tbox"><div class="k">2 ROVs working</div><div class="v" style="color:#1e7d34">'+hm(bothH)+'</div></div>'+
-      '<div class="tbox"><div class="k">1 ROV working</div><div class="v" style="color:#b9822b">'+hm(oneH)+'</div></div>'+
-      '<div class="tbox"><div class="k">No ROV working</div><div class="v" style="color:#c0392b">'+hm(noneH)+'</div></div>'+
+      '<div class="tbox"><div class="k">1 ROV event-free</div><div class="v" style="color:#b9822b">'+hm(oneH)+'</div></div>'+
+      '<div class="tbox"><div class="k">0 ROVs event-free</div><div class="v" style="color:#c0392b">'+hm(noneH)+'</div></div>'+
       '</div>';
     if(compact) return '<div class="bar24wrap">'+lanes+axis+'</div>';
     return '<div class="bar24wrap">'+lanes+axis+tot+'</div>';
@@ -1102,7 +1102,7 @@ function renderDash(){
     mb.innerHTML=flagged.length? flagged.map(function(f){
       var MN=["January","February","March","April","May","June","July","August","September","October","November","December"];
       var lbl=MN[parseInt(f.m.slice(5,7),10)-1]+" "+f.m.slice(0,4);
-      return '<div class="insight" style="margin-top:8px;background:#fdecea;border-left:3px solid #c0392b;padding:10px 12px;border-radius:0 4px 4px 0;color:#7a1f17"><b>Maintenance allowance exceeded, '+esc(lbl)+':</b> '+hm(f.mm.maint)+'  of maintenance against '+hm(f.mm.accrued)+'  accrued (cap 48 h per calendar month). The excess '+hm(f.mm.excess)+'  is not covered by clause 1.8 and stands as downtime for Santos reporting.</div>';
+      return '<div class="insight" style="margin-top:8px;background:#fdecea;border-left:3px solid #c0392b;padding:10px 12px;border-radius:0 4px 4px 0;color:#7a1f17"><b>Maintenance allowance exceeded, '+esc(lbl)+':</b> '+hm(f.mm.maint)+'  of maintenance against '+hm(f.mm.accrued)+'  accrued (cap 48 h per calendar month). The excess '+hm(f.mm.excess)+'  is not covered by clause 1.8 and exceeds the accrued allowance. Contractual treatment of the excess is pending confirmation; downtime totals are unchanged.</div>';
     }).join("") : "";
   }
 
@@ -1206,7 +1206,7 @@ function buildReportBlocks(){
   if(pl){
     pl.innerHTML=(VIEW24==="rov")
       ? '<div class="barlegend">'+
-        '<span class="lg"><span class="sw" style="background:#2fae54"></span>ROV working</span>'+
+        '<span class="lg"><span class="sw" style="background:#2fae54"></span>no ROV-impacting event</span>'+
         '<span class="lg"><span class="sw" style="background:#dd3b40"></span>ROV not working</span>'+
         '</div>'
       : '<div class="barlegend">'+
@@ -1342,7 +1342,8 @@ function wbsHours(key){
   var byTime={}; lines.forEach(function(x){ (byTime[x.t]=byTime[x.t]||[]).push(x.w); });
   var m={}, active=[];
   for(var k=0;k<times.length;k++){
-    var t=times[k], nxt=(k+1<times.length)?times[k+1]:endMin; if(nxt<t) nxt=t;
+    var t=times[k]; if(t>=endMin) break;
+    var nxt=(k+1<times.length)?times[k+1]:endMin; if(nxt>endMin) nxt=endMin; if(nxt<t) nxt=t;
     var tags=byTime[t]||[];
     var hasEnd=tags.indexOf("-")>=0;
     var ids=[]; tags.forEach(function(w){ if(w&&w!=="-"&&ids.indexOf(w)<0) ids.push(w); });
@@ -1577,6 +1578,7 @@ function parsePreview(){
     '</tbody></table></div><div class="sub" style="margin-top:6px">'+impParsed.length+' entries parsed. Apply, then use ⚑ to tag events.</div>';
 }
 function applyImport(){
+  if(guardLocked(curKey())) return;
   if(!impParsed.length) parsePreview();
   if(!impParsed.length) return;
   var key=curKey(); var clone=JSON.parse(JSON.stringify(impParsed));
@@ -1588,7 +1590,7 @@ function applyImport(){
   save(); document.getElementById("impText").value=""; impParsed=[]; toggleImport(false); renderLog();
 }
 
-function q(s){ s=(s||"").replace(/\n/g," ").replace(/"/g,'""'); return /[,"]/.test(s)?'"'+s+'"':s; }
+function q(s){ s=(s||"").replace(/\n/g," ").replace(/"/g,'""'); if(/^[=+\-@]/.test(s)) s="'"+s; return /[,"]/.test(s)?'"'+s+'"':s; }
 function dl(txt,name,type){ var b=new Blob([txt],{type:type||"text/csv"}); var a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=name; a.click(); }
 function exportCSV(){
   var key=curKey(); var day=data[key]; var st=dayStats(key);
@@ -1635,7 +1637,7 @@ function setProject(v){ v=(v||"").trim().slice(0,60)||"MEFF-SAR"; try{ localStor
 function setSync(state,msg){
   var el=document.getElementById("syncStatus"); if(!el) return;
   var col={green:"#2fae54",amber:"#E87722",red:"#dd3b40",grey:"#8C8C8C"}[state]||"#8C8C8C";
-  el.innerHTML='<b style="color:'+col+'">\u25cf</b> '+msg;
+  el.textContent=""; var dot=document.createElement("b"); dot.style.color=col; dot.textContent="\u25cf"; el.appendChild(dot); el.appendChild(document.createTextNode(" "+msg));
 }
 
 function adopt(txt){
@@ -1693,16 +1695,18 @@ function openBackups(){
   setLmButtons([["Close","closeLockModal()"]]);
   m.style.display="flex";
 }
-function restoreBackup(i){
+async function restoreBackup(i){
   var list=listBackups(); if(!list[i]) return;
-  if(!confirm("Restore the backup from "+new Date(list[i].t).toLocaleString()+"?\n\nThis replaces the current data and syncs it to everyone. The current state is backed up first.")) return;
-  writeLocalBackup();                       // snapshot current state before overwriting
+  var lockN=0; try{ lockN=Object.keys(LOCKS||{}).length; }catch(e){}
+  var warn="Restore the backup from "+new Date(list[i].t).toLocaleString()+"?\n\nThis replaces the current data for EVERYONE"+(lockN?(" including "+lockN+" locked day(s)"):"")+". The current state is backed up first.";
+  if(prompt(warn+"\n\nType RESTORE to continue.")!=="RESTORE") return;
+  writeLocalBackup();
   var doc=list[i].doc;
   applyingRemote=true; adopt(doc); applyingRemote=false;
   closeLockModal(); renderLog();
   if(typeof renderDash==="function") renderDash();
-  cloudSave();
-  alert("Backup restored.");
+  var ok=await cloudSave();
+  alert(ok?"Backup restored and synced.":"Backup restored on this device, but cloud sync FAILED. Do not close this browser until the sync light is green.");
 }
 async function cloudSave(){
   if(!sb){ try{ localStorage.setItem("endura_pel_offline_"+curProject(),payload()); }catch(e){} return; }
@@ -1713,11 +1717,13 @@ async function cloudSave(){
     var r=await sb.from("event_logs").upsert({ project:curProject(), doc:body.doc, updated_at:body.updated_at, updated_by:body.updated_by }, { onConflict:"project" });
     if(r.error) throw r.error;
     online=true; setSync("green","synced \u00b7 "+curProject());
+    return true;
   }catch(e){
     online=false;
     try{ localStorage.setItem("endura_pel_offline_"+curProject(),payload()); }catch(_){}
     setSync("red","offline \u2014 saved on this device, will sync when back");
     console.warn("cloud save failed",e);
+    return false;
   }
 }
 
@@ -1727,9 +1733,9 @@ async function cloudLoad(){
   try{
     var r=await sb.from("event_logs").select("doc,updated_by,updated_at").eq("project",curProject()).maybeSingle();
     if(r.error) throw r.error;
-    if(r.data && r.data.doc){ applyingRemote=true; adopt(r.data.doc); applyingRemote=false; return true; }
-    return false;
-  }catch(e){ console.warn("cloud load failed",e); return false; }
+    if(r.data && r.data.doc){ applyingRemote=true; adopt(r.data.doc); applyingRemote=false; return "found"; }
+    return "missing";
+  }catch(e){ console.warn("cloud load failed",e); return "error"; }
 }
 
 /* Live subscription \u2014 when anyone else saves, refresh our copy */
@@ -1752,10 +1758,15 @@ function subscribe(){
 /* Recover anything saved offline once we reconnect */
 async function flushOffline(){
   if(!sb) return;
+  var k="endura_pel_offline_"+curProject();
   try{
-    var pend=localStorage.getItem("endura_pel_offline_"+curProject());
-    if(pend){ await cloudSave(); localStorage.removeItem("endura_pel_offline_"+curProject()); }
-  }catch(e){}
+    var pend=localStorage.getItem(k);
+    if(!pend) return;
+    var doc=JSON.parse(pend);
+    var r=await sb.from("event_logs").upsert({ project:curProject(), doc:doc, updated_at:new Date().toISOString(), updated_by:(curUser()||"?")+" (offline replay)" }, { onConflict:"project" });
+    if(!r.error){ localStorage.removeItem(k); }
+    else { console.warn("offline replay failed; snapshot kept",r.error); }
+  }catch(e){ console.warn("offline replay failed; snapshot kept",e); }
 }
 
 async function initCloud(){
@@ -1772,10 +1783,14 @@ async function initCloud(){
     sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
     setSync("amber","loading\u2026");
     var got=await cloudLoad();
-    if(!got){ await cloudSave(); }     // first run for this project \u2014 seed the row
+    if(got==="missing"){ await cloudSave(); }   // first run: seed only on a confirmed empty read
     subscribe();
-    flushOffline();
-    setSync("green","synced \u00b7 "+curProject());
+    if(got==="error"){
+      setSync("red","cloud read failed \u2014 showing local data; changes queue on this device until reload");
+    } else {
+      await flushOffline();
+      setSync("green","synced \u00b7 "+curProject());
+    }
     renderLog();
     window.addEventListener("online",function(){ flushOffline(); });
   }catch(e){
@@ -2144,7 +2159,10 @@ function renderDprCompare(){
 }
 
 function exportJSON(){ dl(payload(),"Project-Event-Log-data.json","application/json"); }
-function importJSON(inp){ var f=inp.files[0]; if(!f) return; var rd=new FileReader(); rd.onload=function(){ try{ adopt(rd.result); save(); renderLog(); alert("Project data loaded."); }catch(e){ alert("That file could not be read."); } }; rd.readAsText(f); inp.value=""; }
+function importJSON(inp){ var f=inp.files[0]; if(!f) return;
+  var lockN=0; try{ lockN=Object.keys(LOCKS||{}).length; }catch(e){}
+  if(prompt("This import replaces ALL data for this project"+(lockN?(" including "+lockN+" locked day(s)"):"")+" and syncs to everyone.\n\nType REPLACE to continue.")!=="REPLACE"){ inp.value=""; return; }
+  var rd=new FileReader(); rd.onload=function(){ try{ adopt(rd.result); save(); renderLog(); alert("Project data loaded. Verify the sync light goes green before closing."); }catch(e){ alert("That file could not be read."); } }; rd.readAsText(f); inp.value=""; }
 
 document.getElementById("userTag").value=curUser();
 renderLog();
@@ -2452,7 +2470,7 @@ function pelChart(spec){
   // ---- context collection: wired to the app's real functions, degrading honestly ----
   function tryCall(name){ try{ var f=window[name]; if(typeof f==="function") return f(); }catch(e){} return undefined; }
   function stripStats(st){ if(!st||typeof st!=="object") return null;
-    return { len:st.len, dt:st.dt, npt:st.npt, other:st.other, clear:st.clear, count:st.count, cats:st.cats }; }
+    return { len:st.len, dt:st.dt, maint:st.maint, npt:st.npt, other:st.other, clear:st.clear, count:st.count, cats:st.cats }; }
 
   function collectContext(){
     var missing=[], ctx={ generatedAt:new Date().toISOString(), meta:{} };
@@ -2487,7 +2505,7 @@ function pelChart(spec){
 
     // optional hooks: ROV availability + clause 1.8 allowance, if the build exposes them
     var rovNames=["rovState","rovAvail","rovAvailability","ROV_STATE","getRovState"];
-    var alwNames=["allowanceState","maintAllowance","maintAllowanceState","clause18State","getAllowanceState","MAINT_STATE"];
+    var alwNames=["maCalc","allowanceState","maintAllowance","maintAllowanceState","clause18State","getAllowanceState","MAINT_STATE"];
     function probe(names){
       for(var i=0;i<names.length;i++){ var n=names[i];
         try{ var v=window[n]; if(typeof v==="function") v=v();
@@ -2513,7 +2531,7 @@ function pelChart(spec){
   function fmtUsage(u){
     if(!u||u.input_tokens==null) return "";
     var usd=(u.input_tokens/1e6)*2 + (u.output_tokens/1e6)*10; // Sonnet 5 intro rates
-    return u.input_tokens+" in / "+u.output_tokens+" out \u00B7 ~$"+usd.toFixed(3)+" (intro pricing)";
+    return u.input_tokens+" in / "+u.output_tokens+" out \u00B7 ~$"+usd.toFixed(3)+" (approx)";
   }
 
   function attachCopy(bubble, raw){
@@ -2552,9 +2570,10 @@ function pelChart(spec){
       var buf="", full="", inTok=null, outTok=null, stopReason=null;
       for(;;){
         var step=await reader.read();
-        if(step.done) break;
-        buf+=dec.decode(step.value,{stream:true});
-        var parts=buf.split("\n\n"); buf=parts.pop();
+        var __done=step.done;
+        buf+= __done ? dec.decode() : dec.decode(step.value,{stream:true});
+        var parts=buf.split("\n\n");
+        if(__done){ parts.push(""); buf=""; } else { buf=parts.pop(); }
         for(var pi=0; pi<parts.length; pi++){
           var lines=parts[pi].split("\n");
           for(var li=0; li<lines.length; li++){
@@ -2578,6 +2597,7 @@ function pelChart(spec){
             }
           }
         }
+        if(__done) break;
       }
       if(stopReason==="max_tokens" && bubble){ full+="\n\n[answer hit the length limit. Say 'continue' for the rest]"; bubble.innerHTML=renderAnswer(full); }
       if(!full){ try{think.remove();}catch(e){} if(bubble) bubble.remove(); add("pelA-err","Agent: the model returned no text. Ask again, or narrow the question."); }
