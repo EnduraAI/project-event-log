@@ -2417,10 +2417,14 @@ function pelChart(spec){
 
   var FENCE_RE=/```pelchart\s*\n?([\s\S]*?)```/g;
   function stripNext(txt){
-    var m=txt.match(/\n?NEXT:\s*([^\n]+)\s*$/);
-    if(!m) return {text:txt, next:[]};
-    var next=m[1].split("|").map(function(x){return x.trim();}).filter(Boolean).slice(0,3);
-    return {text:txt.slice(0,m.index), next:next};
+    var next=[], out=[], lines=String(txt).split("\n");
+    for(var i=0;i<lines.length;i++){
+      var m=lines[i].match(/^\s*NEXT:\s*(.+)$/);
+      if(m){ var qs=m[1].split("|").map(function(x){return x.trim();}).filter(Boolean);
+             if(qs.length) next=qs.slice(0,3); }
+      else out.push(lines[i]);
+    }
+    return {text:out.join("\n").replace(/\n+$/,""), next:next};
   }
   function renderAnswer(txt){
     txt=stripNext(txt).text;
