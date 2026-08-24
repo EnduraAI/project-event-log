@@ -508,7 +508,7 @@
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-08-24.1";
+var APP_BUILD="2026-08-24.2";
 var PEL_ENV={env:"TEST",agent:true,schema:6};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
@@ -563,7 +563,7 @@ var data=load();
 var LOCKS={};                 /* {dayKey:true} manually locked, persisted in cloud doc */
 var LOCKPW="";                /* hashed shared password, persisted in cloud doc ("" = not set) */
 var UNLOCKED={};              /* session-only: days the user has unlocked this session */
-function todayKey(){ return new Date().toISOString().slice(0,10); }
+function todayKey(){ var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function hashPw(s){ /* small non-crypto hash, adequate for a workflow guard */
   s=String(s); var h=5381; for(var i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))>>>0; } return "h"+h.toString(36);
 }
@@ -894,11 +894,19 @@ function renderBreakdown(key){
   document.getElementById("axEnd").textContent=data[key].end;
 }
 
-function updL(i,f,v){ if(guardLocked()) return; var r=data[curKey()].log[i]; r[f]=v; r[3]=curUser()||r[3]||""; save(); renderLog(); }
-function delL(i){ if(guardLocked()) return; data[curKey()].log.splice(i,1); save(); renderLog(); }
+function updL(i,f,v){ if(guardLocked()) return; var r=data[curKey()].log[i]; r[f]=v; r[3]=curUser()||r[3]||"";
+  if(r[4]&&(f===0||f===1)){ (data[curKey()].ev||[]).forEach(function(e){ if(e[6]===r[4]){ if(f===0){ e[1]=v; } else { e[3]=String(v).slice(0,100); } } }); }
+  save(); renderLog(); }
+function delL(i){ if(guardLocked()) return; var r=data[curKey()].log[i];
+  if(r&&r[4]){ var evs=(data[curKey()].ev||[]); var hit=evs.some(function(e){ return e[6]===r[4]; });
+    if(hit){ if(!confirm("This log line is linked to an event. OK deletes the line AND its linked event; Cancel keeps both.")) return;
+      data[curKey()].ev=evs.filter(function(e){ return e[6]!==r[4]; }); } }
+  data[curKey()].log.splice(i,1); save(); renderLog(); }
 function addL(){ if(guardLocked()) return; var L=data[curKey()].log; L.push([L.length?L[L.length-1][0]:"00:00","","",curUser()]); save(); renderLog(); }
 function updE(i,f,v){ if(guardLocked()) return; var e=data[curKey()].ev[i]; e[f]=v; e[4]=curUser()||e[4]||""; save(); renderLog(); }
-function delE(i){ if(guardLocked()) return; data[curKey()].ev.splice(i,1); save(); renderLog(); }
+function delE(i){ if(guardLocked()) return; var e=data[curKey()].ev[i];
+  if(e&&e[6]){ (data[curKey()].log||[]).forEach(function(r){ if(r[4]===e[6]) r[4]=""; }); }
+  data[curKey()].ev.splice(i,1); save(); renderLog(); }
 function updEType(i,v){ if(guardLocked()) return; var e=data[curKey()].ev[i]; if(v==="DT"||v==="NPT"||v==="OTHER") e[5]=v; else e[5]=undefined; e[4]=curUser()||e[4]||""; save(); renderLog(); }
 function addE(){ if(guardLocked()) return; data[curKey()].ev.push(["Other","","","",curUser()]); save(); renderLog(); }
 function setEnd(v){ if(guardLocked()) return;
@@ -906,7 +914,7 @@ function setEnd(v){ if(guardLocked()) return;
   if(m==null){ alert("Day end must be a valid time in HH:MM (24:00 for a full day)."); renderLog(); return; }
   if(m===0){ alert("Use 24:00 for a full day; 00:00 is not a valid day end."); renderLog(); return; }
   data[curKey()].end=v; save(); renderLog(); }
-function newDay(){ var d=prompt("New day (YYYY-MM-DD):", new Date().toISOString().slice(0,10)); if(!d) return; d=d.trim(); if(!validDayKey(d)){ alert("That is not a real calendar date. Use YYYY-MM-DD."); return; } if(!data[d]) data[d]={end:"24:00",log:[["00:00",""]],ev:[]}; save(); fillDaySelect(); document.getElementById("daySelect").value=d; renderLog(); }
+function newDay(){ var d=prompt("New day (YYYY-MM-DD):", todayKey()); if(!d) return; d=d.trim(); if(!validDayKey(d)){ alert("That is not a real calendar date. Use YYYY-MM-DD."); return; } if(!data[d]) data[d]={end:"24:00",log:[["00:00",""]],ev:[]}; save(); fillDaySelect(); document.getElementById("daySelect").value=d; renderLog(); }
 function deleteDay(){ var key=curKey(); if(guardLocked(key)) return; if(Object.keys(data).length<=1){ alert("Keep at least one day."); return; } if(confirm("Delete "+fmtDay(key)+"?")){ delete data[key]; save(); renderLog(); } }
 
 var KW=[["Maintenance",/maintenan|preventat|greas|lubric|servic/i],["ROV - Asset 2",/rov ?2/i],["ROV - Asset 1",/rov ?1|\btms\b|\bt4\b|umbilical|tether/i],["Weather",/weather|\bwow\b|swell|wave|wind|storm|cyclone/i],["Crane",/crane|lift(ing)?|deck ops/i],["Vessel",/vessel|\bdp\b|engine|thruster|beacon|gangway|bridge/i],["Tooling",/tool|grinder|ring ?saw|cutter|blade|hose|fit ?up|hot ?stab|dredge|jetter/i],["Scheduling",/schedul|waiting|wait on|standby|stand ?by|delay|no work|permit/i]];
@@ -1049,7 +1057,7 @@ function maBlank(k){ var d=data[k]; if(!d) return true;
 function maEl(k){ var d=data[k]||{}; var m=d.maSt;
   if(m && (m.s==="eligible"||m.s==="excluded"||m.s==="pending")) return m;
   return maBlank(k) ? {s:"pending", r:"blank_day"} : {s:"eligible", r:"offshore_operations"}; }
-function setMaSt(k,v){ if(guardLocked(k)) return; var d=data[k]; if(!d) return;
+function setMaSt(k,v){ if(guardLocked(k)){ renderDash(); return; } var d=data[k]; if(!d) return;
   if(v==="eligible") d.maSt={s:"eligible",r:"offshore_operations"};
   else if(v==="pending") d.maSt={s:"pending",r:"review"};
   else d.maSt={s:"excluded",r:v};
@@ -1081,7 +1089,7 @@ function maCalc(){
     var covered=Math.min(mtMin, Math.max(0, accMin-usedCumMin));
     usedCumMin+=covered; maintCumMin+=mtMin;
     var excessMin=Math.max(0, maintCumMin-usedCumMin);
-    days[k]={date:k, eligible:true, eligibilityStatus:"eligible", eligibilityReason:el.r,
+    days[k]={date:k, eligible:true, confirmed:!!(data[k]&&data[k].maSt), eligibilityStatus:"eligible", eligibilityReason:el.r,
       operationalDayOrdinal:ord, periodNumber:per, dayInPeriod:dip,
       accruedMin:accMin, maintenanceMin:mtMin, coveredMin:covered, usedMin:usedCumMin,
       balanceMin:accMin-usedCumMin, excessMin:excessMin, policyVersion:P.version,
@@ -1123,7 +1131,7 @@ function exportMaRecon(){
     var o=OLD[k]||{}, n=NEWC.days[k]||{};
     var deltaMin=Math.round(((n.balanceMin||0))-((o.bal||0)*60));
     var note=n.eligible===false?("Not accruing: "+(n.eligibilityStatus||"")+" ("+(n.eligibilityReason||"")+")"):"";
-    csv+=[q(k),q(n.eligibilityStatus||""),q(n.eligibilityReason||""),q(o.bucket||""),r2(o.accrued||0),r2(o.used||0),r2(o.bal||0),r2(o.excess||0),
+    csv+=[q(k),q((n.eligibilityStatus||"")+((n.eligible&&!n.confirmed)?"_assumed":"")),q(n.eligibilityReason||""),q(o.bucket||""),r2(o.accrued||0),r2(o.used||0),r2(o.bal||0),r2(o.excess||0),
       (n.operationalDayOrdinal==null?"":n.operationalDayOrdinal),(n.periodNumber==null?"":n.periodNumber),(n.dayInPeriod==null?"":n.dayInPeriod),
       (n.accruedMin||0),(n.maintenanceMin||0),(n.usedMin||0),(n.balanceMin||0),(n.excessMin||0),deltaMin,q(note)].join(",")+"\n";
   });
@@ -1183,9 +1191,9 @@ function renderDash(){
   var rb=document.getElementById("rollupBody"); rb.innerHTML="";
   stats.forEach(function(s){
     var md=MA.days[s.k]||{maint:0,used:0,bal:0,overAccr:false,over48:false};
-    var flag=md.overAccr?' <span style="color:#c0392b;font-weight:700" title="Maintenance this month exceeds the accrued allowance. Excess hours are not covered by clause 1.8.">&#9650;</span>':"";
+    var flag=md.overAccr?' <span style="color:#c0392b;font-weight:700" title="Maintenance this period exceeds the accrued allowance. Excess hours are not covered by clause 1.8.">&#9650;</span>':"";
     var usedStyle=md.over48?' style="color:#c0392b;font-weight:700"':'';
-    rb.insertAdjacentHTML("beforeend",'<tr><td>'+fmtDay(s.k)+'</td><td class="num">'+hm(s.len)+'</td><td class="num">'+s.count+'</td><td class="num">'+hm(s.dt)+'</td><td class="num">'+hm(s.npt)+'</td><td class="num">'+hm(s.other||0)+'</td><td class="num">'+hm(s.clear)+'</td><td class="num">'+hm(md.maint)+'</td><td class="num"'+usedStyle+'>'+hm(md.used)+'</td><td class="num">'+hm(md.bal)+flag+'</td><td class="tw"><select onchange="setMaSt(&quot;'+s.k+'&quot;,this.value)" style="font-size:11px;padding:1px" title="Maintenance-allowance eligibility">'+
+    rb.insertAdjacentHTML("beforeend",'<tr><td>'+fmtDay(s.k)+'</td><td class="num">'+hm(s.len)+'</td><td class="num">'+s.count+'</td><td class="num">'+hm(s.dt)+'</td><td class="num">'+hm(s.npt)+'</td><td class="num">'+hm(s.other||0)+'</td><td class="num">'+hm(s.clear)+'</td><td class="num">'+hm(md.maint)+'</td><td class="num"'+usedStyle+'>'+hm(md.used)+'</td><td class="num">'+hm(md.bal)+flag+'</td><td class="tw"><select onchange="setMaSt(&quot;'+s.k+'&quot;,this.value)"'+(isLocked(s.k)?" disabled title=\"Day is locked. Unlock it to classify.\"":" title=\"Maintenance-allowance eligibility\"")+' style="font-size:11px;padding:1px">'+
       (function(cur){ var o=function(v,l){return '<option value="'+v+'"'+(cur===v?" selected":"")+'>'+l+'</option>';};
         return o("eligible","Eligible")+o("pending","Pending")+o("breakaway","Breakaway")+o("transit","Transit")+o("port","Port")+o("weather_shelter","Weather shelter")+o("mobilisation","Mobilisation")+o("other","Excluded: other"); })(
         (maEl(s.k).s==="excluded")?maEl(s.k).r:maEl(s.k).s )+
@@ -1200,7 +1208,7 @@ function renderDash(){
       __pre+='<div class="insight" style="margin-top:8px;background:#fdf3e3;border-left:3px solid #b9822b"><b>'+MA.pendingDays.length+' day(s) pending maintenance-eligibility review:</b> '+MA.pendingDays.map(function(k2){return esc(fmtDay(k2));}).join(", ")+'. Pending days do not accrue allowance and are excluded from the operational-day count until confirmed.</div>';
     }
     if(window.__maShift){
-      __pre+='<div class="insight" style="margin-top:8px;background:#fdf3e3;border-left:3px solid #b9822b"><b>Maintenance period assignments changed since last view.</b> A historical edit has shifted operational-day ordinals. Review the MA reconciliation export before issuing allowance figures.</div>';
+      __pre+='<div class="insight" style="margin-top:8px;background:#fdf3e3;border-left:3px solid #b9822b"><b>Maintenance period assignments changed since last view.</b> A historical edit has shifted operational-day ordinals. Review the MA reconciliation export before issuing allowance figures. <button class="ghost" style="margin-left:8px;font-size:11px" onclick="window.__maShift=false;renderDash()">Acknowledge</button></div>';
     }
     var flagged=[]; var seenB={};
     keys.forEach(function(k){ var d=MA.days[k]; if(!d) return; var b=d.block; if(seenB[b]) return; seenB[b]=1; var mm=MA.blocks[b]; if(mm&&mm.overAccr) flagged.push({m:"Block "+b+" ("+fmtDay(mm.from)+" to "+fmtDay(mm.to)+")",mm:mm}); });
@@ -1367,6 +1375,11 @@ function buildDayRecord(key){
     '<h3 style="margin:10px 0 2px;font-size:11pt">Events</h3>'+
     '<table><thead><tr><th style="width:110px">Category</th><th style="width:56px">Start</th><th style="width:62px">End</th><th style="width:86px">Type</th><th style="width:52px">Dur h</th><th>Description</th><th style="width:56px">By</th></tr></thead><tbody>'+evRows+'</tbody></table>'+
     '<div class="drTotals">Day length <b>'+hm(st.len)+' </b> &middot; Actual downtime <b>'+hm(st.dt)+' </b> &middot; Maintenance <b>'+hm(st.maint||0)+' </b> &middot; NPT <b>'+hm(st.npt)+' </b> &middot; Other <b>'+hm(st.other||0)+' </b> &middot; Clear running <b>'+hm(st.clear)+' </b></div>'+
+    (function(){ var __m=maCalc().days[key]; var __t;
+    if(!__m) __t="";
+    else if(__m.eligible) __t='<div class="drFoot">Maintenance allowance: eligible operational day '+__m.operationalDayOrdinal+' (period '+__m.periodNumber+', day '+__m.dayInPeriod+' of 30)'+(__m.confirmed?'':' [assumed eligible, unconfirmed]')+'. Accrued '+hm(__m.accrued)+', used '+hm(__m.used)+', balance '+hm(__m.bal)+(__m.excessMin>0?', excess '+hm(__m.excess):'')+'. Policy '+__m.policyVersion+'.</div>';
+    else __t='<div class="drFoot">Maintenance allowance: '+esc(__m.eligibilityStatus)+' ('+esc(__m.eligibilityReason)+'), not accruing and not advancing the operational-day count.</div>';
+    return __t; })()+
     '<div class="drFoot">System-generated daily record produced from the Endura Asset Intelligence Project Event Log &middot; '+PEL_ENV.env+' &middot; build '+APP_BUILD+' &middot; schema '+PEL_ENV.schema+' &middot; policy '+MA_POLICY.version+lockNote+'. Times are vessel local. Maintenance hours are handled under contract clause 1.8 and are reported separately from downtime.</div>';
   return true;
 }
@@ -1455,7 +1468,7 @@ function wbsHours(key){
     var tags=byTime[t]||[];
     var hasEnd=tags.indexOf("-")>=0;
     var ids=[]; tags.forEach(function(w){ if(w&&w!=="-"&&ids.indexOf(w)<0) ids.push(w); });
-    if(ids.length) active=ids.slice(0,2);        /* a new tag (or pair) redefines what's active */
+    if(ids.length){ if(ids.length>2){ try{ (window.__wbs3=window.__wbs3||[]).push(key+" "+String(Math.floor(t/60)).padStart(2,"0")+":"+String(t%60).padStart(2,"0")); }catch(e){} } active=ids.slice(0,2); }        /* a new tag (or pair) redefines what's active */
     else if(hasEnd) active=[];                    /* "-" with no new tag ends the span(s) */
     /* else: blank line inherits — active carries forward unchanged */
     var dur=(nxt-t)/60; if(dur<=0||!active.length) continue;
@@ -1464,8 +1477,8 @@ function wbsHours(key){
   }
   return m;
 }
-function wbsTotals(){
-  var keys=Object.keys(data).sort(); var tot={},days={};
+function wbsTotals(keySet){
+  var keys=keySet||Object.keys(data).sort(); var tot={},days={};
   keys.forEach(function(k){ var m=wbsHours(k); for(var w in m){ tot[w]=(tot[w]||0)+m[w]; days[w]=(days[w]||0)+1; } });
   return {tot:tot,days:days};
 }
@@ -1653,9 +1666,12 @@ function importWbs(){
   save(); document.getElementById("wbsText").value=""; renderWbs(); alert(n+" activities added.");
 }
 function exportWbsCSV(){
-  var t=wbsTotals(); var csv="WBS_ID,Activity,Total_h,Days\n";
+  var __r=pelSelRange();
+  var __keys=allDayKeys().filter(function(k){ return (!__r.from||k>=__r.from)&&(!__r.to||k<=__r.to); });
+  var t=wbsTotals(__keys); var csv="WBS_ID,Activity,Total_h,Days\n";
   WBSL.forEach(function(w){ csv+=[q(w[0]),q(w[1]),r2(t.tot[w[0]]||0),(t.days[w[0]]||0)].join(",")+"\n"; });
-  var __r=pelSelRange(); csv+="\n"+exportMetaLine(); dl(csv, pelName("wbs", __r.from, __r.to), "text/csv");
+  csv+="\nReport_From,"+__r.from+",Report_To,"+__r.to+",Logged_days,"+__keys.length;
+  csv+="\n"+exportMetaLine(); dl(csv, pelName("wbs", __r.from, __r.to), "text/csv");
 }
 /* guessWbs removed (D1). Bare-integer MS Project IDs matched fragments like "@50%" and
    "Lift #1", silently mis-tagging imported lines and corrupting WBS hour attribution. */
@@ -1731,7 +1747,7 @@ function pelName(kind, a, b){
   if(kind==="dprBatch")return base+" - DPR Batch - "+a;
   if(kind==="wbs")     return base+" - WBS Hours - "+a+" to "+b+".csv";
   if(kind==="backup")  return base+" - Backup - "+proj+" - "+new Date().toISOString().slice(0,19).replace(/:/g,"")+"Z.json";
-  if(kind==="recon")   return base+" - Maintenance Reconciliation - "+MA_POLICY.version+" - "+new Date().toISOString().slice(0,10)+".csv";
+  if(kind==="recon")   return base+" - Maintenance Reconciliation - "+proj+" - "+MA_POLICY.version+" - "+new Date().toISOString().slice(0,19).replace(/:/g,"")+"Z.csv";
   return base+".txt";
 }
 function exportMetaLine(){
@@ -1760,12 +1776,13 @@ function exportCSV(){
   dl(csv, pelName("daily", key), "text/csv");
 }
 function exportRollupCSV(){
-  var keys=keysInRange();
+  var __r0=pelSelRange();
+  var keys=allDayKeys().filter(function(k){ return (!__r0.from||k>=__r0.from)&&(!__r0.to||k<=__r0.to); });
   var MA=maCalc();
   if(MA.pendingDays.length && !confirm(MA.pendingDays.length+" day(s) are pending maintenance-eligibility review and are excluded from allowance figures. Continue export?")) return;
   var csv="Day,Day_h,Events,Actual_DT_h,NPT_h,Other_h,Clear_h,Maint_h,MA_used_h,MA_balance_h,MA_flag,MA_eligibility,MA_reason,Op_day,Period,Day_in_period,"+CATS.join("_h,")+"_h\n";
   keys.forEach(function(k){ var s=dayStats(k); var md=MA.days[k]||{maint:0,used:0,bal:0,overAccr:false};
-    var row=[k,r2(s.len),s.count,r2(s.dt),r2(s.npt),r2(s.other||0),r2(s.clear),r2(md.maint),r2(md.used),r2(md.bal),(md.overAccr?"OVER":""),q(md.eligibilityStatus||""),q(md.eligibilityReason||""),(md.operationalDayOrdinal==null?"":md.operationalDayOrdinal),(md.periodNumber==null?"":md.periodNumber),(md.dayInPeriod==null?"":md.dayInPeriod)];
+    var row=[k,r2(s.len),s.count,r2(s.dt),r2(s.npt),r2(s.other||0),r2(s.clear),r2(md.maint),r2(md.used),r2(md.bal),(md.overAccr?"OVER":""),q((md.eligibilityStatus||"")+((md.eligible&&!md.confirmed)?"_assumed":"")),q(md.eligibilityReason||""),(md.operationalDayOrdinal==null?"":md.operationalDayOrdinal),(md.periodNumber==null?"":md.periodNumber),(md.dayInPeriod==null?"":md.dayInPeriod)];
     CATS.forEach(function(c){ row.push(r2(s.cats[c]||0)); }); csv+=row.join(",")+"\n"; });
   var tag=(RANGE.from||RANGE.to)?("_"+(RANGE.from||"start")+"_to_"+(RANGE.to||"latest")):"_full_campaign";
   var __r=pelSelRange();
@@ -1803,11 +1820,17 @@ function validDayKey(k){
 }
 function validateDoc(input){
   var issues=[];
-  if(!input || typeof input!=="object") return {ok:false, issues:["not an object"]};
+  if(!input || typeof input!=="object" || Array.isArray(input)) return {ok:false, issues:["not an object"]};
   var o; try{ o=JSON.parse(JSON.stringify(input)); }catch(e){ return {ok:false, issues:["not serialisable"]}; }
-  var KNOWN={days:1,wbs:1,ctype:1,locks:1,lockpw:1,meta:1,app:1,version:1,schemaVersion:1};
-  for(var kk in o){ if(!KNOWN[kk]) issues.push("unknown field "+String(kk).slice(0,24)+" ignored"); }
-  var days=o.days||o; if(typeof days!=="object"||Array.isArray(days)) return {ok:false, issues:["days is not an object"]};
+  var wrapped=!!(o.days && typeof o.days==="object" && !Array.isArray(o.days));
+  if(wrapped){
+    var KNOWN={days:1,wbs:1,ctype:1,locks:1,lockpw:1,meta:1,app:1,version:1,schemaVersion:1};
+    for(var kk in o){ if(!KNOWN[kk]) issues.push("unknown field "+String(kk).slice(0,24)+" ignored"); }
+  } else {
+    issues.push("legacy bare-days format normalised");
+  }
+  var days=wrapped?o.days:o;
+  if(typeof days!=="object"||Array.isArray(days)) return {ok:false, issues:["days is not an object"]};
   for(var k in days){
     if(!validDayKey(k)){ issues.push("invalid day key "+String(k).slice(0,20)); delete days[k]; continue; }
     var d=days[k]; if(!d||typeof d!=="object"||Array.isArray(d)){ issues.push(k+": day is not an object"); delete days[k]; continue; }
@@ -1816,7 +1839,11 @@ function validateDoc(input){
     d.log=d.log.filter(function(r,i){
       if(!Array.isArray(r)){ issues.push(k+": log row "+(i+1)+" is not a row; dropped"); return false; }
       return true;
-    }).map(function(r){ return [String(r[0]||""),String(r[1]||""),String(r[2]||""),String(r[3]||""),String(r[4]||"")]; });
+    }).map(function(r,i){
+      var out=[String(r[0]||""),String(r[1]||""),String(r[2]||""),String(r[3]||""),String(r[4]||"")];
+      if(out[0]!=="" && toMin(out[0])==null){ issues.push(k+": log row "+(i+1)+" invalid time "+out[0].slice(0,8)); }
+      return out;
+    });
     if(!Array.isArray(d.ev)){ issues.push(k+": events is not a list"); d.ev=[]; }
     d.ev=d.ev.filter(function(e,i){
       if(!Array.isArray(e)){ issues.push(k+": event "+(i+1)+" is not a row; dropped"); return false; }
@@ -1824,19 +1851,35 @@ function validateDoc(input){
     });
     d.ev.forEach(function(e,i){
       while(e.length<8) e.push("");
-      if(CATS.indexOf(e[0])<0){ issues.push(k+": unknown category coerced to Other"); e[3]="[was: "+String(e[0]).slice(0,40)+"] "+(e[3]||""); e[0]="Other"; }
-      if(e[1]!=="" && toMin(String(e[1]))==null){ issues.push(k+": event "+(i+1)+" invalid start "+String(e[1]).slice(0,8)); }
-      if(e[2] && toMin(String(e[2]))==null){ issues.push(k+": event "+(i+1)+" invalid end "+String(e[2]).slice(0,8)); }
+      e[0]=String(e[0]||""); e[1]=String(e[1]||""); e[2]=String(e[2]||""); e[3]=String(e[3]||""); e[4]=String(e[4]||"");
+      e[6]=String(e[6]||""); 
+      if(CATS.indexOf(e[0])<0){ issues.push(k+": unknown category coerced to Other"); e[3]="[was: "+e[0].slice(0,40)+"] "+e[3]; e[0]="Other"; }
+      if(e[1]!=="" && toMin(e[1])==null){ issues.push(k+": event "+(i+1)+" invalid start "+e[1].slice(0,8)); }
+      if(e[2]!=="" && toMin(e[2])==null){ issues.push(k+": event "+(i+1)+" invalid end "+e[2].slice(0,8)); }
+      if(e[5]!==undefined && e[5]!=="" && e[5]!=="DT" && e[5]!=="NPT" && e[5]!=="OTHER"){ issues.push(k+": event "+(i+1)+" invalid type override reset"); e[5]=undefined; }
     });
-    if(d.maSt && !(d.maSt.s==="eligible"||d.maSt.s==="excluded"||d.maSt.s==="pending")){ issues.push(k+": invalid maintenance eligibility reset"); delete d.maSt; }
+    if(d.maSt){
+      if(!(d.maSt.s==="eligible"||d.maSt.s==="excluded"||d.maSt.s==="pending")){ issues.push(k+": invalid maintenance eligibility reset"); delete d.maSt; }
+      else d.maSt={s:d.maSt.s, r:String(d.maSt.r||"").slice(0,40)};
+    }
   }
-  if(o.wbs!=null){
+  if(wrapped && o.wbs!=null){
     if(!Array.isArray(o.wbs)){ issues.push("wbs is not a list"); o.wbs=null; }
-    else o.wbs=o.wbs.filter(function(w,i){ if(!Array.isArray(w)){ issues.push("wbs row "+(i+1)+" is not a row; dropped"); return false; } return true; });
+    else o.wbs=o.wbs.filter(function(w,i){
+      if(!Array.isArray(w)){ issues.push("wbs row "+(i+1)+" is not a row; dropped"); return false; }
+      if(typeof w[0]!=="string" && typeof w[0]!=="number"){ issues.push("wbs row "+(i+1)+" has a non-text ID; dropped"); return false; }
+      if(!String(w[0]||"").trim()){ issues.push("wbs row "+(i+1)+" has no ID; dropped"); return false; }
+      return true;
+    }).map(function(w){ return [String(w[0]||"").trim(), String(w[1]||"")]; });
   }
-  if(o.locks!=null && (typeof o.locks!=="object" || Array.isArray(o.locks))){ issues.push("locks malformed; reset"); o.locks={}; }
-  o.schemaVersion=PEL_ENV.schema;
-  return {ok:true, issues:issues, cleaned:o};
+  if(wrapped && o.locks!=null){
+    if(typeof o.locks!=="object" || Array.isArray(o.locks)){ issues.push("locks malformed; reset"); o.locks={}; }
+    else { var nl={}; for(var lk in o.locks){ if(o.locks[lk] && validDayKey(lk)) nl[lk]=true; } o.locks=nl; }
+  }
+  var cleaned;
+  if(wrapped){ o.schemaVersion=PEL_ENV.schema; cleaned=o; }
+  else { cleaned={days:days, schemaVersion:PEL_ENV.schema}; }
+  return {ok:true, issues:issues, cleaned:cleaned};
 }
 function adopt(txt, strict){
   if(!txt) return;
@@ -2106,7 +2149,7 @@ function printDprBatch(){
       '<div class="m"><div class="mk">Checked</div><div class="mv">'+gen.toLocaleDateString("en-GB")+' '+gen.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})+'</div></div>'+
       '<div class="m"><div class="mk">Comparison</div><div class="mv">DT vs DPR downtime</div></div></div>'+
     '<table class="dpr-rec-table"><thead><tr><th>DPR</th><th>Date</th><th>Matched day</th><th class="num">App DT</th><th class="num">DPR W+M</th><th class="num">DPR V+ROV</th><th>Result</th></tr></thead><tbody>'+rows+'</tbody></table>'+
-    '<div class="dpr-pilot">Pilot tool. Downtime figures are read automatically from each contractor PDF. Figures should be verified against the source DPRs. Source of truth remains the contractor DPRs and the Santos event record.</div>';
+    '<div class="dpr-pilot">Comparison basis for DPR agreement remains subject to written confirmation; agreement lines are preliminary. Pilot tool. Downtime figures are read automatically from each contractor PDF. Figures should be verified against the source DPRs. Source of truth remains the contractor DPRs and the Santos event record.</div>';
   document.body.classList.add("printing-dpr");
   withPrintTitle(pelName("dprBatch", new Date().toISOString().slice(0,10)));
   setTimeout(function(){ document.body.classList.remove("printing-dpr"); }, 500);
@@ -2320,7 +2363,7 @@ function printDprRecord(){
     '</tbody></table>'+
     '<div class="dpr-detail"><strong>DPR figures used (today):</strong> Weather '+w.toFixed(2)+'h \u00b7 Mechanical '+me.toFixed(2)+'h \u00b7 Vessel '+ve.toFixed(2)+'h \u00b7 ROV '+ro.toFixed(2)+'h</div>'+
     ((d.warnings&&d.warnings.length)?'<div class="dpr-detail" style="color:#8a5a16"><strong>Verification notes:</strong> '+d.warnings.map(esc).join(" ")+'</div>':"")+
-    '<div class="dpr-pilot">Pilot tool. Downtime figures are read automatically from the contractor PDF and as extracted or entered at the time of checking; independent verification is not captured in this record. Source of truth remains the contractor DPR and the Santos event record.</div>';
+    '<div class="dpr-pilot">Comparison basis for DPR agreement remains subject to written confirmation; agreement lines are preliminary. Pilot tool. Downtime figures are read automatically from the contractor PDF and as extracted or entered at the time of checking; independent verification is not captured in this record. Source of truth remains the contractor DPR and the Santos event record.</div>';
 
   document.body.classList.add("printing-dpr");
   withPrintTitle(pelName("dpr", key));
@@ -2714,7 +2757,7 @@ function pelChart(spec){
     ctx.user    = tryCall("curUser");    if(ctx.user===undefined) ctx.user=null;
     ctx.currentDay = tryCall("curKey") || null; if(!ctx.currentDay) missing.push("currentDay");
     ctx.selectedDay = ctx.currentDay;
-    ctx.todayDate = new Date().toISOString().slice(0,10);
+    ctx.todayDate = (typeof todayKey==="function")? todayKey() : new Date().toISOString().slice(0,10);
     ctx.cats  = (typeof window.CATS!=="undefined")?window.CATS:null;
     ctx.ctype = (typeof window.CTYPE!=="undefined")?window.CTYPE:null;
     if(!ctx.ctype) missing.push("ctype");

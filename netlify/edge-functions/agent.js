@@ -56,6 +56,14 @@ function jresp(status, obj) {
 }
 
 export function truncateContext(context) {
+  if (!context || typeof context !== "object" || Array.isArray(context)) { const err = new Error("invalid context"); err.code = 400; throw err; }
+  const ALLOW = new Set(["days","totals","ctype","cats","wbs","allowance","selectedDay","latestLoggedDay","todayDate","currentDay","project","meta","stats"]);
+  for (const kf of Object.keys(context)) { if (!ALLOW.has(kf)) { if (!context.meta || typeof context.meta !== "object" || Array.isArray(context.meta)) context.meta = {}; context.meta.dropped_fields = (context.meta.dropped_fields || []).concat(kf); delete context[kf]; } }
+  if (context.days !== undefined) {
+    if (!context.days || typeof context.days !== "object" || Array.isArray(context.days)) { const err = new Error("invalid days"); err.code = 400; throw err; }
+    for (const kd of Object.keys(context.days)) { const dv = context.days[kd]; if (!dv || typeof dv !== "object" || Array.isArray(dv)) { if (!context.meta || typeof context.meta !== "object" || Array.isArray(context.meta)) context.meta = {}; context.meta.invalid_days = (context.meta.invalid_days || []).concat(kd); delete context.days[kd]; } }
+  }
+
   let s = JSON.stringify(context);
   if (s.length <= MAX_CONTEXT_CHARS) return { context: context, truncated: false };
   const days = context && context.days ? Object.keys(context.days).sort() : [];
@@ -66,7 +74,7 @@ export function truncateContext(context) {
     delete context.days[oldest];
     s = JSON.stringify(context);
   }
-  context.meta = context.meta || {};
+  if (!context.meta || typeof context.meta !== "object" || Array.isArray(context.meta)) context.meta = {};
   context.meta.truncated_days = dropped;
   /* One oversized day: trim its oldest log rows and events with explicit metadata. */
   let dayTrim = null;
@@ -98,7 +106,9 @@ export function truncateContext(context) {
     const ks = Object.keys(context.days || {}).sort();
     if (ks.length) { context.meta.truncated_days.push(ks[0]); delete context.days[ks[0]]; }
     else if (context.allowance) { context.meta.dropped_fields = (context.meta.dropped_fields || []).concat("allowance"); delete context.allowance; }
-    else break;
+    else if (context.totals) { context.meta.dropped_fields = (context.meta.dropped_fields || []).concat("totals"); delete context.totals; }
+    else if (context.wbs) { context.meta.dropped_fields = (context.meta.dropped_fields || []).concat("wbs"); delete context.wbs; }
+    else { const keepMeta = context.meta; context = { error: "context too large after reduction", meta: keepMeta }; s = JSON.stringify(context); break; }
     s = JSON.stringify(context);
   }
   return { context: context, truncated: dropped.length > 0 || !!dayTrim || clipped > 0 || finalGuard > 0 };
@@ -136,7 +146,11 @@ export default async function handler(request) {
       history = alt;
     })();
 
-    const t = truncateContext(body.context && typeof body.context === "object" ? body.context : {});
+    if (body.context !== undefined && (typeof body.context !== "object" || body.context === null || Array.isArray(body.context))) { return jresp(400, { error: "Invalid context: must be an object" }); }
+  let __tr;
+  try { __tr = truncateContext(body.context || {}); }
+  catch (e) { return jresp((e && e.code) || 400, { error: "Invalid context: " + ((e && e.message) || "malformed") }); }
+  const t = __tr;
 
     const messages = history.concat([{
       role: "user",
