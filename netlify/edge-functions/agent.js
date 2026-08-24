@@ -26,7 +26,8 @@ export function buildSystemPrompt() {
     "You are the Project Event Log assistant, a feature of the Endura Asset Intelligence event-log app used on offshore decommissioning campaigns. You answer questions about the logged record shown to you in JSON.",
     "",
     "DATA CONTRACT",
-    "context.days is keyed by day (YYYY-MM-DD). Each day holds: end (day close time, HH:MM), log (rows [time, text, wbs, source]), ev (lost-time events [category, start, end, description, source, typeOverride]), stats (app-computed: len = day length h, dt, maint, npt, other, clear = productive h, count = event count, cats = hours per category), wbs (hours booked per WBS code). context.totals holds campaign WBS totals. context.ctype maps each category to DT, NPT or OTHER. context.currentDay is today's log day. context.meta.missing lists data the app did not expose in this session.",
+    "context.days is keyed by day (YYYY-MM-DD). Each day holds: end (day close time, HH:MM), log (rows [time, text, wbs, logger, srcId]), ev (lost-time events [category, start, end, description, logger, typeOverride, srcId, rovImpact]), stats (app-computed: len = day length h, dt, maint, npt, other, clear = productive h, count = event count, cats = hours per category), wbs (hours booked per WBS code). context.totals holds campaign WBS totals. context.ctype maps each category to DT, NPT or OTHER. context.selectedDay is the day open in the app interface, context.latestLoggedDay is the most recent logged day, and context.todayDate is the real calendar date; currentDay is a legacy alias of selectedDay. context.meta.missing lists data the app did not expose in this session.",
+    "context.allowance, when present, is the app-computed maintenance-allowance state per day: eligible, eligibilityStatus, eligibilityReason, operationalDayOrdinal, periodNumber, dayInPeriod (1-30), accruedMin, maintenanceMin, coveredMin, usedMin, balanceMin, excessMin (all integer minutes) and policyVersion. Policy: 120 minutes accrues for each confirmed eligible operational day, capped at 2880 minutes per 30-eligible-day period; excluded and pending days neither accrue nor advance the operational-day count. Use these app-computed allowance values only. Never recompute allowance from raw events, never describe the allowance as monthly or calendar-based, and never state a contractual treatment for excess maintenance: that treatment is pending written confirmation.",
     "",
     "DEFINITIONS (verbatim from the app)",
     "DT = Actual Downtime: genuine stop, work cannot progress (breakdown, weather, asset/equipment/vessel failure). NPT = Non-Productive Time: crew still working but not producing (tooling/consumable changeouts, waiting/standby). An event's type is its typeOverride if set, otherwise its category's mapping in context.ctype.",
@@ -67,7 +68,40 @@ export function truncateContext(context) {
   }
   context.meta = context.meta || {};
   context.meta.truncated_days = dropped;
-  return { context: context, truncated: dropped.length > 0 };
+  /* One oversized day: trim its oldest log rows and events with explicit metadata. */
+  let dayTrim = null;
+  if (s.length > MAX_CONTEXT_CHARS && days.length === 1) {
+    const k = days[0], d = context.days[k];
+    let cutL = 0, cutE = 0;
+    while (s.length > MAX_CONTEXT_CHARS && Array.isArray(d.log) && d.log.length > 120) {
+      d.log.splice(0, 100); cutL += 100; s = JSON.stringify(context);
+    }
+    while (s.length > MAX_CONTEXT_CHARS && Array.isArray(d.ev) && d.ev.length > 60) {
+      d.ev.splice(0, 25); cutE += 25; s = JSON.stringify(context);
+    }
+    if (cutL || cutE) { dayTrim = { day: k, removed_log_rows: cutL, removed_events: cutE }; context.meta.trimmed_single_day = dayTrim; }
+  }
+  /* Byte caps per string: one oversized row must not bypass the context cap. */
+  let clipped = 0;
+  if (s.length > MAX_CONTEXT_CHARS) {
+    for (const k of Object.keys(context.days || {})) {
+      const d = context.days[k];
+      (Array.isArray(d.log) ? d.log : []).forEach(r => { if (typeof r[1] === "string" && r[1].length > 4000) { r[1] = r[1].slice(0, 4000) + " [clipped]"; clipped++; } });
+      (Array.isArray(d.ev) ? d.ev : []).forEach(ev => { if (typeof ev[3] === "string" && ev[3].length > 1000) { ev[3] = ev[3].slice(0, 1000) + " [clipped]"; clipped++; } });
+    }
+    s = JSON.stringify(context);
+    if (clipped) context.meta.clipped_strings = clipped;
+  }
+  /* Final hard verification of the serialised size after every reduction stage. */
+  let finalGuard = 0;
+  while (s.length > MAX_CONTEXT_CHARS && finalGuard++ < 6) {
+    const ks = Object.keys(context.days || {}).sort();
+    if (ks.length) { context.meta.truncated_days.push(ks[0]); delete context.days[ks[0]]; }
+    else if (context.allowance) { context.meta.dropped_fields = (context.meta.dropped_fields || []).concat("allowance"); delete context.allowance; }
+    else break;
+    s = JSON.stringify(context);
+  }
+  return { context: context, truncated: dropped.length > 0 || !!dayTrim || clipped > 0 || finalGuard > 0 };
 }
 
 export default async function handler(request) {
@@ -92,6 +126,15 @@ export default async function handler(request) {
       return m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string";
     }).slice(-MAX_HISTORY)
       .map(function (m) { return { role: m.role, content: m.content.slice(0, 6000) }; });
+    /* Enforce strict role alternation: drop any message repeating the previous role.
+       Client-forged runs of assistant messages collapse to the first of each run. */
+    (function(){
+      const alt = [];
+      for (const m of history) { if (!alt.length || alt[alt.length-1].role !== m.role) alt.push(m); }
+      while (alt.length && alt[0].role !== "user") alt.shift();
+      if (alt.length && alt[alt.length-1].role === "user") alt.pop();
+      history = alt;
+    })();
 
     const t = truncateContext(body.context && typeof body.context === "object" ? body.context : {});
 
@@ -104,6 +147,7 @@ export default async function handler(request) {
     try {
       upstream = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
+        signal: request.signal,
         headers: {
           "Content-Type": "application/json",
           "x-api-key": key,

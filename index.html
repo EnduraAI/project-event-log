@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-08-10.4 - deploy check string: PEL-BUILD-2026-08-10.4 -->
+<!-- Endura Project Event Log - build 2026-08-24.1 - deploy check string: PEL-BUILD-2026-08-24.1 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -189,7 +189,7 @@
 
     /* ===== EXECUTIVE SUMMARY STRIP ===== */
     .rpt-section-h{font-family:Calibri;font-size:11pt;font-weight:700;color:#1A1A1A;margin:14px 0 6px;padding-bottom:3px;border-bottom:1px solid #E87722;break-after:avoid}
-    .sumstrip{display:grid;grid-template-columns:repeat(6,1fr);border:1px solid #e3ddcf;border-radius:5px;overflow:hidden;break-inside:avoid}
+    .sumstrip{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid #e3ddcf;border-radius:5px;overflow:hidden;break-inside:avoid}
     .sumstrip .s{padding:8px 10px;border-right:1px solid #e3ddcf}
     .sumstrip .s:last-child{border-right:none}
     .sumstrip .sk{font-size:7pt;letter-spacing:.6px;color:#8C8C8C;text-transform:uppercase;font-weight:700}
@@ -270,7 +270,7 @@
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-08-10.4</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-08-24.1</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -330,7 +330,7 @@
       <div id="catChips" class="chips"></div>
       <div id="wbsChips" class="chips"></div>
       <div id="laneWrap" class="lanewrap"></div>
-      <div class="axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span id="axEnd">24:00</span></div>
+      <div class="axis"><span>00:00</span><span id="axQ1">06:00</span><span id="axQ2">12:00</span><span id="axQ3">18:00</span><span id="axEnd">24:00</span></div>
       <div class="footnote"><b>Actual downtime + maintenance + NPT + other + clear running = day length</b> (overlaps merged, no double-counting; where events overlap, a minute counts once, in the order downtime, then maintenance, then NPT). Each bar is one event, drawn on its own lane so overlapping events are visible side by side. Set whether a category is genuine downtime or non-productive time using the controls above.</div>
     </div>
   </section>
@@ -353,7 +353,7 @@
         </div>
         <div class="spacer"></div>
         <label class="sub" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="printCharts" style="width:auto"> include charts in PDF</label>
-        <button class="btn" onclick="exportRollupCSV()">Export CSV</button>
+        <button class="btn" onclick="exportRollupCSV()">Export CSV</button> <button class="ghost" onclick="exportMaRecon()" title="Old calendar-basis engine versus the current policy engine, day by day, for governance before reissue">MA reconciliation</button>
         <button class="btn primary" onclick="printReport()">Print PDF</button>
       </div>
       <div class="sub" id="rangeSummary" style="margin-top:10px"></div>
@@ -390,13 +390,13 @@
       <h3>Daily rollup</h3>
       <div class="tableScroll">
         <table>
-          <thead><tr><th>Day</th><th class="num">Day h</th><th class="num">Events</th><th class="num">Actual DT h</th><th class="num">NPT h</th><th class="num">Other h</th><th class="num">Clear h</th><th class="num" title="Maintenance hours logged this day (category Maintenance)">Maint h</th><th class="num" title="Maintenance allowance used this calendar month to date. Only accrued hours can be used.">MA used</th><th class="num" title="Accrued allowance minus used, this calendar month. Accrues 2 h per logged day, capped at 48 h, resets monthly.">MA bal</th><th>Worst category</th></tr></thead>
+          <thead><tr><th>Day</th><th class="num">Day h</th><th class="num">Events</th><th class="num">Actual DT h</th><th class="num">NPT h</th><th class="num">Other h</th><th class="num">Clear h</th><th class="num" title="Maintenance hours logged this day (category Maintenance)">Maint h</th><th class="num" title="Maintenance allowance used this operational period to date. Only accrued hours can be used.">MA used</th><th class="num" title="Accrued allowance minus used, this confirmed 30-eligible-operational-day period. Accrues 2 h per eligible day; the cap of 48 h is first reached on eligible day 24 and holds through day 30.">MA bal</th><th title="Maintenance-allowance eligibility for this day. Excluded and pending days neither accrue nor advance the operational-day count.">MA elig</th><th>Worst category</th></tr></thead>
           <tbody id="rollupBody"></tbody>
           <tfoot id="rollupFoot"></tfoot>
         </table>
       </div>
       <div id="maBanner"></div>
-      <div class="footnote">Maintenance allowance per contract clause 1.8: accrues 2 hours for each logged day of offshore operations, capped at 48 hours per calendar month, and the balance resets each month. Unused hours are not compensated. Hours only, at vessel standby rate off-app. Maintenance covered by the allowance is not counted as downtime; hours beyond the accrued balance are flagged and stand as downtime. Calendar-month basis is a working decision to be confirmed with Jed.</div>
+      <div class="footnote">Maintenance allowance under clause 1.8 accrues at 2 hours for each confirmed eligible operational day, capped at 48 hours within each 30-operational-day period. Breakaway and other confirmed non-operational days do not accrue allowance and do not advance the operational-day count. Unused hours are not compensated. Hours only, at vessel standby rate off-app. Maintenance covered by the available accrued allowance is reported separately from downtime. Maintenance above the available accrued balance is flagged separately. Contractual treatment of excess hours remains subject to written confirmation.</div>
     </div>
 
     <!-- Per-day breakdown with events listed -->
@@ -508,7 +508,15 @@
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-08-10.4";
+var APP_BUILD="2026-08-24.1";
+var PEL_ENV={env:"TEST",agent:true,schema:6};
+document.addEventListener("DOMContentLoaded",function(){ try{
+  var b=document.createElement("div");
+  b.id="envBadge";
+  b.textContent=PEL_ENV.env+" \u00b7 build "+APP_BUILD+" \u00b7 schema "+PEL_ENV.schema;
+  b.style.cssText="position:fixed;bottom:6px;right:8px;font:10px monospace;color:"+(PEL_ENV.env==="PRODUCTION"?"#8c8c8c":"#b9822b")+";background:rgba(250,247,241,.9);padding:2px 6px;border-radius:4px;z-index:9998;pointer-events:none";
+  document.body.appendChild(b);
+}catch(e){} });
 var CATS=["Weather","ROV - Asset 1","ROV - Asset 2","Tooling","Scheduling","Crane","Vessel","Maintenance","Other"];
 var CCOL={"Weather":"#2f74c9","ROV - Asset 1":"#2fae54","ROV - Asset 2":"#dd3b40","Tooling":"#c98a2a","Scheduling":"#b23bb0","Crane":"#7d54d6","Vessel":"#0f9bad","Maintenance":"#4c9a6a","Other":"#8C8C8C"};
 
@@ -579,6 +587,7 @@ function lockReason(key){
 }
 /* Called by every mutator. Returns true if the action should be BLOCKED. */
 function guardLocked(key){
+  if(window.__remoteBad){ alert("The cloud copy of this project failed validation. The app is read-only until reload; do not edit."); return true; }
   key=key||curKey();
   if(!isLocked(key)) return false;
   alert("Day "+fmtDay(key)+" is locked. Use the Unlock button to edit it.");
@@ -739,7 +748,7 @@ function dayStats(key){
 }
 /* Worst LOST-TIME category. Maintenance is allowance-covered planned work (clause 1.8),
    so it never competes for "worst". */
-function worstCat(cats){ var w="",h=0; for(var c in cats){ if(c==="Maintenance") continue; if(cats[c]>h){ h=cats[c]; w=c; } } return w?w+" ("+hm(h)+")":"—"; }
+function worstCat(cats){ var w="",h=0; for(var c in cats){ if(c==="Maintenance") continue; if(cats[c]>h){ h=cats[c]; w=c; } } if(!w) return "—"; var e=String(w).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); return e+" ("+hm(h)+")"; }
 
 var VIEW24K="endura_pel_view24";
 var VIEW24=(function(){ try{ return localStorage.getItem(VIEW24K)==="rov"?"rov":"cp"; }catch(e){ return "cp"; } })();
@@ -758,7 +767,7 @@ function showTab(t){
 }
 function fillDaySelect(){
   var sel=document.getElementById("daySelect"); var keys=Object.keys(data).sort(); var cur=sel.value;
-  sel.innerHTML=keys.map(function(k){return '<option value="'+k+'">'+fmtDay(k)+'</option>';}).join("");
+  sel.innerHTML=keys.map(function(k){return '<option value="'+esc(k)+'">'+esc(fmtDay(k))+'</option>';}).join("");
   sel.value=(keys.indexOf(cur)>=0)?cur:keys[keys.length-1];
 }
 function curKey(){ return document.getElementById("daySelect").value; }
@@ -816,7 +825,9 @@ function renderLog(){
   day.ev.forEach(function(e,i){
     var s=toMin(e[1]); var en=e[2]?toMin(e[2]):null;
     var badEnd=!!(e[2]&&(en==null||(s!=null&&en<=s)));
-    var dur=badEnd?0:((s!=null)?(((en!=null&&en>s)?en:endMin)-s)/60:0);
+    var __sp=effSpan(endMin, e);
+    var pastEnd=__sp.past;
+    var dur=__sp.effMin/60;
     var opts=CATS.map(function(c){return '<option value="'+c+'"'+(c===e[0]?" selected":"")+'>'+c+'</option>';}).join("");
     var tr=document.createElement("tr");
     var typeSel=(e[0]==="Maintenance")
@@ -876,6 +887,10 @@ function renderBreakdown(key){
     d.title=x.cat+" · "+min2t(x.s)+"–"+(x.open?"ongoing":min2t(x.e))+" · "+r2(x.hrs)+"h\n"+x.d;
     lw.appendChild(d);
   });
+  var __em=toMin(data[key].end)||1440;
+  function __axq(f){ var mnt=Math.round(__em*f/15)*15; return min2t(Math.min(mnt,__em)); }
+  var __q1=document.getElementById("axQ1"), __q2=document.getElementById("axQ2"), __q3=document.getElementById("axQ3");
+  if(__q1) __q1.textContent=__axq(0.25); if(__q2) __q2.textContent=__axq(0.5); if(__q3) __q3.textContent=__axq(0.75);
   document.getElementById("axEnd").textContent=data[key].end;
 }
 
@@ -886,8 +901,12 @@ function updE(i,f,v){ if(guardLocked()) return; var e=data[curKey()].ev[i]; e[f]
 function delE(i){ if(guardLocked()) return; data[curKey()].ev.splice(i,1); save(); renderLog(); }
 function updEType(i,v){ if(guardLocked()) return; var e=data[curKey()].ev[i]; if(v==="DT"||v==="NPT"||v==="OTHER") e[5]=v; else e[5]=undefined; e[4]=curUser()||e[4]||""; save(); renderLog(); }
 function addE(){ if(guardLocked()) return; data[curKey()].ev.push(["Other","","","",curUser()]); save(); renderLog(); }
-function setEnd(v){ if(guardLocked()) return; data[curKey()].end=v; save(); renderLog(); }
-function newDay(){ var d=prompt("New day (YYYY-MM-DD):", new Date().toISOString().slice(0,10)); if(!d) return; if(!data[d]) data[d]={end:"24:00",log:[["00:00",""]],ev:[]}; save(); fillDaySelect(); document.getElementById("daySelect").value=d; renderLog(); }
+function setEnd(v){ if(guardLocked()) return;
+  var m=toMin(v);
+  if(m==null){ alert("Day end must be a valid time in HH:MM (24:00 for a full day)."); renderLog(); return; }
+  if(m===0){ alert("Use 24:00 for a full day; 00:00 is not a valid day end."); renderLog(); return; }
+  data[curKey()].end=v; save(); renderLog(); }
+function newDay(){ var d=prompt("New day (YYYY-MM-DD):", new Date().toISOString().slice(0,10)); if(!d) return; d=d.trim(); if(!validDayKey(d)){ alert("That is not a real calendar date. Use YYYY-MM-DD."); return; } if(!data[d]) data[d]={end:"24:00",log:[["00:00",""]],ev:[]}; save(); fillDaySelect(); document.getElementById("daySelect").value=d; renderLog(); }
 function deleteDay(){ var key=curKey(); if(guardLocked(key)) return; if(Object.keys(data).length<=1){ alert("Keep at least one day."); return; } if(confirm("Delete "+fmtDay(key)+"?")){ delete data[key]; save(); renderLog(); } }
 
 var KW=[["Maintenance",/maintenan|preventat|greas|lubric|servic/i],["ROV - Asset 2",/rov ?2/i],["ROV - Asset 1",/rov ?1|\btms\b|\bt4\b|umbilical|tether/i],["Weather",/weather|\bwow\b|swell|wave|wind|storm|cyclone/i],["Crane",/crane|lift(ing)?|deck ops/i],["Vessel",/vessel|\bdp\b|engine|thruster|beacon|gangway|bridge/i],["Tooling",/tool|grinder|ring ?saw|cutter|blade|hose|fit ?up|hot ?stab|dredge|jetter/i],["Scheduling",/schedul|waiting|wait on|standby|stand ?by|delay|no work|permit/i]];
@@ -895,6 +914,7 @@ function guessCat(t){ t=t||""; for(var i=0;i<KW.length;i++){ if(KW[i][1].test(t)
 function flagRow(i){
   var key=curKey(); if(guardLocked(key)) return; var L=data[key].log; var row=L[i]; var t=row[0]||""; var desc=(row[1]||"").slice(0,100);
   if(!t){ alert("Add a time to this line before flagging it."); return; }
+  if(toMin(t)==null){ alert("The time on this line is not valid HH:MM, so it cannot be flagged."); return; }
   var ev=data[key].ev;
   /* UNFLAG: if this line already carries a srcId, remove the linked event and clear the id.
      This works no matter how the time/text was edited after flagging. */
@@ -1007,20 +1027,83 @@ function build24Bar(key,compact,mode){
   return '<div class="bar24wrap"><div class="bar24"><div class="bar24grid">'+grid+'</div>'+bars+'</div>'+axis+tot+'</div>';
 }
 
-/* W2: maintenance allowance per contract clause 1.8, calendar-month basis.
-   DECISION POINT (Shaun, 14 Jul 2026, to be confirmed with Jed): periods are calendar
-   months, not rolling 30-day windows. If Jed rules rolling, only this function changes.
-   Rules implemented:
-   - accrues 2 h for each logged day of offshore operations, in date order;
-   - accrual capped at 48 h per calendar month;
-   - balance resets at the start of each calendar month, unused hours lapse;
-   - maintenance draws only what has accrued to date (no retrospective cover);
-   - hours only, no rates;
-   - month maintenance beyond accrued or beyond the 48 h cap is flagged. */
+/* Maintenance allowance: policy-driven engine below; see MA_POLICY. */
+var MA_POLICY={
+  version:"MA-1.8-2026-CLIENT-01",
+  effectiveFrom:null,
+  periodMode:"fixed_30_eligible_days",
+  eligibleDaysPerPeriod:30,
+  accrualMinPerEligibleDay:120,
+  capMinPerPeriod:2880,
+  openingEligibleDayOffset:0,
+  partDayRule:"full_day_credit",
+  unusedBalanceRule:"lapse_at_period_boundary",
+  priorExcessRule:"no_retrospective_cover",
+  excessCommercialTreatment:"pending_confirmation",
+  pending:["effectiveFrom","openingEligibleDayOffset","partDayRule","unusedBalanceRule","priorExcessRule","excessCommercialTreatment"]
+};
+function maintMin(k){ return Math.round((dayStats(k).maint||0)*60); }
+function maBlank(k){ var d=data[k]; if(!d) return true;
+  var hasLog=(d.log||[]).some(function(r){ return String((r&&r[1])||"").trim()!==""; });
+  return !hasLog && !((d.ev||[]).length); }
+function maEl(k){ var d=data[k]||{}; var m=d.maSt;
+  if(m && (m.s==="eligible"||m.s==="excluded"||m.s==="pending")) return m;
+  return maBlank(k) ? {s:"pending", r:"blank_day"} : {s:"eligible", r:"offshore_operations"}; }
+function setMaSt(k,v){ if(guardLocked(k)) return; var d=data[k]; if(!d) return;
+  if(v==="eligible") d.maSt={s:"eligible",r:"offshore_operations"};
+  else if(v==="pending") d.maSt={s:"pending",r:"review"};
+  else d.maSt={s:"excluded",r:v};
+  save(); renderDash(); }
+/* Maintenance allowance policy engine. Integer minutes throughout; decimals only at the
+   presentation boundary. Ordinals count confirmed eligible operational days from the
+   policy opening offset; excluded and pending days neither accrue nor advance the count. */
 function maCalc(){
-  var keys=allDayKeys();
-  var days={}, months={};
-  var mon=null, idx=0, usedCum=0, maintCum=0, accrued=0;
+  var P=MA_POLICY, keys=allDayKeys(), days={}, periods={}, pendingDays=[];
+  var seen=P.openingEligibleDayOffset|0, usedCumMin=0, maintCumMin=0;
+  keys.forEach(function(k){
+    var el=maEl(k), mtMin=maintMin(k);
+    if(el.s!=="eligible"){
+      if(el.s==="pending") pendingDays.push(k);
+      days[k]={date:k, eligible:false, eligibilityStatus:el.s, eligibilityReason:el.r,
+        operationalDayOrdinal:null, periodNumber:null, dayInPeriod:null,
+        accruedMin:0, maintenanceMin:mtMin, coveredMin:0, usedMin:usedCumMin,
+        balanceMin:0, excessMin:(mtMin>0?mtMin:0), policyVersion:P.version,
+        maint:mtMin/60, accrued:0, used:usedCumMin/60, bal:0, excess:(mtMin>0?mtMin:0)/60,
+        overAccr:mtMin>0, over48:false, block:null, dayInBlock:null};
+      return;
+    }
+    seen++;
+    var ord=seen;
+    var per=Math.floor((ord-1)/P.eligibleDaysPerPeriod)+1;
+    var dip=((ord-1)%P.eligibleDaysPerPeriod)+1;
+    if(dip===1){ usedCumMin=0; maintCumMin=0; }
+    var accMin=Math.min(dip*P.accrualMinPerEligibleDay, P.capMinPerPeriod);
+    var covered=Math.min(mtMin, Math.max(0, accMin-usedCumMin));
+    usedCumMin+=covered; maintCumMin+=mtMin;
+    var excessMin=Math.max(0, maintCumMin-usedCumMin);
+    days[k]={date:k, eligible:true, eligibilityStatus:"eligible", eligibilityReason:el.r,
+      operationalDayOrdinal:ord, periodNumber:per, dayInPeriod:dip,
+      accruedMin:accMin, maintenanceMin:mtMin, coveredMin:covered, usedMin:usedCumMin,
+      balanceMin:accMin-usedCumMin, excessMin:excessMin, policyVersion:P.version,
+      maint:mtMin/60, accrued:accMin/60, used:usedCumMin/60, bal:(accMin-usedCumMin)/60,
+      excess:excessMin/60, overAccr:excessMin>0, over48:maintCumMin>P.capMinPerPeriod,
+      block:per, dayInBlock:dip};
+    if(!periods[per]) periods[per]={from:k};
+    periods[per].to=k; periods[per].accruedMin=accMin; periods[per].maintMin=maintCumMin;
+    periods[per].usedMin=usedCumMin; periods[per].excessMin=excessMin;
+    periods[per].overAccr=excessMin>0; periods[per].days=dip;
+    periods[per].accrued=accMin/60; periods[per].excess=excessMin/60;
+  });
+  try{
+    var sig=JSON.stringify(keys.map(function(k){ var d=days[k]; return k+":"+(d.periodNumber||"x")+":"+(d.dayInPeriod||"x"); }));
+    if(window.__maSig && window.__maSig!==sig) window.__maShift=true;
+    window.__maSig=sig;
+  }catch(e){}
+  return {days:days, blocks:periods, periods:periods, pendingDays:pendingDays, policy:P};
+}
+/* Legacy month-bucket engine (superseded), retained only for the reconciliation export. */
+function maLegacyMonthly(){
+  var keys=allDayKeys(); var days={}; var mon=null, idx=0, usedCum=0, maintCum=0, accrued=0;
   keys.forEach(function(k){
     var m=k.slice(0,7);
     if(m!==mon){ mon=m; idx=0; usedCum=0; maintCum=0; }
@@ -1028,13 +1111,24 @@ function maCalc(){
     accrued=Math.min(2*idx,48);
     var mt=r2(dayStats(k).maint||0);
     var covered=Math.min(mt, Math.max(0, r2(accrued-usedCum)));
-    usedCum=r2(usedCum+covered);
-    maintCum=r2(maintCum+mt);
-    var excess=r2(Math.max(0,maintCum-usedCum));
-    days[k]={maint:mt, accrued:accrued, used:usedCum, bal:r2(accrued-usedCum), excess:excess, overAccr:excess>0.005, over48:maintCum>48.005};
-    months[m]={accrued:accrued, maint:maintCum, used:usedCum, excess:excess, overAccr:excess>0.005, over48:maintCum>48.005, days:idx};
+    usedCum=r2(usedCum+covered); maintCum=r2(maintCum+mt);
+    days[k]={bucket:m, accrued:accrued, used:usedCum, bal:r2(accrued-usedCum), excess:r2(Math.max(0,maintCum-usedCum)), maint:mt};
   });
-  return {days:days, months:months};
+  return days;
+}
+function exportMaRecon(){
+  var NEWC=maCalc(), OLD=maLegacyMonthly(), keys=allDayKeys();
+  var csv="Date,Eligibility,Reason,Old_month_bucket,Old_accrued_h,Old_used_h,Old_bal_h,Old_excess_h,New_op_day,New_period,New_day_in_period,New_accrued_min,New_maint_min,New_used_min,New_bal_min,New_excess_min,Balance_delta_min,Note\n";
+  keys.forEach(function(k){
+    var o=OLD[k]||{}, n=NEWC.days[k]||{};
+    var deltaMin=Math.round(((n.balanceMin||0))-((o.bal||0)*60));
+    var note=n.eligible===false?("Not accruing: "+(n.eligibilityStatus||"")+" ("+(n.eligibilityReason||"")+")"):"";
+    csv+=[q(k),q(n.eligibilityStatus||""),q(n.eligibilityReason||""),q(o.bucket||""),r2(o.accrued||0),r2(o.used||0),r2(o.bal||0),r2(o.excess||0),
+      (n.operationalDayOrdinal==null?"":n.operationalDayOrdinal),(n.periodNumber==null?"":n.periodNumber),(n.dayInPeriod==null?"":n.dayInPeriod),
+      (n.accruedMin||0),(n.maintenanceMin||0),(n.usedMin||0),(n.balanceMin||0),(n.excessMin||0),deltaMin,q(note)].join(",")+"\n";
+  });
+  csv+="\n"+exportMetaLine();
+  dl(csv, pelName("recon"), "text/csv");
 }
 function renderDash(){
   /* Batch 2: populate the 24h bar day-picker (default to latest logged day) */
@@ -1091,19 +1185,30 @@ function renderDash(){
     var md=MA.days[s.k]||{maint:0,used:0,bal:0,overAccr:false,over48:false};
     var flag=md.overAccr?' <span style="color:#c0392b;font-weight:700" title="Maintenance this month exceeds the accrued allowance. Excess hours are not covered by clause 1.8.">&#9650;</span>':"";
     var usedStyle=md.over48?' style="color:#c0392b;font-weight:700"':'';
-    rb.insertAdjacentHTML("beforeend",'<tr><td>'+fmtDay(s.k)+'</td><td class="num">'+hm(s.len)+'</td><td class="num">'+s.count+'</td><td class="num">'+hm(s.dt)+'</td><td class="num">'+hm(s.npt)+'</td><td class="num">'+hm(s.other||0)+'</td><td class="num">'+hm(s.clear)+'</td><td class="num">'+hm(md.maint)+'</td><td class="num"'+usedStyle+'>'+hm(md.used)+'</td><td class="num">'+hm(md.bal)+flag+'</td><td>'+worstCat(s.cats)+'</td></tr>');
+    rb.insertAdjacentHTML("beforeend",'<tr><td>'+fmtDay(s.k)+'</td><td class="num">'+hm(s.len)+'</td><td class="num">'+s.count+'</td><td class="num">'+hm(s.dt)+'</td><td class="num">'+hm(s.npt)+'</td><td class="num">'+hm(s.other||0)+'</td><td class="num">'+hm(s.clear)+'</td><td class="num">'+hm(md.maint)+'</td><td class="num"'+usedStyle+'>'+hm(md.used)+'</td><td class="num">'+hm(md.bal)+flag+'</td><td class="tw"><select onchange="setMaSt(&quot;'+s.k+'&quot;,this.value)" style="font-size:11px;padding:1px" title="Maintenance-allowance eligibility">'+
+      (function(cur){ var o=function(v,l){return '<option value="'+v+'"'+(cur===v?" selected":"")+'>'+l+'</option>';};
+        return o("eligible","Eligible")+o("pending","Pending")+o("breakaway","Breakaway")+o("transit","Transit")+o("port","Port")+o("weather_shelter","Weather shelter")+o("mobilisation","Mobilisation")+o("other","Excluded: other"); })(
+        (maEl(s.k).s==="excluded")?maEl(s.k).r:maEl(s.k).s )+
+      '</select></td><td>'+worstCat(s.cats)+'</td></tr>');
   });
   var tL=0,tO=0; stats.forEach(function(s){ tL+=s.len; tO+=(s.other||0); });
-  document.getElementById("rollupFoot").innerHTML='<tr style="font-weight:800"><td>TOTAL</td><td class="num">'+hm(tL)+'</td><td class="num">'+tE+'</td><td class="num">'+hm(tDT)+'</td><td class="num">'+hm(tNPT)+'</td><td class="num">'+hm(tO)+'</td><td class="num">'+hm(tC)+'</td><td class="num">'+hm(tM)+'</td><td class="num sub" title="Used and balance are month-to-date figures; read them on the day rows">&ndash;</td><td class="num sub" title="Used and balance are month-to-date figures; read them on the day rows">&ndash;</td><td>'+worstCat(agg)+'</td></tr>';
+  document.getElementById("rollupFoot").innerHTML='<tr style="font-weight:800"><td>TOTAL</td><td class="num">'+hm(tL)+'</td><td class="num">'+tE+'</td><td class="num">'+hm(tDT)+'</td><td class="num">'+hm(tNPT)+'</td><td class="num">'+hm(tO)+'</td><td class="num">'+hm(tC)+'</td><td class="num">'+hm(tM)+'</td><td class="num sub" title="Used and balance are period-to-date figures; read them on the day rows">&ndash;</td><td class="num sub" title="Used and balance are period-to-date figures; read them on the day rows">&ndash;</td><td class="sub">&ndash;</td><td>'+worstCat(agg)+'</td></tr>';
   var mb=document.getElementById("maBanner");
   if(mb){
-    var flagged=[]; var seenM={};
-    keys.forEach(function(k){ var m=k.slice(0,7); if(seenM[m]) return; seenM[m]=1; var mm=MA.months[m]; if(mm&&mm.overAccr) flagged.push({m:m,mm:mm}); });
-    mb.innerHTML=flagged.length? flagged.map(function(f){
-      var MN=["January","February","March","April","May","June","July","August","September","October","November","December"];
-      var lbl=MN[parseInt(f.m.slice(5,7),10)-1]+" "+f.m.slice(0,4);
-      return '<div class="insight" style="margin-top:8px;background:#fdecea;border-left:3px solid #c0392b;padding:10px 12px;border-radius:0 4px 4px 0;color:#7a1f17"><b>Maintenance allowance exceeded, '+esc(lbl)+':</b> '+hm(f.mm.maint)+'  of maintenance against '+hm(f.mm.accrued)+'  accrued (cap 48 h per calendar month). The excess '+hm(f.mm.excess)+'  is not covered by clause 1.8 and exceeds the accrued allowance. Contractual treatment of the excess is pending confirmation; downtime totals are unchanged.</div>';
-    }).join("") : "";
+    var __pre="";
+    if(MA.pendingDays && MA.pendingDays.length){
+      __pre+='<div class="insight" style="margin-top:8px;background:#fdf3e3;border-left:3px solid #b9822b"><b>'+MA.pendingDays.length+' day(s) pending maintenance-eligibility review:</b> '+MA.pendingDays.map(function(k2){return esc(fmtDay(k2));}).join(", ")+'. Pending days do not accrue allowance and are excluded from the operational-day count until confirmed.</div>';
+    }
+    if(window.__maShift){
+      __pre+='<div class="insight" style="margin-top:8px;background:#fdf3e3;border-left:3px solid #b9822b"><b>Maintenance period assignments changed since last view.</b> A historical edit has shifted operational-day ordinals. Review the MA reconciliation export before issuing allowance figures.</div>';
+    }
+    var flagged=[]; var seenB={};
+    keys.forEach(function(k){ var d=MA.days[k]; if(!d) return; var b=d.block; if(seenB[b]) return; seenB[b]=1; var mm=MA.blocks[b]; if(mm&&mm.overAccr) flagged.push({m:"Block "+b+" ("+fmtDay(mm.from)+" to "+fmtDay(mm.to)+")",mm:mm}); });
+    mb.innerHTML=__pre+(flagged.length? flagged.map(function(f){
+      
+      var lbl=f.m;
+      return '<div class="insight" style="margin-top:8px;background:#fdecea;border-left:3px solid #c0392b;padding:10px 12px;border-radius:0 4px 4px 0;color:#7a1f17"><b>Maintenance allowance exceeded, '+esc(lbl)+':</b> '+hm(f.mm.maint)+'  of maintenance against '+hm(f.mm.accrued)+'  accrued (cap 48 h per 30-eligible-day period). The excess '+hm(f.mm.excess)+'  is not covered by clause 1.8 and exceeds the accrued allowance. Contractual treatment of the excess is pending confirmation; downtime totals are unchanged.</div>';
+    }).join("") : "");
   }
 
   /* Batch 2: per-day breakdown (with events listed) for the selected range */
@@ -1121,9 +1226,9 @@ function renderPerDay(stats){
       var evs=(data[s.k]&&data[s.k].ev)?data[s.k].ev.slice():[];
       evs.sort(function(a,b){ return (toMin(a[1])||0)-(toMin(b[1])||0); });
       var rows=evs.length? evs.map(function(e){
-        var s2=toMin(e[1]), en=e[2]?toMin(e[2]):(s.endMin||1440);
-        var badEnd=!!(e[2]&&(en==null||(s2!=null&&en<=s2)));
-        var dur=badEnd?0:((en!=null&&s2!=null)?((en>s2?en:(s.endMin||1440))-s2)/60:0);
+        var __sp=effSpan(s.endMin||1440, e);
+        var badEnd=(__sp.state==="bad_end"||__sp.state==="bad_start");
+        var dur=__sp.effMin/60;
         var ty={DT:"DT",NPT:"NPT",MAINT:"Maint",OTHER:"Other"}[evType(e)]||evType(e);
         return '<tr><td class="tw">'+esc(e[1]||"")+'</td><td class="tw">'+esc(e[2]||"ongoing")+'</td><td>'+esc(e[0]||"")+'</td><td class="tw">'+ty+'</td><td class="num">'+hm(dur)+(badEnd?' <span style="color:#c0392b" title="End is not after start; excluded from totals">check</span>':'')+'</td><td>'+esc(e[3]||"")+'</td></tr>';
       }).join("") : '<tr><td colspan="6" class="sub">No events logged.</td></tr>';
@@ -1238,9 +1343,9 @@ function buildDayRecord(key){
   evs.sort(function(a,b){ return (toMin(a.e[1])||0)-(toMin(b.e[1])||0); });
   var endMin=st.endMin||1440;
   var evRows=evs.map(function(o){ var e=o.e;
-    var s=toMin(e[1]); var en=e[2]?toMin(e[2]):null;
-    var badEnd=!!(e[2]&&(en==null||(s!=null&&en<=s)));
-    var dur=badEnd?0:((s!=null)?((((en!=null&&en>s)?en:endMin))-s)/60:0);
+    var __sp=effSpan(endMin, e);
+    var badEnd=(__sp.state==="bad_end"||__sp.state==="bad_start");
+    var dur=__sp.effMin/60;
     return '<tr><td>'+esc(e[0]||"")+'</td><td class="num">'+esc(e[1]||"")+'</td><td class="num">'+(e[2]?esc(e[2]):"ongoing")+'</td><td>'+(tmap[evType(e)]||"")+'</td><td class="num">'+hm(dur)+(badEnd?' (end not after start; excluded)':'')+'</td><td>'+esc(e[3]||"")+'</td><td>'+esc(e[4]||"")+'</td></tr>';
   }).join("") || '<tr><td colspan="7" class="sub">No events logged.</td></tr>';
   var lockNote=isLocked(key)?" &middot; day locked at time of printing":"";
@@ -1262,7 +1367,7 @@ function buildDayRecord(key){
     '<h3 style="margin:10px 0 2px;font-size:11pt">Events</h3>'+
     '<table><thead><tr><th style="width:110px">Category</th><th style="width:56px">Start</th><th style="width:62px">End</th><th style="width:86px">Type</th><th style="width:52px">Dur h</th><th>Description</th><th style="width:56px">By</th></tr></thead><tbody>'+evRows+'</tbody></table>'+
     '<div class="drTotals">Day length <b>'+hm(st.len)+' </b> &middot; Actual downtime <b>'+hm(st.dt)+' </b> &middot; Maintenance <b>'+hm(st.maint||0)+' </b> &middot; NPT <b>'+hm(st.npt)+' </b> &middot; Other <b>'+hm(st.other||0)+' </b> &middot; Clear running <b>'+hm(st.clear)+' </b></div>'+
-    '<div class="drFoot">Official daily record produced from the Endura Asset Intelligence Project Event Log &middot; build '+APP_BUILD+lockNote+'. Times are vessel local. Maintenance hours are handled under contract clause 1.8 and are reported separately from downtime.</div>';
+    '<div class="drFoot">System-generated daily record produced from the Endura Asset Intelligence Project Event Log &middot; '+PEL_ENV.env+' &middot; build '+APP_BUILD+' &middot; schema '+PEL_ENV.schema+' &middot; policy '+MA_POLICY.version+lockNote+'. Times are vessel local. Maintenance hours are handled under contract clause 1.8 and are reported separately from downtime.</div>';
   return true;
 }
 function printDayRecord(){
@@ -1270,17 +1375,20 @@ function printDayRecord(){
   if(!key||!data[key]){ alert("No day selected."); return; }
   if(!buildDayRecord(key)) return;
   document.body.classList.add("printing-day");
-  window.print();
+  withPrintTitle(pelName("dailyPdf", key));
   setTimeout(function(){ document.body.classList.remove("printing-day"); }, 500);
 }
 
 /* Apply chart preference and open the print dialog. */
 function printReport(){
+  var __ma=maCalc();
+  if(__ma.pendingDays.length && !confirm(__ma.pendingDays.length+" day(s) are pending maintenance-eligibility review and are excluded from allowance figures. Continue printing?")) return;
   buildReportBlocks();
   var wantCharts=document.getElementById("printCharts");
   if(wantCharts && wantCharts.checked) document.body.classList.add("print-charts");
   else document.body.classList.remove("print-charts");
-  window.print();
+  var __r=pelSelRange();
+  withPrintTitle(pelName("campPdf", __r.from, __r.to));
 }
 
 var USERK="endura_pel_user";
@@ -1546,8 +1654,8 @@ function importWbs(){
 }
 function exportWbsCSV(){
   var t=wbsTotals(); var csv="WBS_ID,Activity,Total_h,Days\n";
-  WBSL.forEach(function(w){ csv+=[w[0],q(w[1]),r2(t.tot[w[0]]||0),(t.days[w[0]]||0)].join(",")+"\n"; });
-  dl(csv,"WBS_hours.csv");
+  WBSL.forEach(function(w){ csv+=[q(w[0]),q(w[1]),r2(t.tot[w[0]]||0),(t.days[w[0]]||0)].join(",")+"\n"; });
+  var __r=pelSelRange(); csv+="\n"+exportMetaLine(); dl(csv, pelName("wbs", __r.from, __r.to), "text/csv");
 }
 /* guessWbs removed (D1). Bare-integer MS Project IDs matched fragments like "@50%" and
    "Lift #1", silently mis-tagging imported lines and corrupting WBS hour attribution. */
@@ -1556,15 +1664,17 @@ var impParsed=[];
 function toggleAdmin(){ var a=document.getElementById("adminTools"); if(!a) return; a.style.display=(a.style.display==="none")?"":"none"; }
 function toggleImport(show){ document.getElementById("importPanel").style.display=show?"":"none"; if(show) document.getElementById("impPreview").innerHTML=""; }
 function pad2(h){ return String(+h).padStart(2,"0"); }
+var impRejects=[];
 function parseRaw(text){
-  var out=[];
-  text.split(/\r?\n/).forEach(function(raw){
+  var out=[]; impRejects=[];
+  text.split(/\r?\n/).forEach(function(raw,idx){
     var line=raw.replace(/\t+/g," ").trim(); if(!line) return;
-    var start=null, rest=line, m;
+    var start=null, rest=line, m, timeLike=false;
     m=line.match(/^(\d{1,2}):?(\d{2})\s*(?:[-–—]|to)\s*\d{1,2}:?\d{2}\s*(.*)$/i);
-    if(m){ start=pad2(m[1])+":"+m[2]; rest=m[3]||""; }
-    else { m=line.match(/^(\d{1,2}):?(\d{2})\b\s*(.*)$/); if(m){ start=pad2(m[1])+":"+m[2]; rest=m[3]||""; } }
-    if(start==null){ if(out.length) out[out.length-1][1]=(out[out.length-1][1]+" "+line).trim(); return; }
+    if(m){ start=pad2(m[1])+":"+m[2]; rest=m[3]||""; timeLike=true; }
+    else { m=line.match(/^(\d{1,2}):?(\d{2})\b\s*(.*)$/); if(m){ start=pad2(m[1])+":"+m[2]; rest=m[3]||""; timeLike=true; } }
+    if(timeLike && toMin(start)==null){ impRejects.push({n:idx+1, raw:line, reason:"invalid time "+start}); return; }
+    if(!timeLike){ if(out.length) out[out.length-1][1]=(out[out.length-1][1]+" "+line).trim(); else out.push(["",line]); return; }
     out.push([start,rest.replace(/^[\s\-:|,]+/,"").trim()]);
   });
   return out;
@@ -1572,14 +1682,16 @@ function parseRaw(text){
 function parsePreview(){
   impParsed=parseRaw(document.getElementById("impText").value);
   var div=document.getElementById("impPreview");
-  if(!impParsed.length){ div.innerHTML='<div class="sub" style="margin-top:10px">Nothing parsed — each entry needs a leading time like <b>0620</b>.</div>'; return; }
+  var rejHtml = impRejects.length ? '<div style="margin-top:10px;padding:8px 10px;border:1px solid #e8b0b0;background:#fdf1f1;border-radius:5px"><b style="color:#c0392b">'+impRejects.length+' line(s) rejected \u2014 fix these before Apply:</b>'+impRejects.map(function(r){ return '<div class="sub" style="color:#c0392b;margin-top:3px">Line '+r.n+': '+esc(r.raw)+' \u2014 '+esc(r.reason)+'</div>'; }).join("")+'</div>' : "";
+  if(!impParsed.length){ div.innerHTML=rejHtml+'<div class="sub" style="margin-top:10px">Nothing parsed — each entry needs a leading time like <b>0620</b>.</div>'; return; }
   div.innerHTML='<div class="tableScroll" style="margin-top:10px"><table><thead><tr><th class="tw">Time</th><th>Entry</th><th class="tw">Suggested category</th></tr></thead><tbody>'+
-    impParsed.map(function(r){ var c=guessCat(r[1]); return '<tr><td class="tw">'+r[0]+'</td><td>'+esc(r[1])+'</td><td class="tw"><span class="dot" style="background:'+CCOL[c]+';margin-right:5px"></span>'+c+'</td></tr>'; }).join("")+
+    impParsed.map(function(r){ var c=guessCat(r[1]); return '<tr><td class="tw">'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td class="tw"><span class="dot" style="background:'+CCOL[c]+';margin-right:5px"></span>'+c+'</td></tr>'; }).join("")+rejHtml+
     '</tbody></table></div><div class="sub" style="margin-top:6px">'+impParsed.length+' entries parsed. Apply, then use ⚑ to tag events.</div>';
 }
 function applyImport(){
   if(guardLocked(curKey())) return;
   if(!impParsed.length) parsePreview();
+  if(impRejects.length){ alert(impRejects.length+" line(s) have invalid times and were rejected. Correct them in the paste box (see the red list) and preview again before applying."); return; }
   if(!impParsed.length) return;
   var key=curKey(); var clone=JSON.parse(JSON.stringify(impParsed));
   /* D1 fix: WBS is never inferred from entry text. A WBS carried in from an upload column
@@ -1590,31 +1702,75 @@ function applyImport(){
   save(); document.getElementById("impText").value=""; impParsed=[]; toggleImport(false); renderLog();
 }
 
-function q(s){ s=(s||"").replace(/\n/g," ").replace(/"/g,'""'); if(/^[=+\-@]/.test(s)) s="'"+s; return /[,"]/.test(s)?'"'+s+'"':s; }
-function dl(txt,name,type){ var b=new Blob([txt],{type:type||"text/csv"}); var a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=name; a.click(); }
+function q(s){ s=(s||"").replace(/[\r\n]+/g," ").replace(/"/g,'""'); if(/^[\s\u00A0]*[=+\-@]/.test(s)) s="'"+s; return /[,"\t]/.test(s)?'"'+s+'"':s; }
+function effSpan(dayEndMin, e){
+  var sM=toMin(e[1]);
+  var rawE=e[2]?toMin(e[2]):null;
+  var badEnd=!!(e[2] && (rawE==null || (sM!=null && rawE<=sM)));
+  var em=dayEndMin||1440;
+  if(sM==null || badEnd) return {state: badEnd?"bad_end":"bad_start", effMin:0, past:false, outside:false};
+  if(sM>=em) return {state:"outside_day", effMin:0, past:false, outside:true};
+  var endM=(rawE!=null && rawE>sM)?rawE:em;
+  return {state:"ok", effMin:Math.max(0, Math.min(endM, em)-sM), past:(endM>em), outside:false};
+}
+function pelSelRange(){
+  var f=(document.getElementById("rangeFrom")||{}).value||"";
+  var t=(document.getElementById("rangeTo")||{}).value||"";
+  var keys=allDayKeys();
+  var pf=keys.length?keys[0]:"", pt=keys.length?keys[keys.length-1]:"";
+  return { from: f||pf, to: t||pt, selected: !!(f||t) };
+}
+function pelName(kind, a, b){
+  var proj=String(curProject()||"").replace(/[\\/:*?"<>|]/g,"").trim();
+  var base="Project Event Log";
+  if(kind==="daily")   return base+" - Daily Record - "+a+".csv";
+  if(kind==="dailyPdf")return base+" - "+a;
+  if(kind==="rollup")  return base+" - Rollup - "+a+" to "+b+".csv";
+  if(kind==="campPdf") return base+" - Campaign Report - "+a+" to "+b;
+  if(kind==="dpr")     return base+" - DPR Check - "+a;
+  if(kind==="dprBatch")return base+" - DPR Batch - "+a;
+  if(kind==="wbs")     return base+" - WBS Hours - "+a+" to "+b+".csv";
+  if(kind==="backup")  return base+" - Backup - "+proj+" - "+new Date().toISOString().slice(0,19).replace(/:/g,"")+"Z.json";
+  if(kind==="recon")   return base+" - Maintenance Reconciliation - "+MA_POLICY.version+" - "+new Date().toISOString().slice(0,10)+".csv";
+  return base+".txt";
+}
+function exportMetaLine(){
+  return ["Meta","project",q(curProject()||""),"env",PEL_ENV.env,"build",APP_BUILD,"schema",PEL_ENV.schema,"policy",MA_POLICY.version,"generated",new Date().toISOString()].join(",");
+}
+function withPrintTitle(t){
+  var o=document.title; document.title=t;
+  var done=function(){ document.title=o; try{window.removeEventListener("afterprint",done);}catch(e){} };
+  try{ window.addEventListener("afterprint",done); }catch(e){}
+  setTimeout(done,4000);
+  window.print();
+}
+function dl(txt,name,type){ var b=new Blob([txt],{type:type||"text/csv"}); var a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=name; a.click(); setTimeout(function(){ try{URL.revokeObjectURL(a.href);}catch(e){} },5000); }
 function exportCSV(){
   var key=curKey(); var day=data[key]; var st=dayStats(key);
   var csv="LOG\nTime,Entry,WBS,By\n";
   var effA=effWbs(day.log);
-  day.log.forEach(function(r,i){ csv+=r[0]+","+q(r[1])+","+(effA[i]||"")+","+(r[3]||"")+"\n"; });
+  day.log.forEach(function(r,i){ csv+=[q(r[0]),q(r[1]),q(effA[i]||""),q(r[3]||"")].join(",")+"\n"; });
   csv+="\nEVENTS\nCategory,Start,End,Duration_h,Description,By,ROV_impact\n";
-  st.sp.forEach(function(x){ var e=day.ev[x.i]; var a=(e&&(e[7]==="R1"||e[7]==="R2"||e[7]==="BOTH"||e[7]==="NONE"))?e[7]:("auto:"+evAffDefault(x.cat)); csv+=[x.cat,min2t(x.s),(x.open?"ongoing":min2t(x.e)),r2(x.hrs),q(x.d),x.by||"",a].join(",")+"\n"; });
+  st.sp.forEach(function(x){ var e=day.ev[x.i]; var a=(e&&(e[7]==="R1"||e[7]==="R2"||e[7]==="BOTH"||e[7]==="NONE"))?e[7]:("auto:"+evAffDefault(x.cat)); csv+=[q(x.cat),q(min2t(x.s)),q(x.open?"ongoing":min2t(x.e)),r2(x.hrs),q(x.d),q(x.by||""),q(a)].join(",")+"\n"; });
   csv+="\nSUMMARY\nDay length h,"+r2(st.len)+"\nActual downtime h,"+r2(st.dt)+"\nMaintenance h,"+r2(st.maint||0)+"\nNon-productive (NPT) h,"+r2(st.npt)+"\nClear h,"+r2(st.clear)+"\n";
   for(var c in st.cats) csv+=c+" h,"+r2(st.cats[c])+"\n";
   var wh=wbsHours(key); var wk=Object.keys(wh);
   if(wk.length){ csv+="\nWBS HOURS\nWBS_ID,Activity,Hours\n"; wk.sort().forEach(function(w){ csv+=w+","+q(wbsName(w))+","+r2(wh[w])+"\n"; }); }
-  dl(csv,"Events_"+key+".csv");
+  csv+="\n"+exportMetaLine();
+  dl(csv, pelName("daily", key), "text/csv");
 }
 function exportRollupCSV(){
-  /* Batch 2: export the SAME date range shown on the dashboard */
   var keys=keysInRange();
   var MA=maCalc();
-  var csv="Day,Day_h,Events,Actual_DT_h,NPT_h,Other_h,Clear_h,Maint_h,MA_used_h,MA_balance_h,MA_flag,"+CATS.join("_h,")+"_h\n";
+  if(MA.pendingDays.length && !confirm(MA.pendingDays.length+" day(s) are pending maintenance-eligibility review and are excluded from allowance figures. Continue export?")) return;
+  var csv="Day,Day_h,Events,Actual_DT_h,NPT_h,Other_h,Clear_h,Maint_h,MA_used_h,MA_balance_h,MA_flag,MA_eligibility,MA_reason,Op_day,Period,Day_in_period,"+CATS.join("_h,")+"_h\n";
   keys.forEach(function(k){ var s=dayStats(k); var md=MA.days[k]||{maint:0,used:0,bal:0,overAccr:false};
-    var row=[fmtDay(k),r2(s.len),s.count,r2(s.dt),r2(s.npt),r2(s.other||0),r2(s.clear),r2(md.maint),r2(md.used),r2(md.bal),(md.overAccr?"OVER":"")];
+    var row=[k,r2(s.len),s.count,r2(s.dt),r2(s.npt),r2(s.other||0),r2(s.clear),r2(md.maint),r2(md.used),r2(md.bal),(md.overAccr?"OVER":""),q(md.eligibilityStatus||""),q(md.eligibilityReason||""),(md.operationalDayOrdinal==null?"":md.operationalDayOrdinal),(md.periodNumber==null?"":md.periodNumber),(md.dayInPeriod==null?"":md.dayInPeriod)];
     CATS.forEach(function(c){ row.push(r2(s.cats[c]||0)); }); csv+=row.join(",")+"\n"; });
   var tag=(RANGE.from||RANGE.to)?("_"+(RANGE.from||"start")+"_to_"+(RANGE.to||"latest")):"_full_campaign";
-  dl(csv,"Events_rollup"+tag+".csv");
+  var __r=pelSelRange();
+  csv+="\n"+exportMetaLine();
+  dl(csv, pelName("rollup", __r.from, __r.to), "text/csv");
 }
 
 /* ===================== CLOUD SYNC (Supabase) ===================== *
@@ -1640,13 +1796,60 @@ function setSync(state,msg){
   el.textContent=""; var dot=document.createElement("b"); dot.style.color=col; dot.textContent="\u25cf"; el.appendChild(dot); el.appendChild(document.createTextNode(" "+msg));
 }
 
-function adopt(txt){
+function validDayKey(k){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(k)) return false;
+  var p=k.split("-"); var d=new Date(Date.UTC(+p[0],+p[1]-1,+p[2]));
+  return d.getUTCFullYear()===+p[0] && d.getUTCMonth()===+p[1]-1 && d.getUTCDate()===+p[2];
+}
+function validateDoc(input){
+  var issues=[];
+  if(!input || typeof input!=="object") return {ok:false, issues:["not an object"]};
+  var o; try{ o=JSON.parse(JSON.stringify(input)); }catch(e){ return {ok:false, issues:["not serialisable"]}; }
+  var KNOWN={days:1,wbs:1,ctype:1,locks:1,lockpw:1,meta:1,app:1,version:1,schemaVersion:1};
+  for(var kk in o){ if(!KNOWN[kk]) issues.push("unknown field "+String(kk).slice(0,24)+" ignored"); }
+  var days=o.days||o; if(typeof days!=="object"||Array.isArray(days)) return {ok:false, issues:["days is not an object"]};
+  for(var k in days){
+    if(!validDayKey(k)){ issues.push("invalid day key "+String(k).slice(0,20)); delete days[k]; continue; }
+    var d=days[k]; if(!d||typeof d!=="object"||Array.isArray(d)){ issues.push(k+": day is not an object"); delete days[k]; continue; }
+    if(typeof d.end!=="string" || toMin(d.end)==null || toMin(d.end)===0){ issues.push(k+": invalid day end "+String(d.end).slice(0,8)+" coerced to 24:00"); d.end="24:00"; }
+    if(!Array.isArray(d.log)){ issues.push(k+": log is not a list"); d.log=[]; }
+    d.log=d.log.filter(function(r,i){
+      if(!Array.isArray(r)){ issues.push(k+": log row "+(i+1)+" is not a row; dropped"); return false; }
+      return true;
+    }).map(function(r){ return [String(r[0]||""),String(r[1]||""),String(r[2]||""),String(r[3]||""),String(r[4]||"")]; });
+    if(!Array.isArray(d.ev)){ issues.push(k+": events is not a list"); d.ev=[]; }
+    d.ev=d.ev.filter(function(e,i){
+      if(!Array.isArray(e)){ issues.push(k+": event "+(i+1)+" is not a row; dropped"); return false; }
+      return true;
+    });
+    d.ev.forEach(function(e,i){
+      while(e.length<8) e.push("");
+      if(CATS.indexOf(e[0])<0){ issues.push(k+": unknown category coerced to Other"); e[3]="[was: "+String(e[0]).slice(0,40)+"] "+(e[3]||""); e[0]="Other"; }
+      if(e[1]!=="" && toMin(String(e[1]))==null){ issues.push(k+": event "+(i+1)+" invalid start "+String(e[1]).slice(0,8)); }
+      if(e[2] && toMin(String(e[2]))==null){ issues.push(k+": event "+(i+1)+" invalid end "+String(e[2]).slice(0,8)); }
+    });
+    if(d.maSt && !(d.maSt.s==="eligible"||d.maSt.s==="excluded"||d.maSt.s==="pending")){ issues.push(k+": invalid maintenance eligibility reset"); delete d.maSt; }
+  }
+  if(o.wbs!=null){
+    if(!Array.isArray(o.wbs)){ issues.push("wbs is not a list"); o.wbs=null; }
+    else o.wbs=o.wbs.filter(function(w,i){ if(!Array.isArray(w)){ issues.push("wbs row "+(i+1)+" is not a row; dropped"); return false; } return true; });
+  }
+  if(o.locks!=null && (typeof o.locks!=="object" || Array.isArray(o.locks))){ issues.push("locks malformed; reset"); o.locks={}; }
+  o.schemaVersion=PEL_ENV.schema;
+  return {ok:true, issues:issues, cleaned:o};
+}
+function adopt(txt, strict){
   if(!txt) return;
   var o;
   if(typeof txt==="string"){ if(!txt.trim()) return; o=JSON.parse(txt); }
   else { o=txt; }
+  var v=validateDoc(o);
+  if(!v.ok) throw new Error("Import rejected: "+v.issues.join("; "));
+  o=v.cleaned;
+  if(strict && v.issues.length) throw new Error("Import rejected \u2014 "+v.issues.length+" problem(s): "+v.issues.slice(0,6).join("; "));
+  if(v.issues.length){ try{ console.warn("adopt: cleaned "+v.issues.length+" issue(s)", v.issues); }catch(_){} }
   if(o&&o.days){
-    data=o.days; WBSL=o.wbs||WBSL;
+    data=o.days; WBSL=Array.isArray(o.wbs)?o.wbs:WBSL;
     if(o.ctype){ for(var k in o.ctype){ if(o.ctype[k]==="DT"||o.ctype[k]==="NPT"||o.ctype[k]==="OTHER") CTYPE[k]=o.ctype[k]; } saveCtype(); }
     LOCKS=(o.locks&&typeof o.locks==="object")?o.locks:{};   /* Batch 3: restore lock set */
     LOCKPW=(typeof o.lockpw==="string")?o.lockpw:"";          /* restore shared password hash */
@@ -1667,6 +1870,7 @@ function scheduleCloudSave(){
 var BACKUP_KEEP=5;
 function backupKey(){ return "endura_pel_backups_"+curProject(); }
 function writeLocalBackup(){
+  window.__lbFail=false;
   try{
     var list=JSON.parse(localStorage.getItem(backupKey())||"[]");
     var snap={ t:new Date().toISOString(), by:(curUser()||"?"), doc:{days:data,wbs:WBSL,ctype:CTYPE,locks:LOCKS,lockpw:LOCKPW} };
@@ -1678,7 +1882,7 @@ function writeLocalBackup(){
     localStorage.setItem(backupKey(), JSON.stringify(list));
     var el=document.getElementById("backupNote");
     if(el) el.textContent="Last local backup "+new Date(snap.t).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
-  }catch(e){ /* storage full or disabled \u2014 non-fatal */ }
+  }catch(e){ window.__lbFail=true; try{ var __sp=document.getElementById("syncStatus"); if(__sp && __sp.textContent.indexOf("local backup failed")<0) __sp.textContent+=" \u00b7 local backup failed"; }catch(_e){} /* storage full or disabled \u2014 non-fatal */ }
 }
 function listBackups(){ try{ return JSON.parse(localStorage.getItem(backupKey())||"[]"); }catch(e){ return []; } }
 function openBackups(){
@@ -1717,6 +1921,7 @@ async function cloudSave(){
     var r=await sb.from("event_logs").upsert({ project:curProject(), doc:body.doc, updated_at:body.updated_at, updated_by:body.updated_by }, { onConflict:"project" });
     if(r.error) throw r.error;
     online=true; setSync("green","synced \u00b7 "+curProject());
+    try{ localStorage.removeItem("endura_pel_offline_"+curProject()); }catch(_){}
     return true;
   }catch(e){
     online=false;
@@ -1733,7 +1938,7 @@ async function cloudLoad(){
   try{
     var r=await sb.from("event_logs").select("doc,updated_by,updated_at").eq("project",curProject()).maybeSingle();
     if(r.error) throw r.error;
-    if(r.data && r.data.doc){ applyingRemote=true; adopt(r.data.doc); applyingRemote=false; return "found"; }
+    if(r.data && r.data.doc){ applyingRemote=true; try{ adopt(r.data.doc); }catch(__e){ window.__remoteBad=true; setSync("red","remote data invalid \u2014 read-only; reload to retry"); }; applyingRemote=false; return "found"; }
     return "missing";
   }catch(e){ console.warn("cloud load failed",e); return "error"; }
 }
@@ -1786,7 +1991,7 @@ async function initCloud(){
     if(got==="missing"){ await cloudSave(); }   // first run: seed only on a confirmed empty read
     subscribe();
     if(got==="error"){
-      setSync("red","cloud read failed \u2014 showing local data; changes queue on this device until reload");
+      setSync("red","cloud read failed \u2014 data shown may be stale. Avoid editing; reload to retry.");
     } else {
       await flushOffline();
       setSync("green","synced \u00b7 "+curProject());
@@ -1840,6 +2045,9 @@ function dprBatchRowResult(parsed){
   if(parsed.error) return {key:"", appDT:null, sum:null, anc:null, verdict:"error", detail:parsed.error};
   if(!key || !data[key]) return {key:key, appDT:null, sum:r2((parsed.weatherDT||0)+(parsed.mechDT||0)), anc:r2((parsed.vesselDT||0)+(parsed.rovDT||0)), verdict:"noday", detail:"No logged day for "+(parsed.reportDate||"?")};
   var st=dayStats(key); var appDT=r2(st.dt);
+  if([parsed.weatherDT,parsed.mechDT,parsed.vesselDT,parsed.rovDT].some(function(v){return v==null;})){
+    return {key:key, appDT:appDT, sum:null, anc:null, verdict:"incomplete", detail:"DPR value(s) missing"};
+  }
   var sum=r2((parsed.weatherDT||0)+(parsed.mechDT||0)), anc=r2((parsed.vesselDT||0)+(parsed.rovDT||0));
   var d1=Math.abs(appDT-sum), d2=Math.abs(appDT-anc);
   var verdict = (d1<0.01 && d2<0.01) ? "match" : ((d1<=0.5 && d2<=0.5) ? "close" : "differ");
@@ -1856,12 +2064,13 @@ function dprShowBatch(){
     if(r.verdict==="match"){ resCell="&#10003; Match"; color="#1e7d34"; nMatch++; }
     else if(r.verdict==="close"){ resCell="&#9679; Close (\u00b1"+r.maxDiff.toFixed(2)+"h)"; color="#b9822b"; nOther++; }
     else if(r.verdict==="differ"){ resCell="&#9888; Differs by "+r.maxDiff.toFixed(2)+"h"; color="#c0392b"; nDiff++; }
+    else if(r.verdict==="incomplete"){ resCell="&#9679; Incomplete \u2014 DPR value(s) missing"; color="#b9822b"; nOther++; }
     else if(r.verdict==="noday"){ resCell="No logged day"; color="#888"; nOther++; }
     else { resCell="Read error"; color="#c0392b"; nOther++; }
     body.insertAdjacentHTML("beforeend",
       '<tr><td>'+esc(p.reportNo?("DPR "+p.reportNo):(p.fileName||"?"))+'</td>'+
       '<td class="tw">'+esc(p.reportDate||"\u2014")+'</td>'+
-      '<td>'+(r.key&&data[r.key]?fmtDay(r.key):'<span class="sub">'+(r.detail||"\u2014")+'</span>')+'</td>'+
+      '<td>'+(r.key&&data[r.key]?fmtDay(r.key):'<span class="sub">'+esc(r.detail||"\u2014")+'</span>')+'</td>'+
       '<td class="num">'+(r.appDT===null?"\u2014":r.appDT.toFixed(2))+'</td>'+
       '<td class="num">'+(r.sum===null?"\u2014":r.sum.toFixed(2))+'</td>'+
       '<td class="num">'+(r.anc===null?"\u2014":r.anc.toFixed(2))+'</td>'+
@@ -1879,6 +2088,7 @@ function printDprBatch(){
     var res = r.verdict==="match"?'<span style="color:#1e7d34;font-weight:700">Match</span>'
             : r.verdict==="close"?'<span style="color:#b9822b;font-weight:700">Close (\u00b1'+r.maxDiff.toFixed(2)+'h)</span>'
             : r.verdict==="differ"?'<span style="color:#c0392b;font-weight:700">Differs by '+r.maxDiff.toFixed(2)+'h</span>'
+            : r.verdict==="incomplete"?'<span style="color:#b9822b;font-weight:700">Incomplete \u2014 DPR value(s) missing</span>'
             : r.verdict==="noday"?'<span style="color:#888">No logged day</span>'
             : '<span style="color:#c0392b">Read error</span>';
     return '<tr><td>'+esc(p.reportNo?("DPR "+p.reportNo):(p.fileName||"?"))+'</td><td>'+esc(p.reportDate||"\u2014")+'</td>'+
@@ -1898,7 +2108,7 @@ function printDprBatch(){
     '<table class="dpr-rec-table"><thead><tr><th>DPR</th><th>Date</th><th>Matched day</th><th class="num">App DT</th><th class="num">DPR W+M</th><th class="num">DPR V+ROV</th><th>Result</th></tr></thead><tbody>'+rows+'</tbody></table>'+
     '<div class="dpr-pilot">Pilot tool. Downtime figures are read automatically from each contractor PDF. Figures should be verified against the source DPRs. Source of truth remains the contractor DPRs and the Santos event record.</div>';
   document.body.classList.add("printing-dpr");
-  window.print();
+  withPrintTitle(pelName("dprBatch", new Date().toISOString().slice(0,10)));
   setTimeout(function(){ document.body.classList.remove("printing-dpr"); }, 500);
 }
 
@@ -2066,7 +2276,7 @@ function dprShowResult(r){
   renderDprCompare();
 }
 
-function dprNum(id){ var el=document.getElementById(id); if(!el) return null; var v=el.value; return v===""?null:parseFloat(v); }
+function dprNum(id){ var el=document.getElementById(id); if(!el) return null; var v=el.value; if(v==="") return null; var f=parseFloat(v); return (isFinite(f)&&f>=0&&f<=24)?f:null; }
 
 /* Build a clean, printable DPR check record (audit trail) and open the print dialog.
    The pilot note appears only here, in the exported record. */
@@ -2076,7 +2286,9 @@ function printDprRecord(){
   if(!key || !data[key]){ alert("Select a logged day to compare before saving a record."); return; }
   var st=dayStats(key);
   var appDT=r2(st.dt), appNPT=r2(st.npt);
-  var w=dprNum("dprWeather")||0, me=dprNum("dprMech")||0, ve=dprNum("dprVessel")||0, ro=dprNum("dprRov")||0;
+  var w=dprNum("dprWeather"), me=dprNum("dprMech"), ve=dprNum("dprVessel"), ro=dprNum("dprRov"); /* print-gate */
+  if([w,me,ve,ro].some(function(v){return v==null;})){ alert("DPR fields are incomplete. Enter or extract all four DPR values before saving a comparison record."); return; }
+  w=w||0; me=me||0; ve=ve||0; ro=ro||0;
   var dprSummary=r2(w+me), dprAnc=r2(ve+ro);
   var d=dprData||{};
   var gen=new Date();
@@ -2108,10 +2320,10 @@ function printDprRecord(){
     '</tbody></table>'+
     '<div class="dpr-detail"><strong>DPR figures used (today):</strong> Weather '+w.toFixed(2)+'h \u00b7 Mechanical '+me.toFixed(2)+'h \u00b7 Vessel '+ve.toFixed(2)+'h \u00b7 ROV '+ro.toFixed(2)+'h</div>'+
     ((d.warnings&&d.warnings.length)?'<div class="dpr-detail" style="color:#8a5a16"><strong>Verification notes:</strong> '+d.warnings.map(esc).join(" ")+'</div>':"")+
-    '<div class="dpr-pilot">Pilot tool. Downtime figures are read automatically from the contractor PDF and verified by the checker before comparison. This record reflects the figures shown at the time of checking. Source of truth remains the contractor DPR and the Santos event record.</div>';
+    '<div class="dpr-pilot">Pilot tool. Downtime figures are read automatically from the contractor PDF and as extracted or entered at the time of checking; independent verification is not captured in this record. Source of truth remains the contractor DPR and the Santos event record.</div>';
 
   document.body.classList.add("printing-dpr");
-  window.print();
+  withPrintTitle(pelName("dpr", key));
   setTimeout(function(){ document.body.classList.remove("printing-dpr"); }, 500);
 }
 
@@ -2126,6 +2338,11 @@ function renderDprCompare(){
 
   /* DPR side: Weather+Mechanical are the headline downtime; Vessel+ROV are the ancillary equipment downtime. */
   var w=dprNum("dprWeather"), me=dprNum("dprMech"), ve=dprNum("dprVessel"), ro=dprNum("dprRov");
+  var __dprMiss=[w,me,ve,ro].some(function(v){return v==null;});
+  if(__dprMiss){
+    out.innerHTML='<div class="dpr-verdict" style="background:#fdf3e3;color:#8a5a00;border:1px solid #e8c07a">INCOMPLETE \u2014 one or more DPR values are missing; no comparison is issued.</div>'+maintNote;
+    return;
+  }
   var dprSummaryDT = (w||0)+(me||0);                 /* DPR "downtime" (weather+mechanical) */
   var dprAncDT = (ve||0)+(ro||0);                    /* DPR ancillary equipment downtime */
   var dprMaxDT = Math.max(dprSummaryDT, dprAncDT);   /* best single DPR downtime figure to compare to app DT */
@@ -2158,11 +2375,11 @@ function renderDprCompare(){
     '</tbody></table>';
 }
 
-function exportJSON(){ dl(payload(),"Project-Event-Log-data.json","application/json"); }
+function exportJSON(){ dl(JSON.stringify({meta:{project:curProject()||"",env:PEL_ENV.env,build:APP_BUILD,schema:PEL_ENV.schema,policy:MA_POLICY.version,generated:new Date().toISOString()},doc:JSON.parse(payload())}), pelName("backup"), "application/json"); }
 function importJSON(inp){ var f=inp.files[0]; if(!f) return;
   var lockN=0; try{ lockN=Object.keys(LOCKS||{}).length; }catch(e){}
   if(prompt("This import replaces ALL data for this project"+(lockN?(" including "+lockN+" locked day(s)"):"")+" and syncs to everyone.\n\nType REPLACE to continue.")!=="REPLACE"){ inp.value=""; return; }
-  var rd=new FileReader(); rd.onload=function(){ try{ adopt(rd.result); save(); renderLog(); alert("Project data loaded. Verify the sync light goes green before closing."); }catch(e){ alert("That file could not be read."); } }; rd.readAsText(f); inp.value=""; }
+  var rd=new FileReader(); rd.onload=function(){ try{ adopt(rd.result,true); save(); renderLog(); alert("Project data loaded. Verify the sync light goes green before closing."); }catch(e){ alert(e && e.message ? e.message : "That file could not be read."); } }; rd.readAsText(f); inp.value=""; }
 
 document.getElementById("userTag").value=curUser();
 renderLog();
@@ -2220,6 +2437,7 @@ initCloud();
 #pelA footer button{background:none;border:none;color:#8C8C8C;cursor:pointer;font:10px ui-monospace,monospace;text-decoration:underline}
 .pelA-chartwrap{overflow-x:auto;background:#fff;border:1px solid #E5DECB;border-radius:8px;padding:6px 8px;margin:6px 0}
 .pelA-chartbad{font:10px ui-monospace,monospace;color:#a02020;padding:4px 2px}
+#pelA:not(.open){visibility:hidden}
 .pelA-h{font:700 12.5px ui-monospace,Menlo,monospace;letter-spacing:.4px;margin:8px 0 3px;color:#1A1A1A}
 .pelA-p{margin:4px 0}
 .pelA-ul,.pelA-ol{margin:4px 0 4px 18px;padding:0}
@@ -2268,15 +2486,31 @@ initCloud();
   var CLIENT_CTX_CAP=700000;    // char cap before we trim days client-side
   var hist=[];                  // {role, content} pairs for this page session
   var thread=[];                // [{q, a}] raw transcript for restore
-  var HKEY="pelA_hist_v2", TKEY="pelA_thread_v2";
+  if(!(window.PEL_ENV && window.PEL_ENV.agent)){
+    try{ var __b=document.getElementById("pelA-btn"); if(__b) __b.remove();
+         var __p=document.getElementById("pelA"); if(__p) __p.remove(); }catch(e){}
+    return;
+  }
+  function pelProj(){ var p=""; try{ p=(typeof curProject==="function"&&curProject())||""; }catch(e){} return String(p).replace(/[^A-Za-z0-9_-]/g,"_").slice(0,40); }
+  function HKEY(){ return "pelA_hist_v2_"+pelProj(); }
+  function TKEY(){ return "pelA_thread_v2_"+pelProj(); }
   function saveThread(){ try{
-    sessionStorage.setItem(HKEY, JSON.stringify(hist.slice(-24)));
-    sessionStorage.setItem(TKEY, JSON.stringify(thread.slice(-20)));
+    localStorage.setItem(HKEY(), JSON.stringify(hist.slice(-24)));
+    localStorage.setItem(TKEY(), JSON.stringify(thread.slice(-12)));
   }catch(e){} }
   function chartPlaceholders(t){
     return t.replace(FENCE_RE, function(_,j){
-      var title="chart"; try{ var o=JSON.parse(j); if(o&&o.title) title=String(o.title).slice(0,60); }catch(e){}
-      return "[chart shown: "+title+"]";
+      var d="[chart shown]";
+      try{
+        var o=JSON.parse(j);
+        var bits=[String(o.title||"chart").slice(0,50)];
+        (o.groups||[]).slice(0,6).forEach(function(g){
+          var vals=(g.bars||[]).slice(0,12).map(function(b){ return String(b.label||"")+" "+b.value; }).join(", ");
+          bits.push(String(g.label||"")+": "+vals+(g.mean!=null?(" (mean "+g.mean+")"):""));
+        });
+        d="[chart shown: "+bits.join("; ").slice(0,300)+"]";
+      }catch(e){}
+      return d;
     });
   }
 
@@ -2361,7 +2595,7 @@ function mdRender(text){
 // hairline #E5DECB frame. No external libraries; deterministic output.
 function pelChart(spec){
   function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
-  function num(v){ v=Number(v); return (isFinite(v)&&v>=0)?v:null; }
+  function num(v){ return (typeof v==="number"&&isFinite(v)&&v>=0)?v:null; }
   try{
     if(!spec||typeof spec!=="object") return null;
     var type=(spec.type==="line")?"line":(spec.type==="bar")?"bar":null;
@@ -2444,7 +2678,7 @@ function pelChart(spec){
     }
     return {text:out.join("\n").replace(/\n+$/,""), next:next};
   }
-  function renderAnswer(txt){
+  function renderAnswer(txt, final){
     txt=stripNext(txt).text;
     var out="", last=0, m;
     FENCE_RE.lastIndex=0;
@@ -2458,7 +2692,9 @@ function pelChart(spec){
     var rest=txt.slice(last);
     var open=rest.lastIndexOf("```pelchart");
     if(open>=0 && rest.indexOf("```", open+11)<0){
-      out+=mdRender(rest.slice(0,open))+'<div class="pelA-think" style="padding:6px 2px">drawing chart&hellip;</div>';
+      out+=mdRender(rest.slice(0,open));
+      out+= final ? '<div class="pelA-chartbad">[chart incomplete]</div>'
+                  : '<div class="pelA-think" style="padding:6px 2px">drawing chart&hellip;</div>';
     } else { out+=mdRender(rest); }
     return out;
   }
@@ -2592,6 +2828,7 @@ function pelChart(spec){
               if(ev.delta && ev.delta.stop_reason) stopReason=ev.delta.stop_reason;
             }
             else if(ev.type==="error"){
+              if(!bubble){ try{think.remove();}catch(_){} bubble=add("pelA-m pelA-a",null,""); }
               full+=(full?"\n\n":"")+"[stream error: "+((ev.error&&ev.error.message)||"unknown")+"]";
               bubble.innerHTML=renderAnswer(full);
             }
@@ -2599,7 +2836,11 @@ function pelChart(spec){
         }
         if(__done) break;
       }
-      if(stopReason==="max_tokens" && bubble){ full+="\n\n[answer hit the length limit. Say 'continue' for the rest]"; bubble.innerHTML=renderAnswer(full); }
+      if(bubble){
+        var finalHtml=renderAnswer(full,true);
+        if(stopReason==="max_tokens") finalHtml+='<p class="pelA-p">[answer hit the length limit. Say continue for the rest]</p>';
+        bubble.innerHTML=finalHtml;
+      }
       if(!full){ try{think.remove();}catch(e){} if(bubble) bubble.remove(); add("pelA-err","Agent: the model returned no text. Ask again, or narrow the question."); }
       else{
         var parts=stripNext(full);
@@ -2613,6 +2854,7 @@ function pelChart(spec){
     }catch(e){
       try{think.remove();}catch(_){}
       if(e && e.name==="AbortError"){
+        if(!(typeof full==="string" && full)){ add("pelA-err","[stopped before a response was received]"); }
         if(typeof full==="string" && full){
           var pa=stripNext(full);
           hist.push({role:"user",content:q},{role:"assistant",content:chartPlaceholders(pa.text)+"\n[stopped by user]"});
@@ -2634,13 +2876,13 @@ function pelChart(spec){
   document.getElementById("pelA-quick").addEventListener("click",function(e){
     var q=e.target&&e.target.getAttribute("data-q"); if(q) ask(q); });
   document.getElementById("pelA-clear").addEventListener("click",function(){
-    hist=[]; thread=[]; try{sessionStorage.removeItem(HKEY);sessionStorage.removeItem(TKEY);}catch(e){}
+    hist=[]; thread=[]; try{localStorage.removeItem(HKEY());localStorage.removeItem(TKEY());sessionStorage.removeItem(HKEY());sessionStorage.removeItem(TKEY());}catch(e){}
     msgs.innerHTML=""; useEl.textContent=""; input.focus(); });
 
   // restore prior thread once everything above is defined
   try{
-    hist=JSON.parse(sessionStorage.getItem(HKEY)||"[]");
-    thread=JSON.parse(sessionStorage.getItem(TKEY)||"[]");
+    hist=JSON.parse(localStorage.getItem(HKEY())||sessionStorage.getItem(HKEY())||"[]");
+    thread=JSON.parse(localStorage.getItem(TKEY())||sessionStorage.getItem(TKEY())||"[]");
     thread.forEach(function(t){
       add("pelA-m pelA-q", t.q);
       var b=add("pelA-m pelA-a", null, renderAnswer(t.a));
