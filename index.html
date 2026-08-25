@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-08-25.3 - deploy check string: PEL-BUILD-2026-08-25.3 -->
+<!-- Endura Project Event Log - build 2026-08-25.4 - deploy check string: PEL-BUILD-2026-08-25.4 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -270,7 +270,7 @@
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-08-25.3</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-08-25.4</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -508,7 +508,7 @@
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-08-25.3";
+var APP_BUILD="2026-08-25.4";
 var PEL_ENV={env:"TEST",agent:true,schema:6};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
@@ -525,12 +525,12 @@ var CCOL={"Weather":"#2f74c9","ROV - Asset 1":"#2fae54","ROV - Asset 2":"#dd3b40
    NPT = crew still working but not producing (tooling/consumable changeouts, waiting/standby).
    Defaults below are a starting point — adjust per category in the End-of-day breakdown. */
 var CTYPE_DEFAULT={"Weather":"DT","ROV - Asset 1":"DT","ROV - Asset 2":"DT","Tooling":"NPT","Scheduling":"NPT","Crane":"DT","Vessel":"DT","Other":"OTHER"};
-var CTYPEK="endura_pel_ctype";
+function ctypeKey(){ return "endura_pel_ctype_"+curProject(); }
 var CTYPE=loadCtype();
 function loadCtype(){ var o={}; for(var c in CTYPE_DEFAULT) o[c]=CTYPE_DEFAULT[c];
-  try{ var s=localStorage.getItem(CTYPEK); if(s){ var p=JSON.parse(s); for(var k in p){ if(p[k]==="DT"||p[k]==="NPT"||p[k]==="OTHER") o[k]=p[k]; } } }catch(e){}
+  try{ var s=localStorage.getItem(ctypeKey())||localStorage.getItem("endura_pel_ctype"); if(s){ var p=JSON.parse(s); for(var k in p){ if(p[k]==="DT"||p[k]==="NPT"||p[k]==="OTHER") o[k]=p[k]; } } }catch(e){}
   return o; }
-function saveCtype(){ try{ localStorage.setItem(CTYPEK,JSON.stringify(CTYPE)); }catch(e){} }
+function saveCtype(){ try{ localStorage.setItem(ctypeKey(),JSON.stringify(CTYPE)); }catch(e){} }
 function catType(c){ if(c==="Maintenance") return "MAINT"; var v=CTYPE[c]; return (v==="NPT"||v==="OTHER")?v:"DT"; }
 function evType(e){ if(e&&e[0]==="Maintenance") return "MAINT"; var o=e&&e[5]; if(o==="DT"||o==="NPT"||o==="OTHER") return o; return catType(e?e[0]:""); }
 /* W1: which ROV(s) an event takes out. Explicit value at ev[7] wins; otherwise derived from category. */
@@ -930,7 +930,21 @@ function setEnd(v){ if(guardLocked()) return;
   var m=toMin(v);
   if(m==null){ alert("Day end must be a valid time in HH:MM (24:00 for a full day)."); renderLog(); return; }
   if(m===0){ alert("Use 24:00 for a full day; 00:00 is not a valid day end."); renderLog(); return; }
-  data[curKey()].end=v; save(); renderLog(); }
+  var __d=data[curKey()];
+  var __oldEnd=toMin(__d.end||"24:00")==null?1440:toMin(__d.end||"24:00");
+  if(m<__oldEnd){
+    var __hits=[];
+    (__d.ev||[]).forEach(function(e){
+      var __s=toMin(e[1]); if(__s==null) return;
+      var __en=(e[2]===""||e[2]==null)?null:toMin(e[2]);
+      if(__s>=m) __hits.push((e[0]||"event")+" "+e[1]+" (zeroed)");
+      else if(__en==null || __en>m) __hits.push((e[0]||"event")+" "+e[1]+" (clipped to "+v+")");
+    });
+    if(__hits.length){
+      if(!confirm("Shortening the day end to "+v+" affects "+__hits.length+" event(s):\n\n"+__hits.slice(0,5).join("\n")+(__hits.length>5?"\n\u2026":"")+"\n\nEntered times are kept as evidence, but effective durations and totals will change. OK applies the new day end; Cancel keeps "+(__d.end||"24:00")+".")){ renderLog(); return; }
+    }
+  }
+  __d.end=v; save(); renderLog(); }
 function newDay(){ if(pelRO()) return; var d=prompt("New day (YYYY-MM-DD):", todayKey()); if(!d) return; d=d.trim(); if(!validDayKey(d)){ alert("That is not a real calendar date. Use YYYY-MM-DD."); return; } if(!data[d]) data[d]={end:"24:00",log:[["00:00",""]],ev:[]}; save(); fillDaySelect(); document.getElementById("daySelect").value=d; renderLog(); }
 function deleteDay(){ var key=curKey(); if(guardLocked(key)) return; if(Object.keys(data).length<=1){ alert("Keep at least one day."); return; } if(confirm("Delete "+fmtDay(key)+"?")){ delete data[key]; save(); renderLog(); } }
 
@@ -1227,6 +1241,21 @@ function renderDash(){
   var mb=document.getElementById("maBanner");
   if(mb){
     var __pre="";
+    var __dqRev=0, __dqOut=0;
+    try{
+      allDayKeys().forEach(function(__k){
+        var __dd=data[__k]; if(!__dd||!__dd.ev) return;
+        var __em=toMin(__dd.end||"24:00"); if(__em==null) __em=1440;
+        __dd.ev.forEach(function(e){
+          var __s=toMin(e[1]); var __en=(e[2]===""||e[2]==null)?null:toMin(e[2]);
+          if(__s!=null && __en!=null && __en<=__s) __dqRev++;
+          else if(__s!=null && __s>=__em) __dqOut++;
+        });
+      });
+    }catch(e){}
+    if(__dqRev+__dqOut>0){
+      __pre+='<div class="insight" style="margin-top:8px;background:#fdf3e3;border-left:3px solid #b9822b"><b>Data quality:</b> '+(__dqRev?__dqRev+' event(s) with end not after start; ':'')+(__dqOut?__dqOut+' event(s) wholly outside their day; ':'')+'these contribute zero time and should be corrected before official issue.</div>';
+    }
     window.__wbs3=[]; try{ wbsTotals(); }catch(e){}
     if(window.__wbs3 && window.__wbs3.length){
       __pre+='<div class="insight" style="margin-top:8px;background:#fdf3e3;border-left:3px solid #b9822b"><b>Three or more concurrent WBS codes detected:</b> '+esc(window.__wbs3.slice(0,6).join("; "))+(window.__wbs3.length>6?" (and more)":"")+'. Only the first two codes receive hours; the remainder are uncounted. Resolve the tagging before issuing WBS reports.</div>';
@@ -1422,7 +1451,7 @@ function printDayRecord(){
 /* Apply chart preference and open the print dialog. */
 function printReport(){
   var __ma=maCalc();
-  if(__ma.pendingDays.length && !confirm(__ma.pendingDays.length+" day(s) are pending maintenance-eligibility review and are excluded from allowance figures. Continue printing?")) return;
+  if(__ma.pendingDays.length && (function(){ var __r=pelSelRange(); var __pd=__ma.pendingDays.filter(function(k2){ return (!__r.selected) || ((!__r.from||k2>=__r.from)&&(!__r.to||k2<=__r.to)); }); window.__pdScoped=__pd; return __pd.length; })() && !confirm(window.__pdScoped.length+" day(s) in the selected range are pending maintenance-eligibility review and are excluded from allowance figures. Continue printing?")) return;
   buildReportBlocks();
   var wantCharts=document.getElementById("printCharts");
   if(wantCharts && wantCharts.checked) document.body.classList.add("print-charts");
@@ -1612,9 +1641,10 @@ function detectWbsCols(rows){
   return {idC:idC,nameC:nameC,headerRows:headerRows,recognised:recognised};
 }
 
-function uploadWbsFile(inp){
+function uploadWbsFile(inp){ if(pelRO()){ inp.value=""; return; }
   var f=inp.files[0]; if(!f) return; inp.value="";
   readSheet(f,function(rows){
+    if(pelRO()) return;
     if(!rows.length){ alert("That file looks empty."); return; }
     var c=detectWbsCols(rows);
     var items=[], idCount=0, namedCount=0;
@@ -1623,6 +1653,7 @@ function uploadWbsFile(inp){
       var id=String(r[c.idC]==null?"":r[c.idC]).trim();
       var nm=String(r[c.nameC]==null?"":r[c.nameC]).trim();
       if(!id && !nm) continue;
+      if(!id){ if(!window.__wbsBlankSkipped) window.__wbsBlankSkipped=0; window.__wbsBlankSkipped++; continue; }
       if(id) idCount++;
       if(nm) namedCount++;
       items.push([id,nm]);
@@ -1833,8 +1864,20 @@ function exportCSV(){
   var csv="LOG\nTime,Entry,WBS,By\n";
   var effA=effWbs(day.log);
   day.log.forEach(function(r,i){ csv+=[q(r[0]),q(r[1]),q(effA[i]||""),q(r[3]||"")].join(",")+"\n"; });
-  csv+="\nEVENTS\nCategory,Start,End,Duration_h,Description,By,ROV_impact\n";
-  st.sp.forEach(function(x){ var e=day.ev[x.i]; var a=(e&&(e[7]==="R1"||e[7]==="R2"||e[7]==="BOTH"||e[7]==="NONE"))?e[7]:("auto:"+evAffDefault(x.cat)); csv+=[q(x.cat),q(min2t(x.s)),q(x.open?"ongoing":min2t(x.e)),r2(x.hrs),q(x.d),q(x.by||""),q(a)].join(",")+"\n"; });
+  csv+="\nEVENTS\nCategory,Raw_Start,Raw_End,Effective_Start,Effective_End,Duration_h,Status,Description,By,ROV_impact\n";
+  var __entered=0, __effective=0;
+  st.sp.forEach(function(x){ var e=day.ev[x.i]; __entered++;
+    var a=(e&&(e[7]==="R1"||e[7]==="R2"||e[7]==="BOTH"||e[7]==="NONE"))?e[7]:("auto:"+evAffDefault(x.cat));
+    var rawS=e?e[1]:min2t(x.s), rawE=e?(e[2]===""?"ongoing":e[2]):(x.open?"ongoing":min2t(x.e));
+    var __rs=toMin(rawS), __re=(rawE==="ongoing")?null:toMin(rawE);
+    var stx;
+    if(__rs!=null && __re!=null && __re<=__rs) stx="reversed (zero effect)";
+    else if(x.hrs>0){ stx="effective"; __effective++; }
+    else if(__rs!=null && __rs>=t2m(day.end||"24:00")) stx="outside day (zero effect)";
+    else stx="zero after clipping";
+    csv+=[q(x.cat),q(rawS),q(rawE),q(min2t(x.s)),q(x.open?"ongoing":min2t(x.e)),r2(x.hrs),q(stx),q(x.d),q(x.by||""),q(a)].join(",")+"\n";
+  });
+  csv+="Entered events,"+__entered+"\nEffective events,"+__effective+"\n";
   csv+="\nSUMMARY\nDay length h,"+r2(st.len)+"\nActual downtime h,"+r2(st.dt)+"\nMaintenance h,"+r2(st.maint||0)+"\nNon-productive (NPT) h,"+r2(st.npt)+"\nOther h,"+r2(st.other||0)+"\nClear h,"+r2(st.clear)+"\n";
   for(var c in st.cats) csv+=c+" h,"+r2(st.cats[c])+"\n";
   var wh=wbsHours(key); var wk=Object.keys(wh);
@@ -1846,7 +1889,7 @@ function exportRollupCSV(){
   var __r0=pelSelRange();
   var keys=allDayKeys().filter(function(k){ return (!__r0.from||k>=__r0.from)&&(!__r0.to||k<=__r0.to); });
   var MA=maCalc();
-  if(MA.pendingDays.length && !confirm(MA.pendingDays.length+" day(s) are pending maintenance-eligibility review and are excluded from allowance figures. Continue export?")) return;
+  if(MA.pendingDays.length){ var __r=pelSelRange(); var __pd=MA.pendingDays.filter(function(k2){ return (!__r.selected) || ((!__r.from||k2>=__r.from)&&(!__r.to||k2<=__r.to)); }); if(__pd.length && !confirm(__pd.length+" day(s) in the selected range are pending maintenance-eligibility review and are excluded from allowance figures. Continue export?")) return; }
   var csv="Day,Day_h,Events,Actual_DT_h,NPT_h,Other_h,Clear_h,Maint_h,MA_used_h,MA_balance_h,MA_flag,MA_eligibility,MA_reason,Op_day,Period,Day_in_period,"+CATS.join("_h,")+"_h\n";
   keys.forEach(function(k){ var s=dayStats(k); var md=MA.days[k]||{maint:0,used:0,bal:0,overAccr:false};
     var row=[k,r2(s.len),s.count,r2(s.dt),r2(s.npt),r2(s.other||0),r2(s.clear),r2(md.maint),r2(md.used),r2(md.bal),(md.overAccr?"OVER":""),q((md.eligibilityStatus||"")+((md.eligible&&!md.confirmed)?"_assumed":"")),q(md.eligibilityReason||""),(md.operationalDayOrdinal==null?"":md.operationalDayOrdinal),(md.periodNumber==null?"":md.periodNumber),(md.dayInPeriod==null?"":md.dayInPeriod)];
@@ -1887,7 +1930,7 @@ function validDayKey(k){
   return d.getUTCFullYear()===+p[0] && d.getUTCMonth()===+p[1]-1 && d.getUTCDate()===+p[2];
 }
 function validateDoc(input){
-  var issues=[]; var fatal=[];
+  var issues=[]; var fatal=[]; var quality=[];
   if(!input || typeof input!=="object" || Array.isArray(input)) return {ok:false, issues:["not an object"]};
   var o; try{ o=JSON.parse(JSON.stringify(input)); }catch(e){ return {ok:false, issues:["not serialisable"]}; }
   if(o && o.doc && typeof o.doc==="object" && !Array.isArray(o.doc) && !o.days){
@@ -1929,6 +1972,7 @@ function validateDoc(input){
       if(CATS.indexOf(e[0])<0){ issues.push(k+": unknown category coerced to Other"); e[3]="[was: "+e[0].slice(0,40)+"] "+e[3]; e[0]="Other"; }
       if(e[1]!=="" && toMin(e[1])==null){ issues.push(k+": event "+(i+1)+" invalid start "+e[1].slice(0,8)); fatal.push(k+": invalid event start"); }
       if(e[2]!=="" && toMin(e[2])==null){ issues.push(k+": event "+(i+1)+" invalid end "+e[2].slice(0,8)); fatal.push(k+": invalid event end"); }
+      if(e[1]!=="" && e[2]!=="" && toMin(e[1])!=null && toMin(e[2])!=null && toMin(e[2])<=toMin(e[1])){ quality.push(k+": event "+(i+1)+" end is not after start (zero effect)"); }
       if(e[5]!==undefined && e[5]!=="" && e[5]!=="DT" && e[5]!=="NPT" && e[5]!=="OTHER"){ issues.push(k+": event "+(i+1)+" invalid type override reset"); e[5]=undefined; }
     });
     if(d.maSt){
@@ -1959,6 +2003,7 @@ function validateDoc(input){
       if(!String(w[0]||"").trim()){ issues.push("wbs row "+(i+1)+" has no ID; dropped"); return false; }
       return true;
     }).map(function(w){ return [String(w[0]||"").trim(), String(w[1]||"")]; });
+    if(o.wbs){ var __wseen={}; o.wbs=o.wbs.filter(function(w){ var __wid=w[0]; if(__wseen[__wid]){ issues.push("duplicate WBS ID "+String(__wid).slice(0,20)+" dropped (first kept)"); return false; } __wseen[__wid]=1; return true; }); }
   }
   if(wrapped && o.locks!=null){
     if(typeof o.locks!=="object" || Array.isArray(o.locks)){ issues.push("locks malformed; reset"); o.locks={}; }
@@ -1967,7 +2012,7 @@ function validateDoc(input){
   var cleaned;
   if(wrapped){ o.schemaVersion=PEL_ENV.schema; cleaned=o; }
   else { cleaned={days:days, schemaVersion:PEL_ENV.schema}; }
-  return {ok:true, issues:issues, fatal:fatal, cleaned:cleaned};
+  return {ok:true, issues:issues, fatal:fatal, quality:quality, cleaned:cleaned};
 }
 function adopt(txt, strict){
   if(!txt) return;
@@ -1982,7 +2027,7 @@ function adopt(txt, strict){
   if(v.issues.length){ try{ console.warn("adopt: cleaned "+v.issues.length+" issue(s)", v.issues); }catch(_){} }
   if(o&&o.days){
     data=o.days; WBSL=Array.isArray(o.wbs)?o.wbs:WBSL;
-    if(o.ctype){ for(var k in o.ctype){ if(o.ctype[k]==="DT"||o.ctype[k]==="NPT"||o.ctype[k]==="OTHER") CTYPE[k]=o.ctype[k]; } saveCtype(); }
+    if(o.ctype){ for(var __ck in CTYPE) delete CTYPE[__ck]; for(var __cd in CTYPE_DEFAULT) CTYPE[__cd]=CTYPE_DEFAULT[__cd]; for(var k in o.ctype){ if(o.ctype[k]==="DT"||o.ctype[k]==="NPT"||o.ctype[k]==="OTHER") CTYPE[k]=o.ctype[k]; } saveCtype(); }
     LOCKS=(o.locks&&typeof o.locks==="object")?o.locks:{};   /* Batch 3: restore lock set */
     LOCKPW=(typeof o.lockpw==="string")?o.lockpw:"";          /* restore shared password hash */
   } else { data=o; }
@@ -2043,6 +2088,15 @@ async function restoreBackup(i){ if(pelRO()) return;
   try{ adopt(doc); }
   catch(__e){ alert("Backup rejected: "+(__e&&__e.message?__e.message:"invalid data")); return; }
   finally{ applyingRemote=false; }
+  try{
+    var __pk="endura_pel_offline_"+curProject();
+    var __pv=localStorage.getItem(__pk);
+    if(__pv){
+      localStorage.setItem("endura_pel_offline_held_"+Date.now()+"_"+curProject(), __pv);
+      localStorage.removeItem(__pk);
+      window.__heldNote=true; refreshSync();
+    }
+  }catch(__e){}
   closeLockModal(); renderLog();
   if(typeof renderDash==="function") renderDash();
   var ok;
@@ -2060,6 +2114,7 @@ async function cloudSave(){
     var r=await sb.from("event_logs").upsert({ project:curProject(), doc:body.doc, updated_at:body.updated_at, updated_by:body.updated_by }, { onConflict:"project" });
     if(r.error) throw r.error;
     online=true; setSync("green","synced \u00b7 "+curProject());
+    try{ localStorage.setItem("endura_pel_local_"+curProject(), lastSavedJSON); }catch(_){}
     try{ localStorage.removeItem("endura_pel_offline_"+curProject()); }catch(_){}
     return true;
   }catch(e){
@@ -2077,7 +2132,7 @@ async function cloudLoad(){
   try{
     var r=await sb.from("event_logs").select("doc,updated_by,updated_at").eq("project",curProject()).maybeSingle();
     if(r.error) throw r.error;
-    if(r.data && r.data.doc){ applyingRemote=true; var __bad=false; try{ adopt(r.data.doc); }catch(__e){ __bad=true; window.__remoteBad=true; setSync("red","remote data invalid \u2014 read-only; reload to retry"); }; applyingRemote=false; return __bad?"invalid":"found"; }
+    if(r.data && r.data.doc){ applyingRemote=true; var __bad=false; try{ adopt(r.data.doc); }catch(__e){ __bad=true; window.__remoteBad=true; setSync("red","remote data invalid \u2014 read-only; reload to retry"); }; applyingRemote=false; if(!__bad){ try{ localStorage.setItem("endura_pel_local_"+curProject(), JSON.stringify(r.data.doc)); }catch(_){} } return __bad?"invalid":"found"; }
     return "missing";
   }catch(e){ console.warn("cloud load failed",e); return "error"; }
 }
@@ -2121,8 +2176,32 @@ async function flushOffline(){
       return "held";
     }
     var doc=JSON.parse(pend);
+    var __v=null; var __docOk=false;
+    try{ __v=validateDoc(doc); __docOk=!!(__v && __v.ok && (!__v.fatal||!__v.fatal.length) && __v.cleaned && __v.cleaned.days); }catch(__e){ __docOk=false; }
+    if(!__docOk){
+      try{
+        var __hk="endura_pel_offline_held_"+Date.now()+"_"+curProject();
+        localStorage.setItem(__hk, pend);
+        localStorage.removeItem(k);
+      }catch(__e){}
+      window.__heldNote=true;
+      setSync("red","offline copy INVALID \u2014 quarantined on this device, not uploaded \u00b7 "+curProject());
+      return "invalid";
+    }
+    doc=__v.cleaned;
     var r=await sb.from("event_logs").upsert({ project:curProject(), doc:doc, updated_at:new Date().toISOString(), updated_by:(curUser()||"?")+" (offline replay)" }, { onConflict:"project" });
-    if(!r.error){ localStorage.removeItem(k); return "sent"; }
+    if(!r.error){
+      localStorage.removeItem(k);
+      try{
+        applyingRemote=true;
+        try{ adopt(doc); }catch(__e){}
+        applyingRemote=false;
+        lastSavedJSON=JSON.stringify(doc);
+        localStorage.setItem("endura_pel_local_"+curProject(), JSON.stringify(doc));
+        renderLog(); if(typeof renderDash==="function") renderDash();
+      }catch(__e){}
+      return "sent";
+    }
     setSync("red","offline replay FAILED \u2014 the offline copy is kept on this device; retry when the connection is stable");
     return "failed";
   }catch(e){
@@ -2138,7 +2217,7 @@ async function initCloud(){
     setSync("grey","not configured \u2014 running local only (see setup note)");
     try{ var s=localStorage.getItem("endura_pel_local_"+curProject()); if(s) adopt(s); }catch(e){}
     try{ writeLocalBackup(); }catch(e){}
-    try{ if(Object.keys(localStorage).some(function(x){ return x.indexOf("endura_pel_offline_held_")===0; })) window.__heldNote=true; refreshSync(); }catch(e){}
+    try{ if(Object.keys(localStorage).some(function(x){ return x.indexOf("endura_pel_offline_held_")===0 && x.slice(-("_"+curProject()).length)===("_"+curProject()); })) window.__heldNote=true; refreshSync(); }catch(e){}
     save=function(){ if(window.__remoteBad){ setSync("red","read-only \u2014 change NOT saved; reload to retry"); return; } writeLocalBackup(); try{ localStorage.setItem("endura_pel_local_"+curProject(),payload()); }catch(e){} };
     renderLog();
     return;
@@ -2155,7 +2234,7 @@ async function initCloud(){
       window.__remoteBad=true;
       setSync("red","cloud read failed \u2014 read-only until reload; data shown may be stale.");
     } else {
-      try{ if(Object.keys(localStorage).some(function(x){ return x.indexOf("endura_pel_offline_held_")===0; })) window.__heldNote=true; }catch(e){}
+      try{ if(Object.keys(localStorage).some(function(x){ return x.indexOf("endura_pel_offline_held_")===0 && x.slice(-("_"+curProject()).length)===("_"+curProject()); })) window.__heldNote=true; }catch(e){}
       try{ writeLocalBackup(); }catch(e){}
       var __fo=await flushOffline();
       if(__fo==="failed"){ /* red state already set; do not report green */ }
@@ -2169,7 +2248,7 @@ async function initCloud(){
     console.warn(e);
     try{ var __ls=localStorage.getItem("endura_pel_local_"+curProject()); if(__ls) adopt(__ls); }catch(_e){}
     try{ writeLocalBackup(); }catch(_e){}
-    try{ if(Object.keys(localStorage).some(function(x){ return x.indexOf("endura_pel_offline_held_")===0; })) window.__heldNote=true; refreshSync(); }catch(_e){}
+    try{ if(Object.keys(localStorage).some(function(x){ return x.indexOf("endura_pel_offline_held_")===0 && x.slice(-("_"+curProject()).length)===("_"+curProject()); })) window.__heldNote=true; refreshSync(); }catch(_e){}
     save=function(){ if(window.__remoteBad){ setSync("red","read-only \u2014 change NOT saved; reload to retry"); return; } writeLocalBackup(); try{ localStorage.setItem("endura_pel_local_"+curProject(),payload()); }catch(_e){} };
     renderLog();
   }
@@ -2959,6 +3038,8 @@ function pelChart(spec){
       ctx.meta.trimmed_client=true;
       s=JSON.stringify(ctx);
     }
+    if(s.length>CLIENT_CTX_CAP && ctx.allowance){ delete ctx.allowance; (ctx.meta.dropped_for_size=ctx.meta.dropped_for_size||[]).push("allowance"); s=JSON.stringify(ctx); }
+    if(s.length>CLIENT_CTX_CAP && ctx.wbs){ delete ctx.wbs; (ctx.meta.dropped_for_size=ctx.meta.dropped_for_size||[]).push("wbs"); s=JSON.stringify(ctx); }
     if(s.length>CLIENT_CTX_CAP){ ctx.meta.context_incomplete=true; }
     return ctx;
   }

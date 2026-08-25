@@ -80,16 +80,23 @@ export function truncateContext(context) {
   context.meta.truncated_days = dropped;
   /* One oversized day: trim its oldest log rows and events with explicit metadata. */
   let dayTrim = null;
-  if (s.length > MAX_CONTEXT_CHARS && days.length === 1) {
-    const k = days[0], d = context.days[k];
-    let cutL = 0, cutE = 0;
-    while (s.length > MAX_CONTEXT_CHARS && Array.isArray(d.log) && d.log.length > 120) {
-      d.log.splice(0, 100); cutL += 100; s = JSON.stringify(context);
+  if (s.length > MAX_CONTEXT_CHARS) {
+    const trims = [];
+    const allKs = Object.keys(context.days || {}).sort();
+    for (const k of allKs) {
+      if (s.length <= MAX_CONTEXT_CHARS) break;
+      const d = context.days[k];
+      let cutL = 0, cutE = 0;
+      while (s.length > MAX_CONTEXT_CHARS && Array.isArray(d.log) && d.log.length > 120) {
+        d.log.splice(0, 100); cutL += 100; s = JSON.stringify(context);
+      }
+      while (s.length > MAX_CONTEXT_CHARS && Array.isArray(d.ev) && d.ev.length > 60) {
+        d.ev.splice(0, 25); cutE += 25; s = JSON.stringify(context);
+      }
+      if (cutL || cutE) trims.push({ day: k, removed_log_rows: cutL, removed_events: cutE });
     }
-    while (s.length > MAX_CONTEXT_CHARS && Array.isArray(d.ev) && d.ev.length > 60) {
-      d.ev.splice(0, 25); cutE += 25; s = JSON.stringify(context);
-    }
-    if (cutL || cutE) { dayTrim = { day: k, removed_log_rows: cutL, removed_events: cutE }; context.meta.trimmed_single_day = dayTrim; }
+    if (trims.length === 1) { dayTrim = trims[0]; context.meta.trimmed_single_day = dayTrim; }
+    else if (trims.length > 1) { dayTrim = trims; context.meta.trimmed_days = trims; }
   }
   /* Byte caps per string: one oversized row must not bypass the context cap. */
   let clipped = 0;
@@ -111,7 +118,16 @@ export function truncateContext(context) {
     else if (context.allowance) { context.meta.dropped_fields = (context.meta.dropped_fields || []).concat("allowance"); delete context.allowance; }
     else if (context.totals) { context.meta.dropped_fields = (context.meta.dropped_fields || []).concat("totals"); delete context.totals; }
     else if (context.wbs) { context.meta.dropped_fields = (context.meta.dropped_fields || []).concat("wbs"); delete context.wbs; }
-    else { const keepMeta = context.meta; context = { error: "context too large after reduction", meta: keepMeta }; s = JSON.stringify(context); break; }
+    else {
+      const keepMeta = context.meta || {};
+      keepMeta.context_incomplete = true;
+      const stubDays = {};
+      for (const pk of [context.selectedDay, context.latestLoggedDay].filter(Boolean)) {
+        stubDays[pk] = { note: "record too large for the context window; trimmed out. Ask a narrower question or a shorter range." };
+      }
+      context = { error: "context too large after reduction", selectedDay: context.selectedDay || null, latestLoggedDay: context.latestLoggedDay || null, days: stubDays, meta: keepMeta };
+      s = JSON.stringify(context); break;
+    }
     s = JSON.stringify(context);
   }
   const droppedAny = ((context.meta && context.meta.dropped_fields) || []).length > 0 || ((context.meta && context.meta.invalid_days) || []).length > 0;
