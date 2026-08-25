@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-08-24.1 - deploy check string: PEL-BUILD-2026-08-24.1 -->
+<!-- Endura Project Event Log - build 2026-08-25.3 - deploy check string: PEL-BUILD-2026-08-25.3 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -148,7 +148,7 @@
     #dayRecord .drTotals b{font-weight:700}
     #dayRecord .drFoot{margin-top:14px;padding-top:8px;border-top:1px solid #ccc;font-size:8pt;color:#777}
     #dprRecord .dpr-verdict{margin:12px 0;padding:10px 12px;border-radius:5px;font-weight:600;font-size:11pt}
-    #dprRecord .dpr-verdict.ok{background:#eaf6ec;border-left:4px solid #1e7d34;color:#1e5b2a}
+    #dprRecord .dpr-verdict.ok{background:#f4f1ea;border-left:4px solid #8C8C8C;color:#1A1A1A}
     #dprRecord .dpr-verdict.bad{background:#fdecea;border-left:4px solid #c0392b;color:#7a1f17}
     #dprRecord .dpr-rec-table{width:100%;border-collapse:collapse;font-size:10pt;margin-top:6px}
     #dprRecord .dpr-rec-table th{background:#1A1A1A!important;color:#fff!important;text-align:left;padding:6px 8px;font-size:8.5pt;text-transform:uppercase;letter-spacing:.4px}
@@ -270,7 +270,7 @@
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-08-24.1</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-08-25.3</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -331,7 +331,7 @@
       <div id="wbsChips" class="chips"></div>
       <div id="laneWrap" class="lanewrap"></div>
       <div class="axis"><span>00:00</span><span id="axQ1">06:00</span><span id="axQ2">12:00</span><span id="axQ3">18:00</span><span id="axEnd">24:00</span></div>
-      <div class="footnote"><b>Actual downtime + maintenance + NPT + other + clear running = day length</b> (overlaps merged, no double-counting; where events overlap, a minute counts once, in the order downtime, then maintenance, then NPT). Each bar is one event, drawn on its own lane so overlapping events are visible side by side. Set whether a category is genuine downtime or non-productive time using the controls above.</div>
+      <div class="footnote"><b>Actual downtime + maintenance + NPT + other + clear running = day length</b> (overlaps merged, no double-counting; where events overlap, a minute counts once, in the order downtime, then maintenance, then NPT). Each bar shows gross overlapping event hours, one lane per event; category sums can exceed the day where events overlap, while the summary tiles reconcile through the precedence engine. Set whether a category is genuine downtime or non-productive time using the controls above.</div>
     </div>
   </section>
 
@@ -508,13 +508,13 @@
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-08-24.2";
+var APP_BUILD="2026-08-25.3";
 var PEL_ENV={env:"TEST",agent:true,schema:6};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
   b.id="envBadge";
   b.textContent=PEL_ENV.env+" \u00b7 build "+APP_BUILD+" \u00b7 schema "+PEL_ENV.schema;
-  b.style.cssText="position:fixed;bottom:6px;right:8px;font:10px monospace;color:"+(PEL_ENV.env==="PRODUCTION"?"#8c8c8c":"#b9822b")+";background:rgba(250,247,241,.9);padding:2px 6px;border-radius:4px;z-index:9998;pointer-events:none";
+  b.style.cssText="position:fixed;bottom:6px;left:8px;font:10px monospace;color:"+(PEL_ENV.env==="PRODUCTION"?"#8c8c8c":"#b9822b")+";background:rgba(250,247,241,.9);padding:2px 6px;border-radius:4px;z-index:9998;pointer-events:none";
   document.body.appendChild(b);
 }catch(e){} });
 var CATS=["Weather","ROV - Asset 1","ROV - Asset 2","Tooling","Scheduling","Crane","Vessel","Maintenance","Other"];
@@ -536,7 +536,7 @@ function evType(e){ if(e&&e[0]==="Maintenance") return "MAINT"; var o=e&&e[5]; i
 /* W1: which ROV(s) an event takes out. Explicit value at ev[7] wins; otherwise derived from category. */
 function evAffDefault(cat){ if(cat==="ROV - Asset 1") return "R1"; if(cat==="ROV - Asset 2") return "R2"; if(cat==="Weather"||cat==="Vessel") return "BOTH"; return "NONE"; }
 function evAffects(e){ var a=e&&e[7]; if(a==="R1"||a==="R2"||a==="BOTH"||a==="NONE") return a; return evAffDefault(e?e[0]:""); }
-function setCtype(c,v){ CTYPE[c]=(v==="NPT"||v==="OTHER")?v:"DT"; saveCtype(); save(); renderLog(); var t=document.getElementById("tabDash"); if(t&&t.classList.contains("active")) renderDash(); }
+function setCtype(c,v){ if(pelRO()) return; CTYPE[c]=(v==="NPT"||v==="OTHER")?v:"DT"; saveCtype(); save(); renderLog(); var t=document.getElementById("tabDash"); if(t&&t.classList.contains("active")) renderDash(); }
 
 /* day = { end, log:[[time,entry,wbs,author,srcId?]], ev:[[category,start,end,desc,author,ctype?,srcId?,rovImpact?]] }
    blank event end = ongoing. ctype index 5: DT | NPT | OTHER. srcId index 6.
@@ -586,6 +586,11 @@ function lockReason(key){
   return "";
 }
 /* Called by every mutator. Returns true if the action should be BLOCKED. */
+function refreshSync(){ try{ if(window.__lastSync) setSync(window.__lastSync.s, window.__lastSync.m); }catch(e){} }
+function pelRO(){
+  if(window.__remoteBad){ alert("The cloud copy of this project is not trusted (failed read or invalid data). The app is read-only until reload; no changes are saved."); return true; }
+  return false;
+}
 function guardLocked(key){
   if(window.__remoteBad){ alert("The cloud copy of this project failed validation. The app is read-only until reload; do not edit."); return true; }
   key=key||curKey();
@@ -593,7 +598,7 @@ function guardLocked(key){
   alert("Day "+fmtDay(key)+" is locked. Use the Unlock button to edit it.");
   return true;
 }
-function toggleLock(){
+function toggleLock(){ if(pelRO()) return;
   var key=curKey();
   if(isLocked(key)){
     if(!LOCKPW) openLockModal("set", key);     /* first use: set the password */
@@ -655,7 +660,7 @@ function doSetPassword(){
   var b=(document.getElementById("lmNew2").value||"").trim();
   if(a.length<4){ lmErr("Use at least 4 characters."); return; }
   if(a!==b){ lmErr("Passwords do not match."); return; }
-  LOCKPW=hashPw(a); UNLOCKED[lockModalKey]=true; save();
+  if(pelRO()) return; LOCKPW=hashPw(a); UNLOCKED[lockModalKey]=true; save();
   closeLockModal(); renderLog();
 }
 function doUnlock(){
@@ -670,7 +675,7 @@ function doChangePassword(){
   if(hashPw(cur)!==LOCKPW){ lmErr("Current password is incorrect."); return; }
   if(a.length<4){ lmErr("New password must be at least 4 characters."); return; }
   if(a!==b){ lmErr("New passwords do not match."); return; }
-  LOCKPW=hashPw(a); save(); closeLockModal();
+  if(pelRO()) return; LOCKPW=hashPw(a); save(); closeLockModal();
   alert("Project password updated.");
 }
 function openChangePassword(){ openLockModal("change"); }
@@ -697,9 +702,9 @@ function renderLockUI(key){
   }
 }
 function mergeEmb(){ var have={}; WBSL.forEach(function(w){ have[String(w[0])]=1; }); var n=0; EMB.forEach(function(w){ if(!have[String(w[0])]){ WBSL.push([w[0],w[1]]); n++; } }); return n; }
-function loadDpr(){ var n=mergeEmb(); save(); renderWbs(); alert(n+" schedule activities loaded."); }
+function loadDpr(){ if(pelRO()) return; var n=mergeEmb(); save(); renderWbs(); alert(n+" schedule activities loaded."); }
 function load(){ var d=JSON.parse(JSON.stringify(SEED)); if(WBSL.length<10) mergeEmb(); return d; }
-function save(){ writeLocalBackup(); scheduleCloudSave(); }
+function save(){ if(window.__remoteBad){ setSync("red","read-only \u2014 change NOT saved; reload to retry"); return; } writeLocalBackup(); scheduleCloudSave(); }
 
 function toMin(t){ if(!t) return null; var m=String(t).trim().match(/^(\d{1,2}):(\d{2})$/); if(!m) return null; var h=+m[1], mm=+m[2]; if(mm>59||h>24||(h===24&&mm>0)) return null; return h*60+mm; }
 function r2(n){ return Math.round(n*100)/100; }
@@ -894,7 +899,9 @@ function renderBreakdown(key){
   document.getElementById("axEnd").textContent=data[key].end;
 }
 
-function updL(i,f,v){ if(guardLocked()) return; var r=data[curKey()].log[i]; r[f]=v; r[3]=curUser()||r[3]||"";
+function updL(i,f,v){ if(guardLocked()) return;
+  if(f===0 && v!=="" && toMin(v)==null){ alert("Invalid time "+String(v).slice(0,8)+" \u2014 the previous value is kept."); renderLog(); return; }
+  var r=data[curKey()].log[i]; r[f]=v; r[3]=curUser()||r[3]||"";
   if(r[4]&&(f===0||f===1)){ (data[curKey()].ev||[]).forEach(function(e){ if(e[6]===r[4]){ if(f===0){ e[1]=v; } else { e[3]=String(v).slice(0,100); } } }); }
   save(); renderLog(); }
 function delL(i){ if(guardLocked()) return; var r=data[curKey()].log[i];
@@ -903,7 +910,17 @@ function delL(i){ if(guardLocked()) return; var r=data[curKey()].log[i];
       data[curKey()].ev=evs.filter(function(e){ return e[6]!==r[4]; }); } }
   data[curKey()].log.splice(i,1); save(); renderLog(); }
 function addL(){ if(guardLocked()) return; var L=data[curKey()].log; L.push([L.length?L[L.length-1][0]:"00:00","","",curUser()]); save(); renderLog(); }
-function updE(i,f,v){ if(guardLocked()) return; var e=data[curKey()].ev[i]; e[f]=v; e[4]=curUser()||e[4]||""; save(); renderLog(); }
+function updE(i,f,v){ if(guardLocked()) return;
+  if((f===1||f===2) && v!=="" && toMin(v)==null){ alert("Invalid time "+String(v).slice(0,8)+" \u2014 the previous value is kept."); renderLog(); return; }
+  var e=data[curKey()].ev[i];
+  if(e[6] && f===3){
+    if(!confirm("This event is linked to a log line. OK updates the event wording and unlinks it (the event becomes manual); Cancel keeps the original wording.")){ renderLog(); return; }
+    (data[curKey()].log||[]).forEach(function(r){ if(r[4]===e[6]) r[4]=""; });
+    e[6]="";
+  }
+  e[f]=v; e[4]=curUser()||e[4]||"";
+  if(e[6] && f===1){ (data[curKey()].log||[]).forEach(function(r){ if(r[4]===e[6]) r[0]=v; }); }
+  save(); renderLog(); }
 function delE(i){ if(guardLocked()) return; var e=data[curKey()].ev[i];
   if(e&&e[6]){ (data[curKey()].log||[]).forEach(function(r){ if(r[4]===e[6]) r[4]=""; }); }
   data[curKey()].ev.splice(i,1); save(); renderLog(); }
@@ -914,7 +931,7 @@ function setEnd(v){ if(guardLocked()) return;
   if(m==null){ alert("Day end must be a valid time in HH:MM (24:00 for a full day)."); renderLog(); return; }
   if(m===0){ alert("Use 24:00 for a full day; 00:00 is not a valid day end."); renderLog(); return; }
   data[curKey()].end=v; save(); renderLog(); }
-function newDay(){ var d=prompt("New day (YYYY-MM-DD):", todayKey()); if(!d) return; d=d.trim(); if(!validDayKey(d)){ alert("That is not a real calendar date. Use YYYY-MM-DD."); return; } if(!data[d]) data[d]={end:"24:00",log:[["00:00",""]],ev:[]}; save(); fillDaySelect(); document.getElementById("daySelect").value=d; renderLog(); }
+function newDay(){ if(pelRO()) return; var d=prompt("New day (YYYY-MM-DD):", todayKey()); if(!d) return; d=d.trim(); if(!validDayKey(d)){ alert("That is not a real calendar date. Use YYYY-MM-DD."); return; } if(!data[d]) data[d]={end:"24:00",log:[["00:00",""]],ev:[]}; save(); fillDaySelect(); document.getElementById("daySelect").value=d; renderLog(); }
 function deleteDay(){ var key=curKey(); if(guardLocked(key)) return; if(Object.keys(data).length<=1){ alert("Keep at least one day."); return; } if(confirm("Delete "+fmtDay(key)+"?")){ delete data[key]; save(); renderLog(); } }
 
 var KW=[["Maintenance",/maintenan|preventat|greas|lubric|servic/i],["ROV - Asset 2",/rov ?2/i],["ROV - Asset 1",/rov ?1|\btms\b|\bt4\b|umbilical|tether/i],["Weather",/weather|\bwow\b|swell|wave|wind|storm|cyclone/i],["Crane",/crane|lift(ing)?|deck ops/i],["Vessel",/vessel|\bdp\b|engine|thruster|beacon|gangway|bridge/i],["Tooling",/tool|grinder|ring ?saw|cutter|blade|hose|fit ?up|hot ?stab|dredge|jetter/i],["Scheduling",/schedul|waiting|wait on|standby|stand ?by|delay|no work|permit/i]];
@@ -1067,7 +1084,7 @@ function setMaSt(k,v){ if(guardLocked(k)){ renderDash(); return; } var d=data[k]
    policy opening offset; excluded and pending days neither accrue nor advance the count. */
 function maCalc(){
   var P=MA_POLICY, keys=allDayKeys(), days={}, periods={}, pendingDays=[];
-  var seen=P.openingEligibleDayOffset|0, usedCumMin=0, maintCumMin=0;
+  var seen=P.openingEligibleDayOffset|0, usedCumMin=0, maintCumMin=0, curAccMin=0;
   keys.forEach(function(k){
     var el=maEl(k), mtMin=maintMin(k);
     if(el.s!=="eligible"){
@@ -1075,8 +1092,8 @@ function maCalc(){
       days[k]={date:k, eligible:false, eligibilityStatus:el.s, eligibilityReason:el.r,
         operationalDayOrdinal:null, periodNumber:null, dayInPeriod:null,
         accruedMin:0, maintenanceMin:mtMin, coveredMin:0, usedMin:usedCumMin,
-        balanceMin:0, excessMin:(mtMin>0?mtMin:0), policyVersion:P.version,
-        maint:mtMin/60, accrued:0, used:usedCumMin/60, bal:0, excess:(mtMin>0?mtMin:0)/60,
+        balanceMin:Math.max(0,curAccMin-usedCumMin), excessMin:(mtMin>0?mtMin:0), policyVersion:P.version,
+        maint:mtMin/60, accrued:0, used:usedCumMin/60, bal:Math.max(0,curAccMin-usedCumMin)/60, excess:(mtMin>0?mtMin:0)/60,
         overAccr:mtMin>0, over48:false, block:null, dayInBlock:null};
       return;
     }
@@ -1086,6 +1103,7 @@ function maCalc(){
     var dip=((ord-1)%P.eligibleDaysPerPeriod)+1;
     if(dip===1){ usedCumMin=0; maintCumMin=0; }
     var accMin=Math.min(dip*P.accrualMinPerEligibleDay, P.capMinPerPeriod);
+    curAccMin=accMin;
     var covered=Math.min(mtMin, Math.max(0, accMin-usedCumMin));
     usedCumMin+=covered; maintCumMin+=mtMin;
     var excessMin=Math.max(0, maintCumMin-usedCumMin);
@@ -1103,9 +1121,14 @@ function maCalc(){
     periods[per].accrued=accMin/60; periods[per].excess=excessMin/60;
   });
   try{
-    var sig=JSON.stringify(keys.map(function(k){ var d=days[k]; return k+":"+(d.periodNumber||"x")+":"+(d.dayInPeriod||"x"); }));
-    if(window.__maSig && window.__maSig!==sig) window.__maShift=true;
-    window.__maSig=sig;
+    var sigMap={};
+    keys.forEach(function(k){ var d=days[k]; sigMap[k]=(d.periodNumber||"x")+":"+(d.dayInPeriod||"x"); });
+    if(window.__maSigMap){
+      for(var sk in sigMap){
+        if(Object.prototype.hasOwnProperty.call(window.__maSigMap, sk) && window.__maSigMap[sk]!==sigMap[sk]){ window.__maShift=true; break; }
+      }
+    }
+    window.__maSigMap=sigMap;
   }catch(e){}
   return {days:days, blocks:periods, periods:periods, pendingDays:pendingDays, policy:P};
 }
@@ -1204,6 +1227,10 @@ function renderDash(){
   var mb=document.getElementById("maBanner");
   if(mb){
     var __pre="";
+    window.__wbs3=[]; try{ wbsTotals(); }catch(e){}
+    if(window.__wbs3 && window.__wbs3.length){
+      __pre+='<div class="insight" style="margin-top:8px;background:#fdf3e3;border-left:3px solid #b9822b"><b>Three or more concurrent WBS codes detected:</b> '+esc(window.__wbs3.slice(0,6).join("; "))+(window.__wbs3.length>6?" (and more)":"")+'. Only the first two codes receive hours; the remainder are uncounted. Resolve the tagging before issuing WBS reports.</div>';
+    }
     if(MA.pendingDays && MA.pendingDays.length){
       __pre+='<div class="insight" style="margin-top:8px;background:#fdf3e3;border-left:3px solid #b9822b"><b>'+MA.pendingDays.length+' day(s) pending maintenance-eligibility review:</b> '+MA.pendingDays.map(function(k2){return esc(fmtDay(k2));}).join(", ")+'. Pending days do not accrue allowance and are excluded from the operational-day count until confirmed.</div>';
     }
@@ -1501,9 +1528,33 @@ function renderWbs(){
   });
   document.getElementById("wbsCount").textContent=WBSL.length+" activities loaded"+(hidden?" · showing "+shown+" (activities with hours first) — use the filter to find others":"");
 }
-function updW(i,f,v){ WBSL[i][f]=v; save(); renderWbs(); }
-function delW(i){ WBSL.splice(i,1); save(); renderWbs(); }
-function addW(){
+function updW(i,f,v){ if(pelRO()) return;
+  if(f===0){
+    var nv=String(v||"").trim();
+    if(!nv){ alert("WBS ID cannot be blank."); renderWbs(); return; }
+    var dup=WBSL.some(function(w,j){ return j!==i && String(w[0]).trim()===nv; });
+    if(dup){ alert("WBS ID "+nv+" already exists. IDs must be unique."); renderWbs(); return; }
+      var oldId=String(WBSL[i][0]).trim();
+    if(oldId && oldId!==nv){
+      var refs=0, lockedRefs=[];
+      for(var k in data){ (data[k].log||[]).forEach(function(r){ if(String(r[2]||"").trim()===oldId){ refs++; if(isLocked(k) && lockedRefs.indexOf(k)<0) lockedRefs.push(k); } }); }
+      if(lockedRefs.length){ alert("WBS ID "+oldId+" appears on "+lockedRefs.length+" LOCKED day(s). Locked history cannot be rewritten by a rename. Unlock those days first, or leave the ID unchanged."); renderWbs(); return; }
+      if(refs){
+        if(!confirm("WBS ID "+oldId+" is used on "+refs+" historical log line(s). OK renames it to "+nv+" everywhere; Cancel keeps "+oldId+".")){ renderWbs(); return; }
+        for(var k2 in data){ (data[k2].log||[]).forEach(function(r){ if(String(r[2]||"").trim()===oldId) r[2]=nv; }); }
+      }
+    }
+    WBSL[i][0]=nv;
+  } else {
+    WBSL[i][f]=v;
+  }
+  save(); renderWbs(); }
+function delW(i){ if(pelRO()) return;
+  var id=String((WBSL[i]||[])[0]||"").trim(); var refs=0;
+  if(id){ for(var k in data){ (data[k].log||[]).forEach(function(r){ if(String(r[2]||"").trim()===id) refs++; }); } }
+  if(refs){ alert("WBS ID "+id+" is used on "+refs+" historical log line(s) and cannot be deleted while referenced. Rename it instead, or clear those references first."); return; }
+  WBSL.splice(i,1); save(); renderWbs(); }
+function addW(){ if(pelRO()) return;
   /* B1 FIX 6: ask for id + name so the new activity is usable immediately.
      (A blank row otherwise sorts to the bottom of 1600+ activities and looks like nothing happened.) */
   var id=prompt("New WBS / activity ID (e.g. 200 or TP-0065):","");
@@ -1652,7 +1703,7 @@ function uploadLogFile(inp){
   });
 }
 
-function importWbs(){
+function importWbs(){ if(pelRO()) return;
   var txt=document.getElementById("wbsText").value; var n=0;
   txt.split(/\r?\n/).forEach(function(raw){
     var line=raw.trim(); if(!line) return;
@@ -1670,6 +1721,12 @@ function exportWbsCSV(){
   var __keys=allDayKeys().filter(function(k){ return (!__r.from||k>=__r.from)&&(!__r.to||k<=__r.to); });
   var t=wbsTotals(__keys); var csv="WBS_ID,Activity,Total_h,Days\n";
   WBSL.forEach(function(w){ csv+=[q(w[0]),q(w[1]),r2(t.tot[w[0]]||0),(t.days[w[0]]||0)].join(",")+"\n"; });
+  var __master={}; WBSL.forEach(function(w){ __master[String(w[0]).trim()]=1; });
+  var __orphans=Object.keys(t.tot).filter(function(id){ return !__master[String(id).trim()]; }).sort();
+  if(__orphans.length){
+    csv+="\nUNMAPPED (hours tagged to IDs not in the WBS master list \u2014 resolve before official issue)\nWBS_ID,Total_h,Days\n";
+    __orphans.forEach(function(id){ csv+=[q(id),r2(t.tot[id]||0),(t.days[id]||0)].join(",")+"\n"; });
+  }
   csv+="\nReport_From,"+__r.from+",Report_To,"+__r.to+",Logged_days,"+__keys.length;
   csv+="\n"+exportMetaLine(); dl(csv, pelName("wbs", __r.from, __r.to), "text/csv");
 }
@@ -1713,7 +1770,14 @@ function applyImport(){
   /* D1 fix: WBS is never inferred from entry text. A WBS carried in from an upload column
      is preserved; otherwise the field is left blank for the user to tag deliberately. */
   clone.forEach(function(e){ e[2]=e[2]||""; e[3]=curUser(); });
-  if(document.getElementById("impMode").value==="replace") data[key].log=clone;
+  if(document.getElementById("impMode").value==="replace"){
+    var __linked=(data[key].ev||[]).filter(function(ev){ return ev[6]; });
+    if(__linked.length){
+      if(!confirm(__linked.length+" event(s) are linked to log lines that this import will replace. OK converts them to manual events (links cleared); Cancel aborts the import.")) return;
+      __linked.forEach(function(ev){ ev[6]=""; });
+    }
+    data[key].log=clone;
+  }
   else clone.forEach(function(e){ data[key].log.push(e); });
   save(); document.getElementById("impText").value=""; impParsed=[]; toggleImport(false); renderLog();
 }
@@ -1734,7 +1798,10 @@ function pelSelRange(){
   var t=(document.getElementById("rangeTo")||{}).value||"";
   var keys=allDayKeys();
   var pf=keys.length?keys[0]:"", pt=keys.length?keys[keys.length-1]:"";
-  return { from: f||pf, to: t||pt, selected: !!(f||t) };
+  var A=f||pf, B=t||pt;
+  var sw=false;
+  if(A && B && A>B){ var tmp=A; A=B; B=tmp; sw=true; }
+  return { from: A, to: B, selected: !!(f||t), swapped: sw };
 }
 function pelName(kind, a, b){
   var proj=String(curProject()||"").replace(/[\\/:*?"<>|]/g,"").trim();
@@ -1768,10 +1835,10 @@ function exportCSV(){
   day.log.forEach(function(r,i){ csv+=[q(r[0]),q(r[1]),q(effA[i]||""),q(r[3]||"")].join(",")+"\n"; });
   csv+="\nEVENTS\nCategory,Start,End,Duration_h,Description,By,ROV_impact\n";
   st.sp.forEach(function(x){ var e=day.ev[x.i]; var a=(e&&(e[7]==="R1"||e[7]==="R2"||e[7]==="BOTH"||e[7]==="NONE"))?e[7]:("auto:"+evAffDefault(x.cat)); csv+=[q(x.cat),q(min2t(x.s)),q(x.open?"ongoing":min2t(x.e)),r2(x.hrs),q(x.d),q(x.by||""),q(a)].join(",")+"\n"; });
-  csv+="\nSUMMARY\nDay length h,"+r2(st.len)+"\nActual downtime h,"+r2(st.dt)+"\nMaintenance h,"+r2(st.maint||0)+"\nNon-productive (NPT) h,"+r2(st.npt)+"\nClear h,"+r2(st.clear)+"\n";
+  csv+="\nSUMMARY\nDay length h,"+r2(st.len)+"\nActual downtime h,"+r2(st.dt)+"\nMaintenance h,"+r2(st.maint||0)+"\nNon-productive (NPT) h,"+r2(st.npt)+"\nOther h,"+r2(st.other||0)+"\nClear h,"+r2(st.clear)+"\n";
   for(var c in st.cats) csv+=c+" h,"+r2(st.cats[c])+"\n";
   var wh=wbsHours(key); var wk=Object.keys(wh);
-  if(wk.length){ csv+="\nWBS HOURS\nWBS_ID,Activity,Hours\n"; wk.sort().forEach(function(w){ csv+=w+","+q(wbsName(w))+","+r2(wh[w])+"\n"; }); }
+  if(wk.length){ csv+="\nWBS HOURS\nWBS_ID,Activity,Hours\n"; wk.sort().forEach(function(w){ var __nm=wbsName(w); csv+=q(w)+","+q(__nm||"[not in WBS master list]")+","+r2(wh[w])+"\n"; }); }
   csv+="\n"+exportMetaLine();
   dl(csv, pelName("daily", key), "text/csv");
 }
@@ -1808,9 +1875,10 @@ function curProject(){ try{ return localStorage.getItem(PROJK)||"MEFF-SAR"; }cat
 function setProject(v){ v=(v||"").trim().slice(0,60)||"MEFF-SAR"; try{ localStorage.setItem(PROJK,v); }catch(e){} location.reload(); }
 
 function setSync(state,msg){
+  window.__lastSync={s:state,m:msg};
   var el=document.getElementById("syncStatus"); if(!el) return;
   var col={green:"#2fae54",amber:"#E87722",red:"#dd3b40",grey:"#8C8C8C"}[state]||"#8C8C8C";
-  el.textContent=""; var dot=document.createElement("b"); dot.style.color=col; dot.textContent="\u25cf"; el.appendChild(dot); el.appendChild(document.createTextNode(" "+msg));
+  el.textContent=""; var dot=document.createElement("b"); dot.style.color=col; dot.textContent="\u25cf"; el.appendChild(dot); el.appendChild(document.createTextNode(" "+msg+(window.__heldNote?" \u00b7 held offline copy on this device (downloaded)":"")));
 }
 
 function validDayKey(k){
@@ -1819,12 +1887,15 @@ function validDayKey(k){
   return d.getUTCFullYear()===+p[0] && d.getUTCMonth()===+p[1]-1 && d.getUTCDate()===+p[2];
 }
 function validateDoc(input){
-  var issues=[];
+  var issues=[]; var fatal=[];
   if(!input || typeof input!=="object" || Array.isArray(input)) return {ok:false, issues:["not an object"]};
   var o; try{ o=JSON.parse(JSON.stringify(input)); }catch(e){ return {ok:false, issues:["not serialisable"]}; }
+  if(o && o.doc && typeof o.doc==="object" && !Array.isArray(o.doc) && !o.days){
+    o=o.doc;
+  }
   var wrapped=!!(o.days && typeof o.days==="object" && !Array.isArray(o.days));
   if(wrapped){
-    var KNOWN={days:1,wbs:1,ctype:1,locks:1,lockpw:1,meta:1,app:1,version:1,schemaVersion:1};
+    var KNOWN={days:1,wbs:1,ctype:1,locks:1,lockpw:1,meta:1,app:1,version:1,schemaVersion:1,saved:1};
     for(var kk in o){ if(!KNOWN[kk]) issues.push("unknown field "+String(kk).slice(0,24)+" ignored"); }
   } else {
     issues.push("legacy bare-days format normalised");
@@ -1841,7 +1912,7 @@ function validateDoc(input){
       return true;
     }).map(function(r,i){
       var out=[String(r[0]||""),String(r[1]||""),String(r[2]||""),String(r[3]||""),String(r[4]||"")];
-      if(out[0]!=="" && toMin(out[0])==null){ issues.push(k+": log row "+(i+1)+" invalid time "+out[0].slice(0,8)); }
+      if(out[0]!=="" && toMin(out[0])==null){ issues.push(k+": log row "+(i+1)+" invalid time "+out[0].slice(0,8)); fatal.push(k+": invalid log time"); }
       return out;
     });
     if(!Array.isArray(d.ev)){ issues.push(k+": events is not a list"); d.ev=[]; }
@@ -1849,19 +1920,36 @@ function validateDoc(input){
       if(!Array.isArray(e)){ issues.push(k+": event "+(i+1)+" is not a row; dropped"); return false; }
       return true;
     });
+    var __sids={};
     d.ev.forEach(function(e,i){
       while(e.length<8) e.push("");
+      if(e[6]){ if(__sids[e[6]]){ issues.push(k+": duplicate event source link"); fatal.push(k+": duplicate source link"); } __sids[e[6]]=1; }
       e[0]=String(e[0]||""); e[1]=String(e[1]||""); e[2]=String(e[2]||""); e[3]=String(e[3]||""); e[4]=String(e[4]||"");
       e[6]=String(e[6]||""); 
       if(CATS.indexOf(e[0])<0){ issues.push(k+": unknown category coerced to Other"); e[3]="[was: "+e[0].slice(0,40)+"] "+e[3]; e[0]="Other"; }
-      if(e[1]!=="" && toMin(e[1])==null){ issues.push(k+": event "+(i+1)+" invalid start "+e[1].slice(0,8)); }
-      if(e[2]!=="" && toMin(e[2])==null){ issues.push(k+": event "+(i+1)+" invalid end "+e[2].slice(0,8)); }
+      if(e[1]!=="" && toMin(e[1])==null){ issues.push(k+": event "+(i+1)+" invalid start "+e[1].slice(0,8)); fatal.push(k+": invalid event start"); }
+      if(e[2]!=="" && toMin(e[2])==null){ issues.push(k+": event "+(i+1)+" invalid end "+e[2].slice(0,8)); fatal.push(k+": invalid event end"); }
       if(e[5]!==undefined && e[5]!=="" && e[5]!=="DT" && e[5]!=="NPT" && e[5]!=="OTHER"){ issues.push(k+": event "+(i+1)+" invalid type override reset"); e[5]=undefined; }
     });
     if(d.maSt){
       if(!(d.maSt.s==="eligible"||d.maSt.s==="excluded"||d.maSt.s==="pending")){ issues.push(k+": invalid maintenance eligibility reset"); delete d.maSt; }
       else d.maSt={s:d.maSt.s, r:String(d.maSt.r||"").slice(0,40)};
     }
+    var __lids={};
+    d.log.forEach(function(r,i){
+      if(r[4]){
+        if(__lids[r[4]]){ issues.push(k+": duplicate log source link"); fatal.push(k+": duplicate log source link"); }
+        __lids[r[4]]=1;
+      }
+    });
+    d.ev.forEach(function(e,i){
+      if(e[6] && !__lids[e[6]]){ issues.push(k+": event "+(i+1)+" linked to a missing log line; converted to manual"); e[6]=""; }
+    });
+    var __eids2={};
+    d.ev.forEach(function(e){ if(e[6]) __eids2[e[6]]=1; });
+    d.log.forEach(function(r,i){
+      if(r[4] && !__eids2[r[4]]){ issues.push(k+": log row "+(i+1)+" flag references a missing event; cleared"); r[4]=""; }
+    });
   }
   if(wrapped && o.wbs!=null){
     if(!Array.isArray(o.wbs)){ issues.push("wbs is not a list"); o.wbs=null; }
@@ -1879,7 +1967,7 @@ function validateDoc(input){
   var cleaned;
   if(wrapped){ o.schemaVersion=PEL_ENV.schema; cleaned=o; }
   else { cleaned={days:days, schemaVersion:PEL_ENV.schema}; }
-  return {ok:true, issues:issues, cleaned:cleaned};
+  return {ok:true, issues:issues, fatal:fatal, cleaned:cleaned};
 }
 function adopt(txt, strict){
   if(!txt) return;
@@ -1888,6 +1976,7 @@ function adopt(txt, strict){
   else { o=txt; }
   var v=validateDoc(o);
   if(!v.ok) throw new Error("Import rejected: "+v.issues.join("; "));
+  if(v.fatal && v.fatal.length) throw new Error("Data rejected (invalid times or duplicate links): "+v.fatal.slice(0,4).join("; "));
   o=v.cleaned;
   if(strict && v.issues.length) throw new Error("Import rejected \u2014 "+v.issues.length+" problem(s): "+v.issues.slice(0,6).join("; "));
   if(v.issues.length){ try{ console.warn("adopt: cleaned "+v.issues.length+" issue(s)", v.issues); }catch(_){} }
@@ -1902,6 +1991,7 @@ function adopt(txt, strict){
 /* Debounced push of full document to the cloud */
 function scheduleCloudSave(){
   if(applyingRemote) return;          // don't echo a change we just received
+  if(window.__remoteBad){ clearTimeout(saveTimer); return; }
   clearTimeout(saveTimer);
   saveTimer=setTimeout(cloudSave,500);
 }
@@ -1942,20 +2032,26 @@ function openBackups(){
   setLmButtons([["Close","closeLockModal()"]]);
   m.style.display="flex";
 }
-async function restoreBackup(i){
+async function restoreBackup(i){ if(pelRO()) return;
   var list=listBackups(); if(!list[i]) return;
   var lockN=0; try{ lockN=Object.keys(LOCKS||{}).length; }catch(e){}
   var warn="Restore the backup from "+new Date(list[i].t).toLocaleString()+"?\n\nThis replaces the current data for EVERYONE"+(lockN?(" including "+lockN+" locked day(s)"):"")+". The current state is backed up first.";
   if(prompt(warn+"\n\nType RESTORE to continue.")!=="RESTORE") return;
   writeLocalBackup();
   var doc=list[i].doc;
-  applyingRemote=true; adopt(doc); applyingRemote=false;
+  applyingRemote=true;
+  try{ adopt(doc); }
+  catch(__e){ alert("Backup rejected: "+(__e&&__e.message?__e.message:"invalid data")); return; }
+  finally{ applyingRemote=false; }
   closeLockModal(); renderLog();
   if(typeof renderDash==="function") renderDash();
-  var ok=await cloudSave();
+  var ok;
+  if(sb){ ok=await cloudSave(); }
+  else { try{ localStorage.setItem("endura_pel_local_"+curProject(), payload()); ok=true; }catch(e){ ok=false; } }
   alert(ok?"Backup restored and synced.":"Backup restored on this device, but cloud sync FAILED. Do not close this browser until the sync light is green.");
 }
 async function cloudSave(){
+  if(window.__remoteBad) return false;
   if(!sb){ try{ localStorage.setItem("endura_pel_offline_"+curProject(),payload()); }catch(e){} return; }
   var body={ doc:{days:data,wbs:WBSL,ctype:CTYPE,locks:LOCKS,lockpw:LOCKPW}, updated_at:new Date().toISOString(), updated_by:curUser()||"?" };
   lastSavedJSON=JSON.stringify(body.doc);
@@ -1981,7 +2077,7 @@ async function cloudLoad(){
   try{
     var r=await sb.from("event_logs").select("doc,updated_by,updated_at").eq("project",curProject()).maybeSingle();
     if(r.error) throw r.error;
-    if(r.data && r.data.doc){ applyingRemote=true; try{ adopt(r.data.doc); }catch(__e){ window.__remoteBad=true; setSync("red","remote data invalid \u2014 read-only; reload to retry"); }; applyingRemote=false; return "found"; }
+    if(r.data && r.data.doc){ applyingRemote=true; var __bad=false; try{ adopt(r.data.doc); }catch(__e){ __bad=true; window.__remoteBad=true; setSync("red","remote data invalid \u2014 read-only; reload to retry"); }; applyingRemote=false; return __bad?"invalid":"found"; }
     return "missing";
   }catch(e){ console.warn("cloud load failed",e); return "error"; }
 }
@@ -1994,11 +2090,14 @@ function subscribe(){
       var doc=p.new&&p.new.doc; if(!doc) return;
       var incoming=JSON.stringify(doc);
       if(incoming===lastSavedJSON) return;     // it's our own write coming back
-      applyingRemote=true; adopt(doc); applyingRemote=false;
+      applyingRemote=true;
+      try{ adopt(doc); }
+      catch(__e){ window.__remoteBad=true; setSync("red","remote data invalid \u2014 read-only; reload to retry"); return; }
+      finally{ applyingRemote=false; }
       lastSavedJSON=incoming;
       renderLog(); var t=document.getElementById("tabDash"); if(t&&t.classList&&t.classList.contains&&t.classList.contains("active")&&typeof renderDash==="function") renderDash();
       var by=(p.new&&p.new.updated_by)||"someone";
-      setSync("green","updated by "+by+" \u00b7 "+curProject());
+      if(window.__remoteBad){ setSync("red","remote updated \u2014 still read-only; reload to resume editing"); } else { setSync("green","updated by "+by+" \u00b7 "+curProject()); }
     })
     .subscribe();
 }
@@ -2009,12 +2108,27 @@ async function flushOffline(){
   var k="endura_pel_offline_"+curProject();
   try{
     var pend=localStorage.getItem(k);
-    if(!pend) return;
+    if(!pend) return "none";
+    if(!confirm("Offline changes from this device are pending upload. Uploading will REPLACE the cloud copy, which may contain newer changes made elsewhere. OK uploads this device's version; Cancel keeps the changes held locally, not uploaded.")){
+      try{
+        var heldKey="endura_pel_offline_held_"+Date.now()+"_"+curProject();
+        localStorage.setItem(heldKey, pend);
+        localStorage.removeItem(k);
+        dl(pend, "Project Event Log - Held Offline Copy - "+curProject()+" - "+new Date().toISOString().slice(0,19).replace(/:/g,"")+"Z.json", "application/json");
+      }catch(e){}
+      window.__heldNote=true;
+      setSync("amber","offline changes held on this device \u2014 not uploaded \u00b7 "+curProject());
+      return "held";
+    }
     var doc=JSON.parse(pend);
     var r=await sb.from("event_logs").upsert({ project:curProject(), doc:doc, updated_at:new Date().toISOString(), updated_by:(curUser()||"?")+" (offline replay)" }, { onConflict:"project" });
-    if(!r.error){ localStorage.removeItem(k); }
-    else { console.warn("offline replay failed; snapshot kept",r.error); }
-  }catch(e){ console.warn("offline replay failed; snapshot kept",e); }
+    if(!r.error){ localStorage.removeItem(k); return "sent"; }
+    setSync("red","offline replay FAILED \u2014 the offline copy is kept on this device; retry when the connection is stable");
+    return "failed";
+  }catch(e){
+    setSync("red","offline replay FAILED \u2014 the offline copy is kept on this device; retry when the connection is stable");
+    return "failed";
+  }
 }
 
 async function initCloud(){
@@ -2023,7 +2137,9 @@ async function initCloud(){
   if(!configured){
     setSync("grey","not configured \u2014 running local only (see setup note)");
     try{ var s=localStorage.getItem("endura_pel_local_"+curProject()); if(s) adopt(s); }catch(e){}
-    save=function(){ writeLocalBackup(); try{ localStorage.setItem("endura_pel_local_"+curProject(),payload()); }catch(e){} };
+    try{ writeLocalBackup(); }catch(e){}
+    try{ if(Object.keys(localStorage).some(function(x){ return x.indexOf("endura_pel_offline_held_")===0; })) window.__heldNote=true; refreshSync(); }catch(e){}
+    save=function(){ if(window.__remoteBad){ setSync("red","read-only \u2014 change NOT saved; reload to retry"); return; } writeLocalBackup(); try{ localStorage.setItem("endura_pel_local_"+curProject(),payload()); }catch(e){} };
     renderLog();
     return;
   }
@@ -2033,17 +2149,28 @@ async function initCloud(){
     var got=await cloudLoad();
     if(got==="missing"){ await cloudSave(); }   // first run: seed only on a confirmed empty read
     subscribe();
-    if(got==="error"){
-      setSync("red","cloud read failed \u2014 data shown may be stale. Avoid editing; reload to retry.");
+    if(got==="invalid"){
+      /* validation failure: stay read-only; no offline replay, no green state */
+    } else if(got==="error"){
+      window.__remoteBad=true;
+      setSync("red","cloud read failed \u2014 read-only until reload; data shown may be stale.");
     } else {
-      await flushOffline();
-      setSync("green","synced \u00b7 "+curProject());
+      try{ if(Object.keys(localStorage).some(function(x){ return x.indexOf("endura_pel_offline_held_")===0; })) window.__heldNote=true; }catch(e){}
+      try{ writeLocalBackup(); }catch(e){}
+      var __fo=await flushOffline();
+      if(__fo==="failed"){ /* red state already set; do not report green */ }
+      else if(window.__remoteBad){ /* read-only state stands */ }
+      else setSync("green","synced \u00b7 "+curProject());
     }
     renderLog();
     window.addEventListener("online",function(){ flushOffline(); });
   }catch(e){
     setSync("red","could not connect \u2014 running local only");
     console.warn(e);
+    try{ var __ls=localStorage.getItem("endura_pel_local_"+curProject()); if(__ls) adopt(__ls); }catch(_e){}
+    try{ writeLocalBackup(); }catch(_e){}
+    try{ if(Object.keys(localStorage).some(function(x){ return x.indexOf("endura_pel_offline_held_")===0; })) window.__heldNote=true; refreshSync(); }catch(_e){}
+    save=function(){ if(window.__remoteBad){ setSync("red","read-only \u2014 change NOT saved; reload to retry"); return; } writeLocalBackup(); try{ localStorage.setItem("endura_pel_local_"+curProject(),payload()); }catch(_e){} };
     renderLog();
   }
 }
@@ -2104,7 +2231,7 @@ function dprShowBatch(){
   dprBatchResults.forEach(function(p){
     var r=dprBatchRowResult(p);
     var resCell, color;
-    if(r.verdict==="match"){ resCell="&#10003; Match"; color="#1e7d34"; nMatch++; }
+    if(r.verdict==="match"){ resCell="&#10003; Numerically matches (policy pending)"; color="#1A1A1A"; nMatch++; }
     else if(r.verdict==="close"){ resCell="&#9679; Close (\u00b1"+r.maxDiff.toFixed(2)+"h)"; color="#b9822b"; nOther++; }
     else if(r.verdict==="differ"){ resCell="&#9888; Differs by "+r.maxDiff.toFixed(2)+"h"; color="#c0392b"; nDiff++; }
     else if(r.verdict==="incomplete"){ resCell="&#9679; Incomplete \u2014 DPR value(s) missing"; color="#b9822b"; nOther++; }
@@ -2128,7 +2255,7 @@ function printDprBatch(){
   var gen=new Date();
   var rows=dprBatchResults.map(function(p){
     var r=dprBatchRowResult(p);
-    var res = r.verdict==="match"?'<span style="color:#1e7d34;font-weight:700">Match</span>'
+    var res = r.verdict==="match"?'<span style="color:#1A1A1A;font-weight:700">Numerically matches</span>'
             : r.verdict==="close"?'<span style="color:#b9822b;font-weight:700">Close (\u00b1'+r.maxDiff.toFixed(2)+'h)</span>'
             : r.verdict==="differ"?'<span style="color:#c0392b;font-weight:700">Differs by '+r.maxDiff.toFixed(2)+'h</span>'
             : r.verdict==="incomplete"?'<span style="color:#b9822b;font-weight:700">Incomplete \u2014 DPR value(s) missing</span>'
@@ -2143,13 +2270,13 @@ function printDprBatch(){
   }).join("");
   rec.innerHTML=
     '<div class="rh-top"><div><div class="rh-brand">Project <span class="o">Event</span> Log</div><div class="rh-brandsub">ENDURA ASSET INTELLIGENCE</div></div>'+
-      '<div class="rh-doc"><div class="rh-doctype">DPR CHECK RECORD</div><div class="rh-title">Contractor Downtime Verification \u2014 Batch</div></div></div>'+
+      '<div class="rh-doc"><div class="rh-doctype">DPR CHECK RECORD</div><div class="rh-title">Contractor DPR Numerical Comparison \u2014 Batch</div></div></div>'+
     '<div class="rh-meta"><div class="m"><div class="mk">Project</div><div class="mv">'+esc(curProject())+'</div></div>'+
       '<div class="m"><div class="mk">DPRs checked</div><div class="mv">'+dprBatchResults.length+'</div></div>'+
       '<div class="m"><div class="mk">Checked</div><div class="mv">'+gen.toLocaleDateString("en-GB")+' '+gen.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})+'</div></div>'+
       '<div class="m"><div class="mk">Comparison</div><div class="mv">DT vs DPR downtime</div></div></div>'+
     '<table class="dpr-rec-table"><thead><tr><th>DPR</th><th>Date</th><th>Matched day</th><th class="num">App DT</th><th class="num">DPR W+M</th><th class="num">DPR V+ROV</th><th>Result</th></tr></thead><tbody>'+rows+'</tbody></table>'+
-    '<div class="dpr-pilot">Comparison basis for DPR agreement remains subject to written confirmation; agreement lines are preliminary. Pilot tool. Downtime figures are read automatically from each contractor PDF. Figures should be verified against the source DPRs. Source of truth remains the contractor DPRs and the Santos event record.</div>';
+    '<div class="dpr-pilot">Comparison basis remains subject to written confirmation; numerical comparison lines are preliminary. Pilot tool. Downtime figures are read automatically from each contractor PDF. Figures should be verified against the source DPRs. Source of truth remains the contractor DPRs and the Santos event record.</div>';
   document.body.classList.add("printing-dpr");
   withPrintTitle(pelName("dprBatch", new Date().toISOString().slice(0,10)));
   setTimeout(function(){ document.body.classList.remove("printing-dpr"); }, 500);
@@ -2214,16 +2341,31 @@ function dprPdfToLines(arrayBuffer){
 }
 
 /* second decimal on a downtime row = the "Today" column (Prev Today Cum %) */
+function dprNumsAfterLabel(line){
+  var toks=String(line||"").trim().split(/\s+/);
+  var start=-1;
+  for(var i=0;i<toks.length;i++){
+    var isNum=/^-?\d+(?:\.\d+)?%?$/.test(toks[i]);
+    var nextNum=(i+1<toks.length) && /^-?\d+(?:\.\d+)?%?$/.test(toks[i+1]);
+    if(isNum && nextNum){ start=i; break; }
+  }
+  if(start<0){ for(var j=toks.length-1;j>=0;j--){ if(/^-?\d+(?:\.\d+)?%?$/.test(toks[j])) start=j; else break; } }
+  if(start<0) return [];
+  return toks.slice(start).filter(function(t){ return /^-?\d+(?:\.\d+)?$/.test(t); }).map(Number);
+}
 function dprTodayHrs(line){
-  var nums=(line.match(/-?\d+\.\d+/g)||[]).map(Number);
-  if(nums.length>=2) return nums[1];
-  if(nums.length===1) return nums[0];
-  return null;
+  var nums=dprNumsAfterLabel(line);
+  var v=null;
+  if(nums.length>=2) v=nums[1];
+  else if(nums.length===1) v=nums[0];
+  if(v==null || !isFinite(v) || v<0 || v>24) return null;
+  return v;
 }
 /* return {prev,today,cum} where available, for sanity checks */
 function dprRowNums(line){
-  var nums=(line.match(/-?\d+\.\d+/g)||[]).map(Number);
-  return { prev: nums.length>=1?nums[0]:null, today: nums.length>=2?nums[1]:null, cum: nums.length>=3?nums[2]:null, count:nums.length };
+  var nums=dprNumsAfterLabel(line);
+  function bnd(x){ return (x==null||!isFinite(x)||x<0)?null:x; }
+  return { prev: nums.length>=1?bnd(nums[0]):null, today: nums.length>=2?bnd(nums[1]):null, cum: nums.length>=3?bnd(nums[2]):null, count:nums.length };
 }
 
 function dprParse(arrayBuffer){
@@ -2337,7 +2479,7 @@ function printDprRecord(){
   var gen=new Date();
   function resCell(appVal,dprVal){
     var diff=r2(Math.abs(appVal-dprVal));
-    if(diff<0.01) return '<span style="color:#1e7d34;font-weight:700">Match</span>';
+    if(diff<0.01) return '<span style="color:#1A1A1A;font-weight:700">Numerically matches</span>';
     if(diff<=0.5) return '<span style="color:#b9822b;font-weight:700">Close (\u00b1'+diff.toFixed(2)+'h)</span>';
     return '<span style="color:#c0392b;font-weight:700">Differs by '+diff.toFixed(2)+'h</span>';
   }
@@ -2345,7 +2487,7 @@ function printDprRecord(){
   rec.innerHTML=
     '<div class="rh-top">'+
       '<div><div class="rh-brand">Project <span class="o">Event</span> Log</div><div class="rh-brandsub">ENDURA ASSET INTELLIGENCE</div></div>'+
-      '<div class="rh-doc"><div class="rh-doctype">DPR CHECK RECORD</div><div class="rh-title">Contractor Downtime Verification</div></div>'+
+      '<div class="rh-doc"><div class="rh-doctype">DPR CHECK RECORD</div><div class="rh-title">Contractor DPR Numerical Comparison</div></div>'+
     '</div>'+
     '<div class="rh-meta">'+
       '<div class="m"><div class="mk">Project</div><div class="mv">'+esc(curProject())+'</div></div>'+
@@ -2354,16 +2496,16 @@ function printDprRecord(){
       '<div class="m"><div class="mk">Checked</div><div class="mv">'+gen.toLocaleDateString("en-GB")+' '+gen.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})+'</div></div>'+
     '</div>'+
     '<div class="dpr-verdict '+(agree?"ok":"bad")+'">'+(agree
-        ? "The contractor DPR and the Santos record AGREE on downtime for "+fmtDay(key)+"."
-        : "The contractor DPR and the Santos record DO NOT fully agree on downtime for "+fmtDay(key)+". See the comparison below.")+'</div>'+
+        ? "The contractor DPR and the Santos record match numerically for "+fmtDay(key)+" under the unapproved comparison basis (policy pending)."
+        : "The contractor DPR and the Santos record do not match numerically on downtime for "+fmtDay(key)+". See the comparison below.")+'</div>'+
     '<table class="dpr-rec-table"><thead><tr><th>Comparison</th><th class="num">Santos record (h)</th><th class="num">Contractor DPR (h)</th><th>Result</th></tr></thead><tbody>'+
       '<tr><td>Downtime vs DPR Weather + Mechanical</td><td class="num">'+appDT.toFixed(2)+'</td><td class="num">'+dprSummary.toFixed(2)+'</td><td>'+resCell(appDT,dprSummary)+'</td></tr>'+
       '<tr><td>Downtime vs DPR Vessel + ROV (ancillary)</td><td class="num">'+appDT.toFixed(2)+'</td><td class="num">'+dprAnc.toFixed(2)+'</td><td>'+resCell(appDT,dprAnc)+'</td></tr>'+
       '<tr><td>Non-productive time (Santos record)</td><td class="num">'+appNPT.toFixed(2)+'</td><td class="num" style="color:#888">n/a</td><td style="color:#888">DPR has no separate NPT field</td></tr>'+
     '</tbody></table>'+
     '<div class="dpr-detail"><strong>DPR figures used (today):</strong> Weather '+w.toFixed(2)+'h \u00b7 Mechanical '+me.toFixed(2)+'h \u00b7 Vessel '+ve.toFixed(2)+'h \u00b7 ROV '+ro.toFixed(2)+'h</div>'+
-    ((d.warnings&&d.warnings.length)?'<div class="dpr-detail" style="color:#8a5a16"><strong>Verification notes:</strong> '+d.warnings.map(esc).join(" ")+'</div>':"")+
-    '<div class="dpr-pilot">Comparison basis for DPR agreement remains subject to written confirmation; agreement lines are preliminary. Pilot tool. Downtime figures are read automatically from the contractor PDF and as extracted or entered at the time of checking; independent verification is not captured in this record. Source of truth remains the contractor DPR and the Santos event record.</div>';
+    ((d.warnings&&d.warnings.length)?'<div class="dpr-detail" style="color:#8a5a16"><strong>Extraction notes:</strong> '+d.warnings.map(esc).join(" ")+'</div>':"")+
+    '<div class="dpr-pilot">Comparison basis remains subject to written confirmation; numerical comparison lines are preliminary. Pilot tool. Downtime figures are read automatically from the contractor PDF and as extracted or entered at the time of checking; independent verification is not captured in this record. Source of truth remains the contractor DPR and the Santos event record.</div>';
 
   document.body.classList.add("printing-dpr");
   withPrintTitle(pelName("dpr", key));
@@ -2394,8 +2536,8 @@ function renderDprCompare(){
     var diff=r2(Math.abs(appVal-dprVal));
     var match=diff<0.01;
     var near=!match && diff<=0.5;
-    var color=match?"#1e7d34":(near?"#b9822b":"#c0392b");
-    var tag=match?"&#10003; match":(near?"&#9679; close ("+diff.toFixed(2)+"h)":"&#9888; differs by "+diff.toFixed(2)+"h");
+    var color=match?"#1A1A1A":(near?"#b9822b":"#c0392b");
+    var tag=match?"&#10003; numerically matches":(near?"&#9679; close ("+diff.toFixed(2)+"h)":"&#9888; differs by "+diff.toFixed(2)+"h");
     return '<tr>'+
       '<td>'+label+'</td>'+
       '<td class="num">'+appVal.toFixed(2)+'</td>'+
@@ -2407,8 +2549,8 @@ function renderDprCompare(){
 
   var anyDiff = Math.abs(appDT-dprSummaryDT)>=0.01 || Math.abs(appDT-dprAncDT)>=0.01;
   var banner = anyDiff
-    ? '<div class="insight" style="margin-bottom:12px;background:#fdecea;border-left:3px solid #c0392b;padding:10px 12px;border-radius:0 4px 4px 0;color:#7a1f17">The app and the contractor DPR do not fully agree on downtime for '+fmtDay(key)+'. Review the rows flagged below.</div>'
-    : '<div class="insight" style="margin-bottom:12px;background:#eaf6ec;border-left:3px solid #1e7d34;padding:10px 12px;border-radius:0 4px 4px 0;color:#1e5b2a">The app and the contractor DPR agree on downtime for '+fmtDay(key)+'.</div>';
+    ? '<div class="insight" style="margin-bottom:12px;background:#fdecea;border-left:3px solid #c0392b;padding:10px 12px;border-radius:0 4px 4px 0;color:#7a1f17">The app and the contractor DPR do not numerically match on downtime for '+fmtDay(key)+' (comparison basis pending). Review the rows flagged below.</div>'
+    : '<div class="insight" style="margin-bottom:12px;background:#f4f1ea;border-left:3px solid #8C8C8C;padding:10px 12px;border-radius:0 4px 4px 0;color:#1A1A1A">The app and the contractor DPR numerically match on downtime for '+fmtDay(key)+' under the unapproved comparison basis (policy pending).</div>';
 
   out.innerHTML=banner+maintNote+
     '<table><thead><tr><th>Comparison</th><th class="num">App (logged)</th><th class="num">DPR</th><th class="num">Diff (h)</th><th>Result</th></tr></thead><tbody>'+
@@ -2419,7 +2561,7 @@ function renderDprCompare(){
 }
 
 function exportJSON(){ dl(JSON.stringify({meta:{project:curProject()||"",env:PEL_ENV.env,build:APP_BUILD,schema:PEL_ENV.schema,policy:MA_POLICY.version,generated:new Date().toISOString()},doc:JSON.parse(payload())}), pelName("backup"), "application/json"); }
-function importJSON(inp){ var f=inp.files[0]; if(!f) return;
+function importJSON(inp){ if(pelRO()){ inp.value=""; return; } var f=inp.files[0]; if(!f) return;
   var lockN=0; try{ lockN=Object.keys(LOCKS||{}).length; }catch(e){}
   if(prompt("This import replaces ALL data for this project"+(lockN?(" including "+lockN+" locked day(s)"):"")+" and syncs to everyone.\n\nType REPLACE to continue.")!=="REPLACE"){ inp.value=""; return; }
   var rd=new FileReader(); rd.onload=function(){ try{ adopt(rd.result,true); save(); renderLog(); alert("Project data loaded. Verify the sync light goes green before closing."); }catch(e){ alert(e && e.message ? e.message : "That file could not be read."); } }; rd.readAsText(f); inp.value=""; }
@@ -2770,14 +2912,28 @@ function pelChart(spec){
       ctx.latestLoggedDay = keys[keys.length-1] || null;
       ctx.meta.days_available = keys.length;
       ctx.meta.days_sent = recent.length;
-      recent.forEach(function(k){
+      var __clip=0;
+      function buildCtxDay(k){
         var day = window.data[k]||{};
         var st=null, wbs=null;
         try{ if(typeof window.dayStats==="function") st=stripStats(window.dayStats(k)); }catch(e){}
         try{ if(typeof window.wbsHours==="function") wbs=window.wbsHours(k); }catch(e){}
         if(st===null && missing.indexOf("dayStats")<0) missing.push("dayStats");
-        ctx.days[k]={ end:day.end||null, log:day.log||[], ev:day.ev||[], stats:st, wbs:wbs };
-      });
+        var lg=(day.log||[]).map(function(r){ r=r.slice();
+          if(typeof r[1]==="string" && r[1].length>4000){ r[1]=r[1].slice(0,4000)+" [clipped]"; __clip++; }
+          return r; });
+        var ev=(day.ev||[]).map(function(e){ e=e.slice();
+          if(typeof e[3]==="string" && e[3].length>1000){ e[3]=e[3].slice(0,1000)+" [clipped]"; __clip++; }
+          return e; });
+        ctx.days[k]={ end:day.end||null, log:lg, ev:ev, stats:st, wbs:wbs };
+      }
+      recent.forEach(buildCtxDay);
+      if(ctx.selectedDay && window.data[ctx.selectedDay] && !ctx.days[ctx.selectedDay]){
+        buildCtxDay(ctx.selectedDay);
+        ctx.meta.selected_day_added = true;
+      }
+      if(__clip) ctx.meta.clipped_strings = __clip;
+
     } else { missing.push("days"); }
 
     try{ if(typeof window.wbsTotals==="function") ctx.totals=window.wbsTotals(); }catch(e){}
@@ -2796,12 +2952,14 @@ function pelChart(spec){
     ctx.meta.missing=missing;
 
     // client-side size guard: trim oldest sent days if enormous
-    var s=JSON.stringify(ctx), dks=Object.keys(ctx.days).sort();
-    while(s.length>CLIENT_CTX_CAP && dks.length>1){
+    var s=JSON.stringify(ctx);
+    var dks=Object.keys(ctx.days).sort().filter(function(k2){ return k2!==ctx.selectedDay && k2!==ctx.latestLoggedDay; });
+    while(s.length>CLIENT_CTX_CAP && dks.length){
       delete ctx.days[dks.shift()];
       ctx.meta.trimmed_client=true;
       s=JSON.stringify(ctx);
     }
+    if(s.length>CLIENT_CTX_CAP){ ctx.meta.context_incomplete=true; }
     return ctx;
   }
   // exposed for testing
@@ -2810,7 +2968,7 @@ function pelChart(spec){
   function fmtUsage(u){
     if(!u||u.input_tokens==null) return "";
     var usd=(u.input_tokens/1e6)*2 + (u.output_tokens/1e6)*10; // Sonnet 5 intro rates
-    return u.input_tokens+" in / "+u.output_tokens+" out \u00B7 ~$"+usd.toFixed(3)+" (approx)";
+    return u.input_tokens+" in / "+u.output_tokens+" out \u00B7 ~$"+usd.toFixed(3)+" indicative (approx)";
   }
 
   function attachCopy(bubble, raw){

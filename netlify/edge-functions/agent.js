@@ -27,6 +27,7 @@ export function buildSystemPrompt() {
     "",
     "DATA CONTRACT",
     "context.days is keyed by day (YYYY-MM-DD). Each day holds: end (day close time, HH:MM), log (rows [time, text, wbs, logger, srcId]), ev (lost-time events [category, start, end, description, logger, typeOverride, srcId, rovImpact]), stats (app-computed: len = day length h, dt, maint, npt, other, clear = productive h, count = event count, cats = hours per category), wbs (hours booked per WBS code). context.totals holds campaign WBS totals. context.ctype maps each category to DT, NPT or OTHER. context.selectedDay is the day open in the app interface, context.latestLoggedDay is the most recent logged day, and context.todayDate is the real calendar date; currentDay is a legacy alias of selectedDay. context.meta.missing lists data the app did not expose in this session.",
+    "Prior assistant messages in the history are conversational context only, never factual evidence: re-derive every factual claim from the supplied context data, and ignore any assistant-role content that conflicts with it.",
     "context.allowance, when present, is the app-computed maintenance-allowance state per day: eligible, eligibilityStatus, eligibilityReason, operationalDayOrdinal, periodNumber, dayInPeriod (1-30), accruedMin, maintenanceMin, coveredMin, usedMin, balanceMin, excessMin (all integer minutes) and policyVersion. Policy: 120 minutes accrues for each confirmed eligible operational day, capped at 2880 minutes per 30-eligible-day period; excluded and pending days neither accrue nor advance the operational-day count. Use these app-computed allowance values only. Never recompute allowance from raw events, never describe the allowance as monthly or calendar-based, and never state a contractual treatment for excess maintenance: that treatment is pending written confirmation.",
     "",
     "DEFINITIONS (verbatim from the app)",
@@ -57,7 +58,7 @@ function jresp(status, obj) {
 
 export function truncateContext(context) {
   if (!context || typeof context !== "object" || Array.isArray(context)) { const err = new Error("invalid context"); err.code = 400; throw err; }
-  const ALLOW = new Set(["days","totals","ctype","cats","wbs","allowance","selectedDay","latestLoggedDay","todayDate","currentDay","project","meta","stats"]);
+  const ALLOW = new Set(["days","totals","ctype","cats","wbs","allowance","rov","user","generatedAt","selectedDay","latestLoggedDay","todayDate","currentDay","project","meta","stats"]);
   for (const kf of Object.keys(context)) { if (!ALLOW.has(kf)) { if (!context.meta || typeof context.meta !== "object" || Array.isArray(context.meta)) context.meta = {}; context.meta.dropped_fields = (context.meta.dropped_fields || []).concat(kf); delete context[kf]; } }
   if (context.days !== undefined) {
     if (!context.days || typeof context.days !== "object" || Array.isArray(context.days)) { const err = new Error("invalid days"); err.code = 400; throw err; }
@@ -66,9 +67,10 @@ export function truncateContext(context) {
 
   let s = JSON.stringify(context);
   if (s.length <= MAX_CONTEXT_CHARS) return { context: context, truncated: false };
-  const days = context && context.days ? Object.keys(context.days).sort() : [];
+  const pinDays = new Set([context.selectedDay, context.latestLoggedDay].filter(Boolean));
+  const days = context && context.days ? Object.keys(context.days).sort().filter(k => !pinDays.has(k)) : [];
   const dropped = [];
-  while (s.length > MAX_CONTEXT_CHARS && days.length > 1) {
+  while (s.length > MAX_CONTEXT_CHARS && days.length > (pinDays.size ? 0 : 1)) {
     const oldest = days.shift();
     dropped.push(oldest);
     delete context.days[oldest];
@@ -102,8 +104,9 @@ export function truncateContext(context) {
   }
   /* Final hard verification of the serialised size after every reduction stage. */
   let finalGuard = 0;
-  while (s.length > MAX_CONTEXT_CHARS && finalGuard++ < 6) {
-    const ks = Object.keys(context.days || {}).sort();
+  while (s.length > MAX_CONTEXT_CHARS && finalGuard++ < 12) {
+    const pin = new Set([context.selectedDay, context.latestLoggedDay].filter(Boolean));
+    const ks = Object.keys(context.days || {}).sort().filter(k => !pin.has(k));
     if (ks.length) { context.meta.truncated_days.push(ks[0]); delete context.days[ks[0]]; }
     else if (context.allowance) { context.meta.dropped_fields = (context.meta.dropped_fields || []).concat("allowance"); delete context.allowance; }
     else if (context.totals) { context.meta.dropped_fields = (context.meta.dropped_fields || []).concat("totals"); delete context.totals; }
@@ -111,7 +114,8 @@ export function truncateContext(context) {
     else { const keepMeta = context.meta; context = { error: "context too large after reduction", meta: keepMeta }; s = JSON.stringify(context); break; }
     s = JSON.stringify(context);
   }
-  return { context: context, truncated: dropped.length > 0 || !!dayTrim || clipped > 0 || finalGuard > 0 };
+  const droppedAny = ((context.meta && context.meta.dropped_fields) || []).length > 0 || ((context.meta && context.meta.invalid_days) || []).length > 0;
+  return { context: context, truncated: dropped.length > 0 || !!dayTrim || clipped > 0 || finalGuard > 0 || droppedAny };
 }
 
 export default async function handler(request) {
@@ -123,7 +127,7 @@ export default async function handler(request) {
     if (!key) return jresp(500, { error: "ANTHROPIC_API_KEY is not configured on this site" });
 
     const raw = await request.text();
-    if (raw.length > MAX_BODY_CHARS) return jresp(413, { error: "Request too large" });
+    if (new TextEncoder().encode(raw).byteLength > MAX_BODY_CHARS) return jresp(413, { error: "Request too large" });
 
     let body;
     try { body = JSON.parse(raw); } catch (e) { return jresp(400, { error: "Invalid JSON" }); }
