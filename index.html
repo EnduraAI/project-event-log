@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-08-25.4 - deploy check string: PEL-BUILD-2026-08-25.4 -->
+<!-- Endura Project Event Log - build 2026-08-26.1 - deploy check string: PEL-BUILD-2026-08-26.1 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -270,7 +270,7 @@
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-08-25.4</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-08-26.1</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -508,7 +508,7 @@
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-08-25.4";
+var APP_BUILD="2026-08-26.1";
 var PEL_ENV={env:"TEST",agent:true,schema:6};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
@@ -1020,8 +1020,8 @@ function build24Bar(key,compact,mode){
     var left=v.s/endMin*100, w=(v.e-v.s)/endMin*100;
     return '<div class="seg24" style="left:'+left+'%;width:'+w+'%;background:'+color+'" title="'+label+' '+min2t(v.s)+'–'+min2t(v.e)+'"></div>';
   }).join(""); }
-  var grid=""; for(var h=2;h<24;h+=2){ grid+='<i style="left:'+(h*60/endMin*100)+'%"></i>'; }
-  var axis='<div class="bar24axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>'+min2t(endMin)+'</span></div>';
+  var grid=""; for(var __gm=120; __gm<endMin; __gm+=120){ grid+='<i style="left:'+(__gm/endMin*100)+'%"></i>'; }
+  var __q=endMin/4; var axis='<div class="bar24axis"><span>00:00</span><span>'+min2t(Math.round(__q))+'</span><span>'+min2t(Math.round(2*__q))+'</span><span>'+min2t(Math.round(3*__q))+'</span><span>'+min2t(endMin)+'</span></div>';
   if(mode==="rov"){
     /* W1: ROV availability view. A lane is red where any event whose ROV impact covers that
        ROV is running (any lost-time type), green where the ROV is working. */
@@ -2729,6 +2729,7 @@ initCloud();
     <button data-q="Total DT and NPT this week, and the main causes?">DT / NPT this week</button>
     <button data-q="Chart the chain cut learning curve by mooring leg across your date range, with the mean cut time per leg.">Learning curve</button>
     <button data-q="Draft a three-line shift summary for the project manager.">Draft PM summary</button>
+    <button data-q="Chart DT and NPT for today versus yesterday as grouped bars.">Today vs yesterday</button>
   </div>
   <div id="pelA-msgs"></div>
   <div id="pelA-use"></div>
@@ -2886,7 +2887,13 @@ function pelChart(spec){
 
     var totalBars=0; groups.forEach(function(G){ totalBars+=G.bars.length; });
     var showVals = totalBars<=22;
-    var W=PADL+PADR; groups.forEach(function(G,i){ W+=G.bars.length*(BW+GAP)-GAP+(i?GGAP:0); });
+    var W=PADL+PADR;
+    if(type==="line"){
+      var maxLen=1; groups.forEach(function(G){ if(G.bars.length>maxLen) maxLen=G.bars.length; });
+      W+=Math.max(maxLen-1,1)*22;
+    } else {
+      groups.forEach(function(G,i){ W+=G.bars.length*(BW+GAP)-GAP+(i?GGAP:0); });
+    }
     if(W<320) W=320;
 
     var s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img">';
@@ -2897,16 +2904,29 @@ function pelChart(spec){
 
     var x=PADL;
     if(type==="line"){
-      var pts=groups[0].bars, step=(W-PADL-PADR)/Math.max(pts.length-1,1), poly=[];
-      pts.forEach(function(p,i){
-        var px=PADL+i*step, py=PADT+chartH*(1-p.value/maxV);
-        poly.push(px+","+py);
-        s+='<circle cx="'+px+'" cy="'+py+'" r="3" fill="#E87722"/>';
-        if(showVals) s+='<text x="'+px+'" y="'+(py-6)+'" font-size="8.5" text-anchor="middle" fill="#1A1A1A" font-family="ui-monospace,monospace">'+p.value+'</text>';
-        s+='<text x="'+px+'" y="'+(H-PADB+14)+'" font-size="8" text-anchor="middle" fill="#8C8C8C" font-family="ui-monospace,monospace">'+esc(p.label)+'</text>';
+      var LCOL=["#E87722","#1A1A1A","#8C8C8C"];
+      var maxLen2=1; groups.forEach(function(G){ if(G.bars.length>maxLen2) maxLen2=G.bars.length; });
+      var step=(W-PADL-PADR)/Math.max(maxLen2-1,1);
+      var lab=null; groups.forEach(function(G){ if(!lab && G.bars.length===maxLen2) lab=G.bars; });
+      (lab||[]).forEach(function(p,i){
+        s+='<text x="'+(PADL+i*step)+'" y="'+(H-PADB+14)+'" font-size="8" text-anchor="middle" fill="#8C8C8C" font-family="ui-monospace,monospace">'+esc(p.label)+'</text>';
       });
-      s+='<polyline points="'+poly.join(" ")+'" fill="none" stroke="#E87722" stroke-width="2.5" stroke-linejoin="round"/>';
-      if(groups[0].label) s+='<text x="'+((W)/2)+'" y="'+(H-4)+'" font-size="9" font-weight="700" text-anchor="middle" fill="#4a4a4a" font-family="ui-monospace,monospace">'+esc(groups[0].label)+'</text>';
+      groups.slice(0,3).forEach(function(G,gi){
+        var col=LCOL[gi], poly=[];
+        G.bars.forEach(function(p,i){
+          var px=PADL+i*step, py=PADT+chartH*(1-p.value/maxV);
+          poly.push(px+","+py);
+          s+='<circle cx="'+px+'" cy="'+py+'" r="'+(gi?2.2:3)+'" fill="'+col+'"/>';
+          if(showVals && gi===0) s+='<text x="'+px+'" y="'+(py-6)+'" font-size="8.5" text-anchor="middle" fill="#1A1A1A" font-family="ui-monospace,monospace">'+p.value+'</text>';
+        });
+        s+='<polyline points="'+poly.join(" ")+'" fill="none" stroke="'+col+'" stroke-width="'+(gi?1.8:2.5)+'" stroke-linejoin="round"'+(gi===2?' stroke-dasharray="5 3"':'')+'/>';
+      });
+      var lx=PADL;
+      groups.slice(0,3).forEach(function(G,gi){
+        if(!G.label) return;
+        s+='<text x="'+lx+'" y="'+(H-4)+'" font-size="9" font-weight="700" fill="'+LCOL[gi]+'" font-family="ui-monospace,monospace">'+esc(G.label)+'</text>';
+        lx+=8+G.label.length*6.2;
+      });
     } else {
       groups.forEach(function(G,gi){
         if(gi) x+=GGAP;
@@ -2945,12 +2965,21 @@ function pelChart(spec){
   function renderAnswer(txt, final){
     txt=stripNext(txt).text;
     var out="", last=0, m;
-    FENCE_RE.lastIndex=0;
-    while((m=FENCE_RE.exec(txt))){
+    var FENCE_ANY=/```(\w*)[ \t]*\n?([\s\S]*?)```/g;
+    while((m=FENCE_ANY.exec(txt))){
       out+=mdRender(txt.slice(last,m.index));
-      var svg=null;
-      try{ svg=pelChart(JSON.parse(m[1])); }catch(e){}
-      out+= svg? svg : '<div class="pelA-chartbad">[chart data invalid]</div>';
+      var tag=(m[1]||"").toLowerCase(), body=m[2], obj=null, svg=null, parseErr=false;
+      try{ obj=JSON.parse(body); }catch(e){ parseErr=true; }
+      var chartShape = obj && typeof obj==="object" && Array.isArray(obj.groups);
+      if(tag==="pelchart"){
+        if(chartShape) svg=pelChart(obj);
+        out+= svg? svg : '<div class="pelA-chartbad">[chart data invalid'+(parseErr?" \u2014 not JSON":"")+']</div>';
+      } else if(chartShape){
+        svg=pelChart(obj);
+        out+= svg? svg : mdRender(m[0]);
+      } else {
+        out+=mdRender(m[0]);
+      }
       last=m.index+m[0].length;
     }
     var rest=txt.slice(last);
