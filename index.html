@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-08-31.5 - deploy check string: PEL-BUILD-2026-08-31.5 -->
+<!-- Endura Project Event Log - build 2026-08-31.6 - deploy check string: PEL-BUILD-2026-08-31.6 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -271,7 +271,7 @@
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-08-31.5</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-08-31.6</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -451,9 +451,15 @@
       #view-cyc .cyc-sub{font-size:12.5px;color:#5c5c5c;margin:0 0 10px;line-height:1.45}
       #view-cyc .cyc-sec{padding:16px 18px}
       #view-cyc .cyc-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-      #view-cyc .cyc-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:8px 0 0}
+      #view-cyc .cyc-nav{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid #e6e1d6;padding:0 0 8px;margin:10px 0 0}
+      #view-cyc .cyc-nav button{border:0;background:transparent;padding:7px 11px;font-size:13px;color:#5c5c5c;border-radius:4px;cursor:pointer}
+      #view-cyc .cyc-nav button.on{background:#1A1A1A;color:#fff}
+      #view-cyc .cyc-nav .badge{display:inline-block;min-width:16px;padding:0 5px;border-radius:9px;background:#E87722;color:#fff;font-size:10.5px;margin-left:5px}
+      #view-cyc .cyc-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
       #view-cyc .cyc-chip{border:1px solid #d9d2c5;background:#fff;border-radius:14px;padding:4px 11px;font-size:12px;cursor:pointer;color:#1A1A1A}
       #view-cyc .cyc-chip.on{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
+      #view-cyc .cyc-filter{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:12.5px;padding:10px 0 2px}
+      #view-cyc .cyc-filter input[type=number]{width:60px;padding:4px 6px;border:1px solid #d9d2c5;border-radius:4px}
       #view-cyc .cyc-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
       #view-cyc .cyc-tile{background:#f4f1ea;border:1px solid #e6e1d6;border-radius:6px;padding:10px 12px}
       #view-cyc .cyc-tile .k{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#7a7a7a}
@@ -467,60 +473,45 @@
       #view-cyc .good{color:#2f7d4a} #view-cyc .bad{color:#c0392b} #view-cyc .warn{color:#b9822b} #view-cyc .dim{color:#8C8C8C}
       #view-cyc .cyc-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:#4a4a4a;margin-top:6px}
       #view-cyc .cyc-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle}
-      #view-cyc .cyc-prog{height:10px;background:#eee7da;border-radius:5px;overflow:hidden}
-      #view-cyc .cyc-prog > div{height:100%;background:#E87722}
+      #view-cyc .cyc-prog{height:10px;background:#eee7da;border-radius:5px;overflow:hidden;display:flex}
+      #view-cyc .cyc-prog > div{height:100%}
       #view-cyc .cyc-reel{border:1px solid #e6e1d6;border-radius:6px;margin-top:10px;background:#fff}
+      #view-cyc .cyc-reel.excluded{opacity:.75;background:#faf7f1}
       #view-cyc .cyc-reel-h{display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:10px 12px;cursor:pointer}
       #view-cyc .cyc-reel-h b{font-size:15px} #view-cyc .cyc-reel-h span{font-size:12px;color:#5c5c5c}
       #view-cyc .cyc-reel-b{display:none;padding:0 12px 12px;border-top:1px solid #eee7da}
       #view-cyc .cyc-reel.open .cyc-reel-b{display:block}
-      #view-cyc .cyc-note{font-size:12px;color:#5c5c5c;background:#faf7f1;border-left:3px solid #E87722;padding:6px 10px;margin-top:6px;border-radius:0 4px 4px 0}
+      #view-cyc .cyc-note{font-size:12.5px;color:#3a3a3a;background:#faf7f1;border-left:3px solid #E87722;padding:8px 10px;margin-top:8px;border-radius:0 4px 4px 0;line-height:1.5}
+      #view-cyc .cyc-note.ink{border-left-color:#1A1A1A} #view-cyc .cyc-note.bad{border-left-color:#c0392b;background:#fdecea}
       #view-cyc .cyc-empty{padding:34px 24px;text-align:center}
-      #view-cyc .cyc-empty h3{margin:0 0 6px;font-size:18px}
-      #view-cyc .cyc-empty p{max-width:640px;margin:0 auto 14px;color:#5c5c5c;font-size:13px;line-height:1.5}
+      #view-cyc .cyc-empty h3{margin:0 0 6px;font-size:18px} #view-cyc .cyc-empty p{max-width:640px;margin:0 auto 14px;color:#5c5c5c;font-size:13px;line-height:1.5}
       #view-cyc .cyc-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:10px}
       #view-cyc .cyc-form label{display:flex;flex-direction:column;font-size:11.5px;color:#5c5c5c;gap:3px}
       #view-cyc .cyc-form input, #view-cyc .cyc-form select{padding:6px 8px;border:1px solid #d9d2c5;border-radius:4px;font-size:13px}
       #view-cyc .cyc-steps{width:100%;margin-top:10px;border-collapse:collapse;font-size:12.5px}
       #view-cyc .cyc-steps td{padding:4px 6px} #view-cyc .cyc-steps input{width:78px;padding:5px 6px;border:1px solid #d9d2c5;border-radius:4px}
       #view-cyc .cyc-import{padding:12px 14px;background:#f4f1ea;border-left:3px solid #E87722;border-radius:0 4px 4px 0;font-size:13px;margin-top:10px;line-height:1.5}
+      #view-cyc .cyc-issue{padding:5px 8px;border-radius:4px;margin-top:4px;font-size:12.5px;background:#fff;border:1px solid #e6e1d6}
+      #view-cyc .cyc-issue.blocking{border-color:#c0392b;background:#fdecea} #view-cyc .cyc-issue.conflict{border-color:#b9822b;background:#fdf3e3} #view-cyc .cyc-issue.warning{border-color:#d9d2c5}
+      #view-cyc .cyc-dq{display:inline-flex;gap:6px;align-items:center;font-size:12px;padding:3px 9px;border-radius:12px;background:#f4f1ea;border:1px solid #e6e1d6}
+      #view-cyc .cyc-dq i{width:8px;height:8px;border-radius:50%;display:inline-block}
+      #view-cyc .cyc-err{font-size:11.5px;color:#c0392b;margin-left:6px}
+      #view-cyc button[disabled]{opacity:.45;cursor:not-allowed}
       #view-cyc svg text{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
       @media print{ #view-cyc .noprint{display:none !important} #view-cyc .cyc-reel-b{display:block !important} #view-cyc .panel{break-inside:avoid} }
     </style>
-
     <div class="panel cyc-sec" id="cycTop">
       <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;justify-content:space-between">
         <div style="flex:1;min-width:280px">
           <p class="cyc-h">Recovery cycles and learning curves</p>
-          <p class="cyc-sub" id="cycPurpose">Every reel recovery, step by step: how long each cycle took, how that is improving reel on reel, the achieved norms per flowline, and how far each line has been recovered. Built from the register below, so every figure traces to a reel.</p>
-          <div class="cyc-chips noprint" id="cycFlowChips"></div>
+          <p class="cyc-sub" id="cycPurpose">Every reel recovery held as evidence: stage times, cycle totals, lengths, weights and NORM readings, with the norms, learning curves and physical progress recomputed from included reels only. Every figure traces to a reel, a file and a row.</p>
         </div>
-        <div class="cyc-actions noprint">
-          <button class="btn" onclick="document.getElementById('cycFile').click()">Import timing workbook</button>
-          <input id="cycFile" type="file" accept=".xlsx,.xlsm,.xls" multiple style="display:none" onchange="cycImportFile(this)">
-          <button class="btn" onclick="cycToggleForm(true)">+ Add reel</button>
-          <button class="btn" onclick="cycExportXLSX()">Export Excel</button>
-          <button class="btn" onclick="cycExportCSV()">Export CSV</button>
-          <button class="btn" onclick="cycExportReport()">Report (HTML)</button>
-          <button class="btn" onclick="cycPrint()">Print / PDF</button>
-        </div>
+        <div class="cyc-actions noprint" id="cycTopActions"></div>
       </div>
-      <div id="cycImportPreview" class="cyc-import noprint" style="display:none"></div>
-      <div id="cycImportNote" class="cyc-sub" style="margin:8px 0 0"></div>
-      <div id="cycFormWrap" class="noprint" style="display:none"></div>
+      <div class="cyc-filter noprint" id="cycFilterBar"></div>
+      <div class="cyc-nav noprint" id="cycNav"></div>
     </div>
-
-    <div class="panel" id="cycEmpty" style="display:none"></div>
-    <div class="panel cyc-sec" id="cycHeadline" style="display:none"></div>
-    <div class="panel cyc-sec" id="cycCurvePanel" style="display:none"></div>
-    <div class="panel cyc-sec" id="cycStackPanel" style="display:none"></div>
-    <div class="panel cyc-sec" id="cycStepPanel" style="display:none"></div>
-    <div class="panel cyc-sec" id="cycNormsPanel" style="display:none"></div>
-    <div class="panel cyc-sec" id="cycComparePanel" style="display:none"></div>
-    <div class="panel cyc-sec" id="cycProgressPanel" style="display:none"></div>
-    <div class="panel cyc-sec" id="cycReelsPanel" style="display:none"></div>
-    <div class="panel cyc-sec" id="cycNormPanel" style="display:none"></div>
-    <div class="panel cyc-sec noprint" id="cycDataPanel" style="display:none"></div>
+    <div id="cycBody"></div>
   </section>
   <section id="view-dpr" style="display:none">
     <div class="panel">
@@ -586,7 +577,7 @@
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-08-31.5";
+var APP_BUILD="2026-08-31.6";
 var PEL_ENV={env:"TEST",agent:true,schema:6};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
@@ -3287,606 +3278,575 @@ function pelChart(spec){
 </script>
 <!-- ============ PEL AGENT END ============ -->
 <script>
-/* ===== Recovery Cycles engine (parser, derivations, norms, sanitiser) ===== */
+/* ===== Recovery Cycles engine v3 (templates, strict validation, identity, governed statistics) ===== */
 var CYC_STEPS=[
-  {k:"clamp",n:"Clamp deployment and torque-on",s:"Clamp"},
-  {k:"loa",n:"1st end at LOA",s:"LOA"},
-  {k:"tensioner",n:"1st end in tensioner",s:"Tens."},
-  {k:"reel1",n:"1st end on reel",s:"On reel"},
-  {k:"recovery",n:"Recovery (all segments)",s:"Recov."},
-  {k:"midline",n:"Anode removal and midline",s:"Midline"},
-  {k:"cut",n:"2nd end cut",s:"Cut"},
-  {k:"secure",n:"2nd end secure on reel",s:"Secure"}
+  {k:"clamp",n:"Clamp deployment and torque-on",s:"Clamp",required:true},
+  {k:"loa",n:"1st end at LOA",s:"1st end LOA",required:true},
+  {k:"tensioner",n:"1st end in tensioner",s:"1st end tens.",required:true},
+  {k:"reel1",n:"1st end on reel",s:"1st end reel",required:true},
+  {k:"recovery",n:"Recovery (all segments)",s:"Recovery",required:true},
+  {k:"midline",n:"Anode removal and midline",s:"Midline",required:true},
+  {k:"cut",n:"2nd end cut",s:"2nd end cut",required:true},
+  {k:"secure",n:"2nd end secure on reel",s:"2nd end secure",required:true}
+];
+var CYC_TEMPLATES_DEFAULT=[
+  {id:"SURF-RECOVERY-v1", name:"Rigid flowline recovery (SURF reel)", activity:"Rigid flowline recovery", status:"active", stages:CYC_STEPS.map(function(s){ return {k:s.k,n:s.n,s:s.s,required:true}; }), bounds:{stageMaxMin:10080,cycleMaxMin:20160,lengthMaxM:50000,weightMaxTe:2000}},
+  {id:"FLEX-RECOVERY-draft", name:"Flexible flowline recovery (draft template)", activity:"Flexible flowline recovery", status:"draft", stages:CYC_STEPS.map(function(s){ return {k:s.k,n:s.n,s:s.s,required:true}; }), bounds:{stageMaxMin:10080,cycleMaxMin:20160,lengthMaxM:50000,weightMaxTe:2000}},
+  {id:"UMB-RECOVERY-draft", name:"Umbilical recovery (draft template)", activity:"Umbilical recovery", status:"draft", stages:CYC_STEPS.map(function(s){ return {k:s.k,n:s.n,s:s.s,required:true}; }), bounds:{stageMaxMin:10080,cycleMaxMin:20160,lengthMaxM:50000,weightMaxTe:2000}}
 ];
 var CYC_DEFAULT_TYPES=["Rigid flowline recovery","Flexible flowline recovery","Umbilical recovery","Other"];
-var CYC={version:2, activityTypes:CYC_DEFAULT_TYPES.slice(), flowlines:[], reels:[], trips:[], readings:[], importLog:[], settings:{normTrigger:0.2, taxonomy:"SURF-RECOVERY-v1"}};
+function cycUid(){ return "c"+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function cycFresh(){ return { version:3, revision:0, templates:JSON.parse(JSON.stringify(CYC_TEMPLATES_DEFAULT)), flowlines:[], reels:[], trips:[], readings:[], importLog:[],
+  settings:{ normPolicy:{ id:"NORM-TRIGGER-v1", measurement:"Surface contamination, reel end swab", value:0.2, unit:"Bq/cm2", operator:">", effectiveFrom:"2026-08-31", approvedBy:"", note:"Project trigger as used offshore" }, statsPolicy:{ minFit:3, minPlanning:5 }, clientView:false, activityTypes:CYC_DEFAULT_TYPES.slice() } }; }
+var CYC=cycFresh();
 
-function cycFresh(){ return {version:2, activityTypes:CYC_DEFAULT_TYPES.slice(), flowlines:[], reels:[], trips:[], readings:[], importLog:[], settings:{normTrigger:0.2, taxonomy:"SURF-RECOVERY-v1"}}; }
-function cycStepKey(name){
-  var d=String(name||"").toLowerCase();
-  if(!d) return null;
-  if(d.indexOf("transfer")>=0) return "transfer";
-  if(d.indexOf("offload")>=0) return "offload";
-  if(d.indexOf("secure")>=0) return "secure";
-  if(d.indexOf("cut")>=0) return "cut";
-  if(d.indexOf("midline")>=0 || d.indexOf("anode")>=0) return "midline";
-  if(d.indexOf("recovery")===0) return "recovery";
-  if(d.indexOf("clamp")>=0) return "clamp";
-  if(d.indexOf("loa")>=0) return "loa";
-  if(d.indexOf("tensioner")>=0) return "tensioner";
-  if(d.indexOf("on reel")>=0) return "reel1";
-  return "other";
-}
+/* strict primitive parsers */
+function cycNumStrict(v, lo, hi){ if(v==null||v==="") return null; if(typeof v==="boolean"||Array.isArray(v)||(typeof v==="object")) return null; var t=String(v).trim(); if(!/^-?\d+(\.\d+)?$/.test(t)) return null; var n=parseFloat(t); if(!isFinite(n)) return null; if(lo!=null&&n<lo) return null; if(hi!=null&&n>hi) return null; return n; }
+function cycNum(v){ return cycNumStrict(String(v==null?"":v).replace(/[^\d.\-]/g,""), null, null); }
+function cycMinFmt(m){ if(m==null||!isFinite(m)) return ""; var neg=m<0; m=Math.abs(Math.round(m)); return (neg?"\u2212":"")+Math.floor(m/60)+":"+("0"+(m%60)).slice(-2); }
 function cycTime(v, kind){
-  kind=kind||"dur";
-  var maxMin = kind==="clock" ? 1440 : 336*60;
-  if(v==null || v==="") return null;
-  var out=null;
-  if(typeof v==="number"){ if(v>=0 && v*1440<=maxMin) out=Math.round(v*1440); else return null; }
-  else {
-    var s=String(v).trim(), m;
-    m=s.match(/^(\d{4})-\d\d-\d\d\s+(\d\d):(\d\d)/);
-    if(m){ var hh=parseInt(m[2],10), mm=parseInt(m[3],10); if(mm>59||hh>23) return null; out=(m[1]==="1900" && hh===0 && mm===0) ? 1440 : hh*60+mm; }
+  kind=kind||"dur"; var maxMin = kind==="clock" ? 1440 : 336*60;
+  if(v==null || v==="") return null; var out=null;
+  if(typeof v==="number"){ if(isFinite(v) && v>=0 && v*1440<=maxMin) out=Math.round(v*1440); else return null; }
+  else if(typeof v==="string"){
+    var s=v.trim(), m;
+    if((m=s.match(/^(\d{4})-\d\d-\d\d\s+(\d\d):(\d\d)/))){ var hh=parseInt(m[2],10), mm=parseInt(m[3],10); if(mm>59||hh>23) return null; out=(m[1]==="1900" && hh===0 && mm===0) ? 1440 : hh*60+mm; }
     else if((m=s.match(/^(\d{1,3}):(\d\d)(?::(\d\d))?$/))){ var h2=parseInt(m[1],10), m2=parseInt(m[2],10), s2=m[3]?parseInt(m[3],10):0; if(m2>59||s2>59) return null; out=h2*60+m2+(s2>=30?1:0); }
-    else if((m=s.match(/^(\d+)\s*h(?:rs?|ours?)?\s*(\d+)?\s*(?:min|m)?/i))){ var m3=m[2]?parseInt(m[2],10):0; if(m3>59) return null; out=parseInt(m[1],10)*60+m3; }
+    else if((m=s.match(/^(\d+)\s*h(?:rs?|ours?)?\s*(\d+)?\s*(?:mins?|m)?$/i))){ var m3=m[2]?parseInt(m[2],10):0; if(m3>59) return null; out=parseInt(m[1],10)*60+m3; }
+    else if(kind==="dur" && /^\d+$/.test(s)){ out=parseInt(s,10); }
     else return null;
-  }
+  } else return null;
   if(out==null || out<0 || out>maxMin) return null;
-  if(kind==="clock" && out===1440){ /* 24:00 allowed only as an end-of-day marker */ }
   return out;
 }
 function cycClock(v){ return cycTime(v,"clock"); }
-function cycUid(){ return "c"+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function cycDate(v){
-  if(v==null || v==="") return null;
-  var s=String(v).trim();
-  var m=s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);
-  if(m){ var y=m[3].length===2?("20"+m[3]):m[3]; return y+"-"+("0"+m[2]).slice(-2)+"-"+("0"+m[1]).slice(-2); }
-  m=s.match(/^(\d{4})-(\d\d)-(\d\d)/);
-  if(m) return m[1]+"-"+m[2]+"-"+m[3];
-  return null;
+  if(v==null || v==="") return null; var s=String(v).trim(), m, y, mo, d;
+  if((m=s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/))){ d=parseInt(m[1],10); mo=parseInt(m[2],10); y=m[3].length===2?2000+parseInt(m[3],10):parseInt(m[3],10); }
+  else if((m=s.match(/^(\d{4})-(\d\d)-(\d\d)/))){ y=parseInt(m[1],10); mo=parseInt(m[2],10); d=parseInt(m[3],10); }
+  else return null;
+  if(y<2000||y>2100||mo<1||mo>12||d<1) return null;
+  var dim=[31,(y%4===0&&(y%100!==0||y%400===0))?29:28,31,30,31,30,31,31,30,31,30,31][mo-1];
+  if(d>dim) return null;
+  return y+"-"+("0"+mo).slice(-2)+"-"+("0"+d).slice(-2);
 }
-function cycNum(v){ if(v==null||v==="") return null; var n=parseFloat(String(v).replace(/[^\d.\-]/g,"")); return isFinite(n)?n:null; }
-function cycMinFmt(m){ if(m==null||!isFinite(m)) return ""; var neg=m<0; m=Math.abs(Math.round(m)); return (neg?"\u2212":"")+Math.floor(m/60)+":"+("0"+(m%60)).slice(-2); }
+function cycIdOk(v){ return typeof v==="string" && /^[A-Z0-9][A-Z0-9\-]{0,11}$/.test(v); }
+function cycFlowIdOk(v){ return typeof v==="string" && /^[A-Z]{1,6}\s?\d{1,3}[A-Z]?$/.test(v); }
+function cycStr(v,max){ if(v==null) return ""; if(typeof v!=="string" && typeof v!=="number") return ""; return String(v).slice(0,max||120); }
 function cycTypeFor(flowId){ return /^UMB/i.test(flowId||"")?"Umbilical recovery":"Rigid flowline recovery"; }
+function cycTemplateForActivity(act){ var t=(CYC.templates||[]).filter(function(x){ return x.activity===act; })[0]; return t?t.id:"SURF-RECOVERY-v1"; }
+function cycTemplate(id){ return (CYC.templates||[]).filter(function(t){ return t.id===id; })[0]||(CYC.templates||[])[0]||CYC_TEMPLATES_DEFAULT[0]; }
+function cycFlow(id){ return (CYC.flowlines||[]).filter(function(f){ return f.id===id; })[0]||null; }
+function cycTemplateOf(rl){ var f=cycFlow(rl.flowlineId||rl.flowline); return cycTemplate(f&&f.templateId?f.templateId:cycTemplateForActivity(cycTypeFor(rl.flowlineId||rl.flowline))); }
+function cycTypeOf(rl){ return cycTemplateOf(rl).activity; }
+function cycStagesOf(rl){ return cycTemplateOf(rl).stages; }
+function cycStepKey(name){
+  var d=String(name||"").toLowerCase(); if(!d) return null;
+  if(d.indexOf("transfer")>=0) return "transfer"; if(d.indexOf("offload")>=0) return "offload"; if(d.indexOf("secure")>=0) return "secure"; if(d.indexOf("cut")>=0) return "cut";
+  if(d.indexOf("midline")>=0 || d.indexOf("anode")>=0) return "midline"; if(d.indexOf("recovery")===0) return "recovery"; if(d.indexOf("clamp")>=0) return "clamp";
+  if(d.indexOf("loa")>=0) return "loa"; if(d.indexOf("tensioner")>=0) return "tensioner"; if(d.indexOf("on reel")>=0) return "reel1"; return "other";
+}
+function cycStepName(k){ var st=CYC_STEPS.filter(function(s){ return s.k===k; })[0]; return st?st.n:k; }
 
-/* Parse the offshore timing workbook: sheets is {sheetName: array-of-arrays} */
+/* NORM threshold policy: one function for screen, exports, report, agent and preview */
+function cycNormStatus(values, policy){
+  var p=policy||(CYC.settings&&CYC.settings.normPolicy)||cycFresh().settings.normPolicy;
+  var vals=(values||[]).filter(function(x){ return typeof x==="number" && isFinite(x); });
+  var worst=vals.length?Math.max.apply(null,vals):null, cmp=function(x){ return p.operator===">="?x>=p.value:p.operator==="<"?x<p.value:p.operator==="<="?x<=p.value:x>p.value; };
+  return { above: vals.some(cmp), worst:worst, policyId:p.id, value:p.value, unit:p.unit, operator:p.operator, label:(vals.some(cmp)?"ABOVE ":"within ")+p.value+" "+p.unit };
+}
+
+/* parse the offshore timing workbook; sheets is {sheetName: array-of-arrays}; columns located from headers */
 function parseSurfWorkbook(sheets){
   var out={reels:[], trips:[], flowlines:[], readings:[], issues:[]};
+  function issue(cls, text){ out.issues.push({cls:cls, text:text}); }
   var names=Object.keys(sheets||{});
   function sheetLike(re){ for(var i=0;i<names.length;i++){ if(re.test(names[i])) return sheets[names[i]]; } return null; }
-  var T=sheetLike(/timing/i)||sheets[names[0]]||[];
-  var W=sheetLike(/weight/i)||[];
-  var N=sheetLike(/norm/i)||[];
-
-  /* weights sheet first: authoritative reel -> flowline, length, weight, trip */
+  var T=sheetLike(/timing/i)||sheets[names[0]]||[], W=sheetLike(/weight/i)||[], N=sheetLike(/norm/i)||[];
   var hdr=-1, col={};
-  for(var r=0;r<W.length;r++){
-    var row=W[r]||[]; var low=row.map(function(c){ return String(c||"").toLowerCase(); });
-    var ri=low.indexOf("reel");
-    if(ri>=0 && low.some(function(c){ return c.indexOf("weight")>=0; })){ hdr=r;
-      low.forEach(function(c,i){ if(c==="date") col.date=i; if(c.indexOf("trip")===0) col.trip=i; if(c.indexOf("hlv")>=0) col.hlv=i; if(c==="reel") col.reel=i; if(c.indexOf("weight")>=0) col.weight=i; if(c.indexOf("duration")>=0) col.dur=i; if(c.indexOf("length")>=0) col.len=i; });
-      break; }
-  }
+  for(var r=0;r<W.length;r++){ var row=W[r]||[]; var low=row.map(function(c){ return String(c||"").toLowerCase().trim(); }); var ri=low.indexOf("reel");
+    if(ri>=0 && low.some(function(c){ return c.indexOf("weight")>=0; })){ hdr=r; low.forEach(function(c,i){ if(c==="date") col.date=i; if(c.indexOf("trip")===0) col.trip=i; if(c.indexOf("hlv")>=0) col.hlv=i; if(c==="reel") col.reel=i; if(c.indexOf("weight")>=0) col.weight=i; if(c.indexOf("duration")>=0) col.dur=i; if(c.indexOf("length")>=0) col.len=i; }); break; } }
   var seenReel={}, lastTrip=null, lastHlv=null, lastDate=null;
-  if(hdr>=0){
-    for(var r2=hdr+1;r2<W.length;r2++){
-      var w=W[r2]||[]; var reelId=String(w[col.reel]||"").trim();
-      if(!/^[A-Z]\d{1,2}$/i.test(reelId)) continue;
-      if(cycNum(w[col.trip])!=null) lastTrip=cycNum(w[col.trip]);
-      if(cycNum(w[col.hlv])!=null) lastHlv=cycNum(w[col.hlv]);
-      if(cycDate(w[col.date])) lastDate=cycDate(w[col.date]);
-      var flow=null; w.forEach(function(c){ var m=String(c||"").match(/\b(FL\s?\d+|UMB\s?\d+)\b/i); if(m && !flow) flow=m[1].replace(/\s+/g,"").toUpperCase(); });
+  if(hdr>=0){ for(var r2=hdr+1;r2<W.length;r2++){ var w=W[r2]||[]; var reelId=String(w[col.reel]||"").trim().toUpperCase(); if(!/^[A-Z]\d{1,2}$/.test(reelId)) continue;
+      if(cycNum(w[col.trip])!=null) lastTrip=cycNum(w[col.trip]); if(cycNum(w[col.hlv])!=null) lastHlv=cycNum(w[col.hlv]); var dd=cycDate(w[col.date]); if(dd) lastDate=dd; else if(w[col.date]!=="" && w[col.date]!=null) issue("blocking", "Weights row "+(r2+1)+": date "+String(w[col.date])+" is not a valid calendar date");
+      var flow=null, ft=""; w.forEach(function(c){ var m=String(c||"").match(/\b(FL\s?\d+|UMB\s?\d+)\b/i); if(m && !flow){ flow=m[1].replace(/\s+/g,"").toUpperCase(); ft=String(c); } });
       seenReel[reelId]=(seenReel[reelId]||0)+1;
-      var __ft=""; w.forEach(function(c){ if(/\b(FL\s?\d+|UMB\s?\d+)\b/i.test(String(c||""))) __ft=String(c); });
-      out.trips.push({ flowText:__ft, date:lastDate, trip:lastTrip, hlvTp:lastHlv, reel:reelId.toUpperCase(), occurrence:seenReel[reelId], weightTe:cycNum(w[col.weight]), durationMin:cycTime(w[col.dur]), lengthM:cycNum(w[col.len]), flowline:flow });
-    }
-  } else out.issues.push("Weights sheet header not found; lengths and weights not linked");
-
-  /* timing sheet: columns are located from the Start / finished / Total header row, never assumed,
-     because spreadsheet readers start each row at the sheet's first used column */
+      var wt=cycNum(w[col.weight]), ln=cycNum(w[col.len]); if(wt!=null && (wt<0||wt>2000)){ issue("blocking","Weights row "+(r2+1)+": weight "+wt+" t is outside 0 to 2000"); wt=null; } if(ln!=null && (ln<0||ln>50000)){ issue("blocking","Weights row "+(r2+1)+": length "+ln+" m is outside 0 to 50000"); ln=null; }
+      out.trips.push({ tripId:cycUid(), flowText:ft, date:lastDate, trip:lastTrip, hlvTp:lastHlv, reel:reelId, occurrence:seenReel[reelId], weightTe:wt, durationMin:cycTime(w[col.dur],"dur"), lengthM:ln, flowlineId:flow, src:{sheet:"weights", row:r2+1} }); } }
+  else issue("warning","Weights sheet header not found; lengths and weights not linked");
   var cS=4,cF=5,cG=6,cH=7,cD=3,cB=1, hdrFound=false;
-  for(var hr=0; hr<Math.min(T.length,20) && !hdrFound; hr++){
-    var hrow=T[hr]||[];
-    for(var hc=0; hc<hrow.length; hc++){ if(/^start(\s*time)?$/i.test(String(hrow[hc]||"").trim())){ cS=hc; hdrFound=true; break; } }
-    if(hdrFound){
-      for(var hc2=0; hc2<hrow.length; hc2++){ var hv=String(hrow[hc2]||"").trim().toLowerCase(); if(/^finish/.test(hv)) cF=hc2; if(/^total/.test(hv)) cG=hc2; if(/^comment/.test(hv)) cH=hc2; }
-      cD=cS-1; cB=0;
-      var drow=T[hr+1]||[];
-      for(var hc3=0; hc3<Math.max(hrow.length,drow.length); hc3++){ if(/^(tooling|date)$/i.test(String(hrow[hc3]||"").trim()) || /^(tooling|date)$/i.test(String(drow[hc3]||"").trim())){ cB=hc3; break; } }
-    }
-  }
-  if(!hdrFound) out.issues.push("Timing sheet header (Start / finished / Total) not found; default columns assumed");
+  for(var hr=0; hr<Math.min(T.length,20) && !hdrFound; hr++){ var hrow=T[hr]||[]; for(var hc=0; hc<hrow.length; hc++){ if(/^start(\s*time)?$/i.test(String(hrow[hc]||"").trim())){ cS=hc; hdrFound=true; break; } }
+    if(hdrFound){ for(var hc2=0; hc2<hrow.length; hc2++){ var hv=String(hrow[hc2]||"").trim().toLowerCase(); if(/^finish/.test(hv)) cF=hc2; if(/^total/.test(hv)) cG=hc2; if(/^comment/.test(hv)) cH=hc2; } cD=cS-1; cB=0; var drow=T[hr+1]||[]; for(var hc3=0; hc3<Math.max(hrow.length,drow.length); hc3++){ if(/^(tooling|date)$/i.test(String(hrow[hc3]||"").trim()) || /^(tooling|date)$/i.test(String(drow[hc3]||"").trim())){ cB=hc3; break; } } } }
+  if(!hdrFound) issue("blocking","Timing sheet header (Start / finished / Total) not found; is this the SURF timings workbook?");
   var cur=null, flowHint=null, dateCarry=null, occ={};
   for(var i=0;i<T.length;i++){
-    var row=T[i]||[]; var D=String(row[cD]||"").trim(), B=row[cB], E=row[cS], F=row[cF], G=row[cG], H=String(row[cH]||"").trim();
-    if(!D) continue;
+    var row=T[i]||[]; var D=String(row[cD]||"").trim(), B=row[cB], E=row[cS], F=row[cF], G=row[cG], H=String(row[cH]||"").trim(); if(!D) continue;
     if(/flowline/i.test(D) && !cycTime(G) && !/clamp/i.test(D)){ flowHint=D; continue; }
     var hm=D.match(/^\{?\s*([A-Z]\d{1,2})\s*\}?(.*)$/i);
     if(hm && cycTime(G)==null && cycClock(E)==null && !/clamp|end|recovery|cut|offload|transfer/i.test(D)){
-      var id=hm[1].toUpperCase(); occ[id]=(occ[id]||0)+1;
-      var tm=D.match(/trip\s*#?\s*(\d+)/i), hv=D.match(/hlv\s*trip\s*#?\s*(\d+)/i);
-      cur={ uid:cycUid(), id:id, seq:out.reels.length+1, occurrence:occ[id], flowline:null, flowHint:flowHint, tripHint:tm?parseInt(tm[1],10):null, hlvHint:hv?parseInt(hv[1],10):null, dateStart:null, steps:[], cycleMin:null, weightTe:null, notes:[] , status:"planned", src:{sheet:"timings", row:i+1} };
-      if(H) cur.notes.push(H);
-      out.reels.push(cur); continue;
-    }
+      var id=hm[1].toUpperCase(); occ[id]=(occ[id]||0)+1; var tm=D.match(/trip\s*#?\s*(\d+)/i), hv2=D.match(/hlv\s*trip\s*#?\s*(\d+)/i);
+      cur={ cycleId:cycUid(), id:id, occurrence:occ[id], flowlineId:null, flowHint:flowHint, tripHint:tm?parseInt(tm[1],10):null, hlvHint:hv2?parseInt(hv2[1],10):null, dateStart:null, steps:[], override:{}, cycleMin:null, weightTe:null, lengthM:null, notes:[], status:"planned", included:true, excludeReason:"", deleted:false, src:{sheet:"timings", row:i+1} };
+      if(H) cur.notes.push(H); out.reels.push(cur); continue; }
     if(!cur) continue;
     var key=cycStepKey(D);
-    var d0=cycDate(B); if(d0){ dateCarry=d0; if(!cur.dateStart) cur.dateStart=d0; }
-    if(key==="offload"){
-      var tot=cycTime(G); if(tot!=null) cur.cycleMin=tot;
-      var wm=D.match(/Weight\s*-\s*([\d.]+)\s*te/i); if(wm) cur.weightTe=parseFloat(wm[1]);
-      if(H) cur.notes.push(H);
-      continue;
-    }
+    if(B!=="" && B!=null){ var d0=cycDate(B); if(d0){ dateCarry=d0; if(!cur.dateStart) cur.dateStart=d0; } else if(typeof B==="string" && /\d/.test(B)) issue("blocking", cur.id+" row "+(i+1)+": date "+B+" is not a valid calendar date"); }
+    if(key==="offload"){ var tot=cycTime(G,"dur"); if(tot!=null) cur.cycleMin=tot; var wm=D.match(/Weight\s*-\s*([\d.]+)\s*te/i); if(wm) cur.weightTe=parseFloat(wm[1]); if(H) cur.notes.push(H); continue; }
     var st=cycClock(E), en=cycClock(F), tt=cycTime(G,"dur");
-    if((E!=="" && E!=null && st==null) || (F!=="" && F!=null && en==null)) out.issues.push(cur.id+" seq "+cur.seq+": "+D.slice(0,28)+" has an unreadable clock time ("+String(E)+" / "+String(F)+"); row kept without it");
-    if(st==null && en==null && tt==null){ continue; }
-    var comp=null;
-    if(st!=null && en!=null) comp=(en>=st)?(en-st):(en+1440-st);
+    if((E!=="" && E!=null && st==null) || (F!=="" && F!=null && en==null)) issue("blocking", cur.id+" row "+(i+1)+": "+D.slice(0,28)+" has an unreadable clock time ("+String(E)+" / "+String(F)+")");
+    if(st==null && en==null && tt==null) continue;
+    var comp=null; if(st!=null && en!=null) comp=(en>=st)?(en-st):(en+1440-st);
     var mins=(tt!=null)?tt:comp;
-    if(tt!=null && comp!=null && Math.abs(comp-tt)>1) out.issues.push(cur.id+" seq "+cur.seq+": "+D.slice(0,28)+" total "+cycMinFmt(tt)+" differs from start/finish "+cycMinFmt(comp)+" (total kept)");
+    if(tt!=null && comp!=null && Math.abs(comp-tt)>1) issue("warning", cur.id+" row "+(i+1)+": "+D.slice(0,28)+" total "+cycMinFmt(tt)+" differs from start/finish "+cycMinFmt(comp)+" (total kept)");
     if(mins==null){ cur.started=true; cur.notes.push("Started "+(st!=null?cycMinFmt(st):"")+" "+D.slice(0,30)); continue; }
-    cur.steps.push({ k:key, name:D, start:st, end:en, min:mins, note:H||"" , date:dateCarry, row:i+1 });
-  }
+    cur.steps.push({ k:key, name:D, start:st, end:en, min:mins, note:H||"", date:dateCarry, row:i+1 }); }
   out.reels.forEach(function(rl){
     var tr=out.trips.filter(function(t){ return t.reel===rl.id && t.occurrence===rl.occurrence; })[0];
-    if(tr){ rl.flowline=tr.flowline||null; rl.lengthM=tr.lengthM; if(rl.weightTe==null) rl.weightTe=tr.weightTe; rl.trip=tr.trip; rl.hlvTp=tr.hlvTp; if(rl.cycleMin==null && tr.durationMin!=null) rl.cycleMin=tr.durationMin; if(!rl.dateStart) rl.dateStart=tr.date; }
+    if(tr){ rl.flowlineId=tr.flowlineId||null; rl.lengthM=tr.lengthM; if(rl.weightTe!=null && tr.weightTe!=null && Math.abs(rl.weightTe-tr.weightTe)>0.05) out.issues.push({cls:"conflict", text:rl.id+": weight "+rl.weightTe+" t on the timings offload row differs from "+tr.weightTe+" t in the Weights sheet", field:"weightTe", cycleId:rl.cycleId, options:[{label:"Use "+rl.weightTe+" t (timings sheet)",value:rl.weightTe},{label:"Use "+tr.weightTe+" t (Weights sheet)",value:tr.weightTe}]}); if(rl.weightTe==null) rl.weightTe=tr.weightTe; rl.trip=tr.trip; rl.hlvTp=tr.hlvTp; rl.tripId=tr.tripId; tr.cycleId=rl.cycleId; if(rl.cycleMin==null && tr.durationMin!=null) rl.cycleMin=tr.durationMin; if(!rl.dateStart) rl.dateStart=tr.date; }
     else { rl.trip=rl.tripHint; rl.hlvTp=rl.hlvHint; }
-    if(!rl.flowline && rl.flowHint){ var fm=rl.flowHint.match(/\b(FL\s?\d+|UMB\s?\d+)\b/i); rl.flowline=fm?fm[1].replace(/\s+/g,"").toUpperCase():null; }
-    if(!rl.flowline){ var prev=out.reels.filter(function(x){ return x.seq<rl.seq && x.flowline; }).pop(); if(prev && prev.flowHint===rl.flowHint) rl.flowline=prev.flowline; }
-    delete rl.flowHint; delete rl.tripHint; delete rl.hlvHint;
-    rl.status=cycStatusOf(rl);
-  });
-
-  /* NORM sheet: block headers carry the flowline ID, the length sits in the same column two rows down,
-     and each reel has End 1 / End 2 readings on consecutive rows */
-  for(var n=0;n<N.length;n++){
-    var nr=N[n]||[];
-    for(var c=0;c<nr.length;c++){
-      var cell=String(nr[c]||"").trim();
-      var fm2=cell.match(/^(FL\s?\d+|UMB\s?\d+)\b(.*)$/i);
-      if(fm2 && !/^[A-Z]\d$/.test(cell)){
-        var fid=fm2[1].replace(/\s+/g,"").toUpperCase(), desc=(fm2[2]||"").replace(/^[\s\-:]+/,"").trim();
-        var lenCell=null;
-        for(var dr=1; dr<=4 && n+dr<N.length; dr++){ var v2=(N[n+dr]||[])[c]; if(typeof v2==="number" && v2>50){ lenCell=v2; break; } }
-        if(!out.flowlines.some(function(f){ return f.id===fid; })) out.flowlines.push({ id:fid, name:desc||fid, lengthM:lenCell, type:cycTypeFor(fid) });
-        continue;
-      }
-      if(/^[A-Z]\d{1,2}$/.test(cell)){
-        var loc1=String(nr[c+1]||"").trim(), v1=(typeof nr[c+2]==="number")?nr[c+2]:null;
-        var nx=N[n+1]||[]; var loc2=String(nx[c+1]||"").trim(), vv2=(typeof nx[c+2]==="number" && !String(nx[c]||"").trim())?nx[c+2]:null;
+    if(!rl.flowlineId && rl.flowHint){ var fm=rl.flowHint.match(/\b(FL\s?\d+|UMB\s?\d+)\b/i); rl.flowlineId=fm?fm[1].replace(/\s+/g,"").toUpperCase():null; }
+    if(!rl.flowlineId){ var prev=out.reels.filter(function(x){ return x.cycleId!==rl.cycleId && x.flowlineId && x.flowHint===rl.flowHint; }).pop(); if(prev) rl.flowlineId=prev.flowlineId; }
+    delete rl.flowHint; delete rl.tripHint; delete rl.hlvHint; });
+  for(var n=0;n<N.length;n++){ var nr=N[n]||[]; for(var c=0;c<nr.length;c++){ var cell=String(nr[c]||"").trim(); var fm2=cell.match(/^(FL\s?\d+|UMB\s?\d+)\b(.*)$/i);
+      if(fm2 && !/^[A-Z]\d$/.test(cell)){ var fid=fm2[1].replace(/\s+/g,"").toUpperCase(), desc=(fm2[2]||"").replace(/^[\s\-:]+/,"").trim(); var lenCell=null; for(var dr=1; dr<=4 && n+dr<N.length; dr++){ var v2=(N[n+dr]||[])[c]; if(typeof v2==="number" && v2>50){ lenCell=v2; break; } }
+        if(!out.flowlines.some(function(f){ return f.id===fid; })){ var nom=(desc.match(/(\d+(?:\.\d+)?)\s*"/)||[])[1]; out.flowlines.push({ id:fid, name:desc||fid, lengthM:lenCell, templateId:cycTemplateForActivity(cycTypeFor(fid)), product:desc, nominalIn:nom?parseFloat(nom):null, src:{sheet:"norm", row:n+1} }); } continue; }
+      if(/^[A-Z]\d{1,2}$/.test(cell)){ var loc1=String(nr[c+1]||"").trim(), v1=(typeof nr[c+2]==="number")?nr[c+2]:null; var nx=N[n+1]||[]; var loc2=String(nx[c+1]||"").trim(), vv2=(typeof nx[c+2]==="number" && !String(nx[c]||"").trim())?nx[c+2]:null;
         var nums=[]; if(v1!=null) nums.push(v1); if(vv2!=null) nums.push(vv2);
-        if(nums.length && /end|start|mid|test/i.test(loc1+loc2)){ var recM=(typeof nr[c+3]==="number" && nr[c+3]>50)?nr[c+3]:null; out.readings.push({ reel:cell.toUpperCase(), location:[loc1,loc2].filter(Boolean).join(" / "), readings:nums, recoveredM:recM, row:n+1 }); }
-      }
-    }
-  }
-  /* cross-sheet checks: diameter wording and recovered lengths */
-  out.trips.forEach(function(t){ var dm=(t.flowText||"").match(/(\d+(?:\.\d+)?)\s*"/); var fl=out.flowlines.filter(function(f){ return f.id===t.flowline; })[0]; var dn=fl&&fl.name?fl.name.match(/(\d+(?:\.\d+)?)\s*"/):null; if(dm&&dn&&dm[1]!==dn[1]) { var msg=t.flowline+" is written as "+dm[1]+"\" in the Weights sheet and "+dn[1]+"\" in the NORM sheet"; if(out.issues.indexOf(msg)<0) out.issues.push(msg); } });
-  out.readings.forEach(function(rd){ if(rd.recoveredM==null) return; var tr=out.trips.filter(function(t){ return t.reel===rd.reel && t.lengthM!=null; })[0]; if(tr && Math.abs(tr.lengthM-rd.recoveredM)>1) out.issues.push(rd.reel+": recovered length "+rd.recoveredM+" m in the NORM sheet differs from "+tr.lengthM+" m in the Weights sheet (Weights kept)"); });
+        if(nums.length && /end|start|mid|test/i.test(loc1+loc2)){ var recM=(typeof nr[c+3]==="number" && nr[c+3]>50)?nr[c+3]:null; out.readings.push({ readingId:cycUid(), reel:cell.toUpperCase(), location:[loc1,loc2].filter(Boolean).join(" / "), readings:nums, recoveredM:recM, src:{sheet:"norm", row:n+1} }); } } } }
+  /* link readings to cycles by reel occurrence order within the NORM sheet */
+  var rdOcc={}; out.readings.forEach(function(rd){ rdOcc[rd.reel]=(rdOcc[rd.reel]||0)+1; rd.occurrence=rdOcc[rd.reel]; var cy=out.reels.filter(function(rl){ return rl.id===rd.reel && rl.occurrence===rd.occurrence; })[0]; if(cy) rd.cycleId=cy.cycleId; });
+  out.trips.forEach(function(t){ var dm=(t.flowText||"").match(/(\d+(?:\.\d+)?)\s*"/); var fl=out.flowlines.filter(function(f){ return f.id===t.flowlineId; })[0]; var dn=fl&&fl.name?fl.name.match(/(\d+(?:\.\d+)?)\s*"/):null; if(dm&&dn&&dm[1]!==dn[1]){ var msg=t.flowlineId+" nominal size is written as "+dm[1]+"\" in the Weights sheet and "+dn[1]+"\" in the NORM sheet"; if(!out.issues.some(function(x){ return x.text===msg; })) out.issues.push({cls:"conflict", text:msg, field:"nominalIn", flowlineId:t.flowlineId, options:[{label:"Use "+dn[1]+"\" (NORM sheet)",value:parseFloat(dn[1])},{label:"Use "+dm[1]+"\" (Weights sheet)",value:parseFloat(dm[1])}]}); } });
+  out.readings.forEach(function(rd){ if(rd.recoveredM==null) return; var tr=out.trips.filter(function(t){ return t.reel===rd.reel && t.occurrence===rd.occurrence && t.lengthM!=null; })[0]; if(tr && Math.abs(tr.lengthM-rd.recoveredM)>1) out.issues.push({cls:"conflict", text:rd.reel+": recovered length "+rd.recoveredM+" m in the NORM sheet differs from "+tr.lengthM+" m in the Weights sheet", field:"lengthM", cycleId:tr.cycleId, options:[{label:"Use "+tr.lengthM+" m (Weights)",value:tr.lengthM},{label:"Use "+rd.recoveredM+" m (NORM)",value:rd.recoveredM}]}); });
+  out.reels.forEach(function(rl,i){ rl.seq=i+1; rl.status=cycStatusOf(rl); });
   return out;
 }
 
+/* derivations: reporting convention for stage minutes, actual coverage for unallocated, overrides on top */
 function cycDerive(rl, midRule){
-  var m={}, all={}; var recSum=0, recN=0, midVals=[]; var ov=rl.override||{};
-  rl.steps.forEach(function(s){
-    if(s.k==="recovery"){ recSum+=s.min; recN++; }
-    else if(s.k==="midline"){ midVals.push(s.min); }
-    else if(s.k!=="transfer" && s.k!=="other" && s.k!=="offload"){ m[s.k]=(m[s.k]||0)+s.min; }
-  });
-  if(recN) m.recovery=recSum;
-  var midTot=midVals.reduce(function(a,b){ return a+b; },0);
+  var stages=cycStagesOf(rl); var m={}, all={}; var recSum=0, recN=0, midVals=[]; var ov=rl.override||{};
+  (rl.steps||[]).forEach(function(s){ if(s.k==="recovery"){ recSum+=s.min; recN++; } else if(s.k==="midline"){ midVals.push(s.min); } else if(s.k!=="transfer" && s.k!=="other" && s.k!=="offload"){ m[s.k]=(m[s.k]||0)+s.min; } });
+  if(recN) m.recovery=recSum; var midTot=midVals.reduce(function(a,b){ return a+b; },0);
   if(midVals.length){ m.midline=(midRule==="sum")?midTot:Math.round(midTot/midVals.length); m.midlineN=midVals.length; }
-  CYC_STEPS.forEach(function(st){ all[st.k]=(st.k==="midline")?(midVals.length?midTot:null):(m[st.k]!=null?m[st.k]:null); });
-  CYC_STEPS.forEach(function(st){ if(ov[st.k]!=null){ m[st.k]=ov[st.k]; all[st.k]=ov[st.k]; } });
-  var sum=0, sumAll=0, missing=[];
-  CYC_STEPS.forEach(function(st){ if(m[st.k]!=null) sum+=m[st.k]; else missing.push(st.n); if(all[st.k]!=null) sumAll+=all[st.k]; });
-  var un=(rl.cycleMin!=null && sumAll>0)?(rl.cycleMin-sumAll):null;
-  var hrs=rl.cycleMin!=null?rl.cycleMin/60:null;
-  if(rl.cycleMin==null) missing.push("cycle total");
-  return { stepMin:m, stepAll:all, sumSteps:sum, sumAll:sumAll, unallocated:un, missing:missing, complete:missing.length===0, mPerHr:(rl.lengthM!=null&&hrs)?Math.round(rl.lengthM/hrs):null, tePerHr:(rl.weightTe!=null&&hrs)?Math.round(rl.weightTe/hrs*10)/10:null };
+  stages.forEach(function(st){ all[st.k]=(st.k==="midline")?(midVals.length?midTot:null):(m[st.k]!=null?m[st.k]:null); });
+  stages.forEach(function(st){ if(ov[st.k]!=null){ m[st.k]=ov[st.k]; all[st.k]=ov[st.k]; } });
+  var sum=0, sumAll=0, missing=[]; stages.forEach(function(st){ if(m[st.k]!=null) sum+=m[st.k]; else if(st.required!==false) missing.push(st.n); if(all[st.k]!=null) sumAll+=all[st.k]; });
+  var un=(rl.cycleMin!=null && sumAll>0)?(rl.cycleMin-sumAll):null; var hrs=rl.cycleMin!=null?rl.cycleMin/60:null; if(rl.cycleMin==null) missing.push("cycle total");
+  var recMin=all.recovery||0;
+  return { stepMin:m, stepAll:all, sumSteps:sum, sumAll:sumAll, unallocated:un, missing:missing, complete:missing.length===0, mPerHr:(rl.lengthM!=null&&hrs)?Math.round(rl.lengthM/hrs):null, activeRate:(rl.lengthM!=null&&recMin)?Math.round(rl.lengthM/(recMin/60)):null, intensity:(rl.lengthM&&rl.cycleMin)?Math.round(rl.cycleMin/(rl.lengthM/100)*10)/10:null, tePerHr:(rl.weightTe!=null&&hrs)?Math.round(rl.weightTe/hrs*10)/10:null };
 }
-/* Wright-style learning curve: ln(t) = a + b ln(x); learning rate = 2^b per doubling of units */
-function cycFit(vals){
-  var n=vals.length; if(n<3) return { n:n, ok:false, reason:n<2?"one reel":"two reels: a trend, not a curve" };
-  var xs=[], ys=[]; for(var i=0;i<n;i++){ if(!(vals[i]>0)) return { n:n, ok:false, reason:"non-positive time" }; xs.push(Math.log(i+1)); ys.push(Math.log(vals[i])); }
-  var mx=xs.reduce(function(a,b){return a+b;},0)/n, my=ys.reduce(function(a,b){return a+b;},0)/n, sxy=0, sxx=0, syy=0;
-  for(var j=0;j<n;j++){ sxy+=(xs[j]-mx)*(ys[j]-my); sxx+=(xs[j]-mx)*(xs[j]-mx); syy+=(ys[j]-my)*(ys[j]-my); }
-  if(!sxx) return { n:n, ok:false, reason:"no spread" };
-  var b=sxy/sxx, a=my-b*mx, r2=syy?(sxy*sxy)/(sxx*syy):0;
-  var lr=Math.pow(2,b);
-  function pred(x){ return Math.exp(a+b*Math.log(x)); }
-  return { n:n, ok:true, a:a, b:b, r2:r2, learningRate:lr, improvementPerDoubling:1-lr, next:pred(n+1), predict:pred, thin:n<5 };
-}
-function cycStatusOf(rl){ var d=cycDerive(rl,"mean"); if(d.complete) return "complete"; return (rl.steps.length||rl.cycleMin!=null||rl.started)?"in-progress":"planned"; }
-function cycTypeOf(rl){ var f=(CYC.flowlines||[]).filter(function(x){ return x.id===rl.flowline; })[0]; return (f&&f.type)||cycTypeFor(rl.flowline); }
+function cycStatusOf(rl){ var d=cycDerive(rl,"mean"); if(d.complete) return "complete"; return ((rl.steps||[]).length||rl.cycleMin!=null||rl.started)?"in-progress":"planned"; }
+function cycIncluded(rl){ return !rl.deleted && rl.included!==false; }
 function cycNorms(reels, midRule){
-  var out={};
-  CYC_STEPS.forEach(function(st){
-    var vals=[]; reels.forEach(function(rl){ if(rl.status!=="complete") return; var d=cycDerive(rl,midRule); if(d.stepMin[st.k]!=null) vals.push({seq:rl.seq,id:rl.id,v:d.stepMin[st.k]}); });
-    if(!vals.length) return;
-    var vs=vals.map(function(x){ return x.v; });
-    var mean=Math.round(vs.reduce(function(a,b){ return a+b; },0)/vs.length);
-    var sorted=vs.slice().sort(function(a,b){ return a-b; });
-    out[st.k]={ n:vs.length, mean:mean, best:sorted[0], worst:sorted[sorted.length-1], first:vals[0].v, last:vals[vals.length-1].v, firstId:vals[0].id, lastId:vals[vals.length-1].id, change:vals[0].v?Math.round((vals[vals.length-1].v-vals[0].v)/vals[0].v*100):null, series:vals };
-  });
-  var cyc=[]; reels.forEach(function(rl){ if(rl.status==="complete" && rl.cycleMin!=null) cyc.push({seq:rl.seq,id:rl.id,v:rl.cycleMin}); });
+  var out={}; var use=reels.filter(function(r){ return r.status==="complete" && cycIncluded(r); }).sort(function(a,b){ return (a.cohortSeq||a.seq||0)-(b.cohortSeq||b.seq||0); });
+  CYC_STEPS.forEach(function(st){ var vals=[]; use.forEach(function(rl){ var d=cycDerive(rl,midRule); if(d.stepMin[st.k]!=null) vals.push({id:rl.id,v:d.stepMin[st.k]}); }); if(!vals.length) return; var vs=vals.map(function(x){ return x.v; }); var mean=Math.round(vs.reduce(function(a,b){ return a+b; },0)/vs.length); var sorted=vs.slice().sort(function(a,b){ return a-b; });
+    out[st.k]={ n:vs.length, mean:mean, best:sorted[0], worst:sorted[sorted.length-1], first:vals[0].v, last:vals[vals.length-1].v, firstId:vals[0].id, lastId:vals[vals.length-1].id, change:vals[0].v?Math.round((vals[vals.length-1].v-vals[0].v)/vals[0].v*100):null, series:vals }; });
+  var cyc=[]; use.forEach(function(rl){ if(rl.cycleMin!=null) cyc.push({id:rl.id,v:rl.cycleMin}); });
   if(cyc.length){ var cv=cyc.map(function(x){ return x.v; }); var cs=cv.slice().sort(function(a,b){ return a-b; }); out.cycle={ n:cv.length, mean:Math.round(cv.reduce(function(a,b){ return a+b; },0)/cv.length), best:cs[0], worst:cs[cs.length-1], first:cyc[0].v, last:cyc[cyc.length-1].v, firstId:cyc[0].id, lastId:cyc[cyc.length-1].id, change:Math.round((cyc[cyc.length-1].v-cyc[0].v)/cyc[0].v*100), series:cyc }; }
   return out;
 }
-
-
-function cycNumOrNull(v){ if(v==null||v==="") return null; var n=+v; return isFinite(n)?n:null; }
+/* governed learning model: log-log fit over the included cohort, with a residual range and a grade */
+function cycFit(vals, policy){
+  var P=policy||(CYC.settings&&CYC.settings.statsPolicy)||{minFit:3,minPlanning:5}; var n=vals.length;
+  if(n<P.minFit) return { n:n, ok:false, grade:"none", reason:n<=1?"one reel":n+" reels: data points only; a learning curve needs at least "+P.minFit };
+  var xs=[], ys=[]; for(var i=0;i<n;i++){ if(!(vals[i]>0)) return { n:n, ok:false, grade:"none", reason:"non-positive time" }; xs.push(Math.log(i+1)); ys.push(Math.log(vals[i])); }
+  var mx=xs.reduce(function(a,b){return a+b;},0)/n, my=ys.reduce(function(a,b){return a+b;},0)/n, sxy=0, sxx=0, syy=0;
+  for(var j=0;j<n;j++){ sxy+=(xs[j]-mx)*(ys[j]-my); sxx+=(xs[j]-mx)*(xs[j]-mx); syy+=(ys[j]-my)*(ys[j]-my); }
+  if(!sxx) return { n:n, ok:false, grade:"none", reason:"no spread" };
+  var b=sxy/sxx, a=my-b*mx, r2=syy?(sxy*sxy)/(sxx*syy):0; var sse=0; for(var k=0;k<n;k++){ var e=ys[k]-(a+b*xs[k]); sse+=e*e; } var se=n>2?Math.sqrt(sse/(n-2)):0;
+  function pred(x){ return Math.exp(a+b*Math.log(x)); }
+  var next=pred(n+1), lo=Math.exp(Math.log(next)-se), hi=Math.exp(Math.log(next)+se);
+  return { n:n, ok:true, a:a, b:b, r2:r2, se:se, learningRate:Math.pow(2,b), improvementPerDoubling:1-Math.pow(2,b), next:next, nextLo:lo, nextHi:hi, predict:pred, grade:n>=P.minPlanning?"planning":"indicative", thin:n<P.minPlanning };
+}
+/* comparability gate between two flowline cohorts */
+function cycComparable(A,B,nA,nB){
+  var fa=cycFlow(A)||{}, fb=cycFlow(B)||{}; var reasons=[];
+  if((fa.templateId||"")!==(fb.templateId||"")) reasons.push("different activity templates");
+  if(fa.nominalIn!=null && fb.nominalIn!=null && Math.abs(fa.nominalIn-fb.nominalIn)/Math.max(fa.nominalIn,fb.nominalIn)>0.1) reasons.push("nominal size differs ("+fa.nominalIn+"\" vs "+fb.nominalIn+"\")");
+  var minFit=(CYC.settings&&CYC.settings.statsPolicy&&CYC.settings.statsPolicy.minFit)||3; if(nA<minFit||nB<minFit) reasons.push("fewer than "+minFit+" included reels on one line");
+  reasons.push("recovery method, equipment and crew are not recorded");
+  var strict=reasons.length===1; /* only the unrecorded-controls caveat remains */
+  return { comparable:strict, reasons:reasons };
+}
+/* physical progress: accepted = complete and included; provisional = in progress; planned; excluded; no clamping */
+function cycProgress(flowId){
+  var f=cycFlow(flowId); var acc=0, prov=0, plan=0, exc=0, nAcc=0;
+  (CYC.reels||[]).forEach(function(r){ if(r.flowlineId!==flowId || r.deleted || r.lengthM==null) return; if(r.included===false){ exc+=r.lengthM; return; } if(r.status==="complete"){ acc+=r.lengthM; nAcc++; } else if(r.status==="in-progress") prov+=r.lengthM; else plan+=r.lengthM; });
+  var control=f&&f.lengthM?f.lengthM:null; var remaining=control!=null?control-acc:null; var over=control!=null && acc>control+1;
+  return { flowlineId:flowId, control:control, accepted:Math.round(acc), provisional:Math.round(prov), planned:Math.round(plan), excluded:Math.round(exc), remaining:remaining!=null?Math.round(remaining):null, pct:control?Math.round(acc/control*1000)/10:null, over:over, variance:control!=null?Math.round(acc-control):null, avgReel:nAcc?Math.round(acc/nAcc):null, reelsLeft:(nAcc&&remaining>0)?Math.ceil(remaining/(acc/nAcc)):null };
+}
+/* strict sanitiser and v2 to v3 migration; the only way a document reaches CYC */
 function cycSanitise(c){
-  var f=cycFresh(); if(!c||typeof c!=="object") return f;
-  if(Array.isArray(c.activityTypes)) f.activityTypes=c.activityTypes.map(String).slice(0,20);
-  if(Array.isArray(c.flowlines)) f.flowlines=c.flowlines.filter(function(x){ return x&&x.id; }).map(function(x){ return { id:String(x.id).toUpperCase(), name:String(x.name||x.id), lengthM:cycNumOrNull(x.lengthM), type:String(x.type||cycTypeFor(x.id)) }; });
+  var f=cycFresh(); if(!c||typeof c!=="object"||Array.isArray(c)) return f;
+  function bnd(v,lo,hi){ return cycNumStrict(v,lo,hi); }
+  if(Array.isArray(c.templates) && c.templates.length){ f.templates=c.templates.filter(function(t){ return t&&typeof t.id==="string"&&/^[A-Za-z0-9\-]{1,40}$/.test(t.id)&&Array.isArray(t.stages); }).map(function(t){ return { id:t.id, name:cycStr(t.name,80)||t.id, activity:cycStr(t.activity,40)||"Other", status:(t.status==="active"||t.status==="draft")?t.status:"draft", stages:t.stages.filter(function(s){ return s&&/^[a-z0-9]{1,16}$/.test(String(s.k)); }).slice(0,20).map(function(s){ return {k:String(s.k), n:cycStr(s.n,60)||s.k, s:cycStr(s.s,16)||s.k, required:s.required!==false}; }), bounds:{stageMaxMin:bnd(t.bounds&&t.bounds.stageMaxMin,1,20160)||10080, cycleMaxMin:bnd(t.bounds&&t.bounds.cycleMaxMin,1,40320)||20160, lengthMaxM:bnd(t.bounds&&t.bounds.lengthMaxM,1,200000)||50000, weightMaxTe:bnd(t.bounds&&t.bounds.weightMaxTe,1,10000)||2000} }; }); if(!f.templates.length) f.templates=JSON.parse(JSON.stringify(CYC_TEMPLATES_DEFAULT)); }
+  var tids={}; f.templates.forEach(function(t){ tids[t.id]=1; });
+  if(Array.isArray(c.flowlines)) f.flowlines=c.flowlines.filter(function(x){ return x&&cycFlowIdOk(String(x.id||"").toUpperCase()); }).map(function(x){ var id=String(x.id).toUpperCase().replace(/\s+/g,""); var tpl=(typeof x.templateId==="string"&&tids[x.templateId])?x.templateId:cycTemplateForActivity(cycStr(x.type,40)||cycTypeFor(id)); return { id:id, name:cycStr(x.name,120)||id, lengthM:bnd(x.lengthM,0,200000), templateId:tpl, product:cycStr(x.product,120), nominalIn:bnd(x.nominalIn,0,100), lengthApproved:!!x.lengthApproved }; });
   var KEYS={}; CYC_STEPS.forEach(function(st){ KEYS[st.k]=1; }); KEYS.transfer=1; KEYS.other=1; KEYS.offload=1;
-  function bnd(v,lo,hi){ var n=cycNumOrNull(v); return (n==null||n<lo||n>hi)?null:n; }
-  if(Array.isArray(c.reels)) f.reels=c.reels.filter(function(r){ return r&&r.id; }).map(function(r,i){ var ov={}; if(r.override&&typeof r.override==="object"){ for(var k in r.override){ if(KEYS[k] && bnd(r.override[k],0,10080)!=null) ov[k]=Math.round(+r.override[k]); } } return {
-    uid:(typeof r.uid==="string"&&r.uid.length<40)?r.uid:cycUid(), id:String(r.id).toUpperCase().slice(0,12), seq:cycNumOrNull(r.seq)!=null?+r.seq:i+1, occurrence:cycNumOrNull(r.occurrence)!=null?+r.occurrence:1,
-    flowline:r.flowline?String(r.flowline).toUpperCase().slice(0,12):null, dateStart:r.dateStart?String(r.dateStart).slice(0,10):null,
-    trip:bnd(r.trip,0,999), hlvTp:bnd(r.hlvTp,0,999),
-    steps:Array.isArray(r.steps)?r.steps.filter(function(st){ return st&&bnd(st.min,0,10080)!=null; }).map(function(st){ return { k:KEYS[st.k]?String(st.k):"other", name:String(st.name||"").slice(0,120), start:bnd(st.start,0,1440), end:bnd(st.end,0,1440), min:Math.round(+st.min), note:String(st.note||"").slice(0,200), date:st.date?String(st.date).slice(0,10):null, row:cycNumOrNull(st.row) }; }):[],
-    cycleMin:bnd(r.cycleMin,0,20160), weightTe:bnd(r.weightTe,0,2000), lengthM:bnd(r.lengthM,0,50000),
-    notes:Array.isArray(r.notes)?r.notes.map(String).slice(0,20):[], override:ov, started:!!r.started, src:(r.src&&typeof r.src==="object")?{sheet:String(r.src.sheet||""),row:cycNumOrNull(r.src.row),file:String(r.src.file||"")}:null,
-    status:(r.status==="complete"||r.status==="in-progress"||r.status==="planned")?r.status:"in-progress" }; }).sort(function(a,b){ return a.seq-b.seq; });
+  if(Array.isArray(c.reels)) f.reels=c.reels.filter(function(r){ return r&&cycIdOk(String(r.id||"").toUpperCase()); }).map(function(r,i){ var ov={}; if(r.override&&typeof r.override==="object"&&!Array.isArray(r.override)){ for(var k in r.override){ if(KEYS[k] && bnd(r.override[k],0,10080)!=null) ov[k]=Math.round(+r.override[k]); } }
+    var fid=r.flowlineId||r.flowline; fid=fid?String(fid).toUpperCase().replace(/\s+/g,""):null; if(fid && !cycFlowIdOk(fid)) fid=null;
+    var src=(r.src&&typeof r.src==="object"&&!Array.isArray(r.src))?{sheet:cycStr(r.src.sheet,20),row:bnd(r.src.row,0,1000000),file:cycStr(r.src.file,200),hash:/^[a-f0-9;]{0,520}$/.test(String(r.src.hash||""))?String(r.src.hash||""):""}:null;
+    return { cycleId:(typeof r.cycleId==="string"&&/^[a-z0-9]{1,24}$/.test(r.cycleId))?r.cycleId:((typeof r.uid==="string"&&/^[a-z0-9]{1,24}$/.test(r.uid))?r.uid:cycUid()), id:String(r.id).toUpperCase().slice(0,12), occurrence:bnd(r.occurrence,1,999)||1, seq:bnd(r.seq,0,100000)!=null?+r.seq:i+1, cohortSeq:bnd(r.cohortSeq,1,100000), campaignSeq:bnd(r.campaignSeq,1,100000), flowlineId:fid, tripId:(typeof r.tripId==="string"&&/^[a-z0-9]{1,24}$/.test(r.tripId))?r.tripId:null, dateStart:cycDate(r.dateStart), trip:bnd(r.trip,0,999), hlvTp:bnd(r.hlvTp,0,999),
+      steps:Array.isArray(r.steps)?r.steps.filter(function(st){ return st&&!Array.isArray(st)&&typeof st==="object"&&bnd(st.min,0,10080)!=null; }).slice(0,60).map(function(st){ return { k:KEYS[st.k]?String(st.k):"other", name:cycStr(st.name,120), start:bnd(st.start,0,1440), end:bnd(st.end,0,1440), min:Math.round(+st.min), note:cycStr(st.note,200), date:cycDate(st.date), row:bnd(st.row,0,1000000) }; }):[],
+      override:ov, cycleMin:bnd(r.cycleMin,0,20160), weightTe:bnd(r.weightTe,0,2000), lengthM:bnd(r.lengthM,0,50000), notes:Array.isArray(r.notes)?r.notes.map(function(x){ return cycStr(x,200); }).filter(Boolean).slice(0,20):[], src:src, started:!!r.started, included:r.included!==false, excludeReason:cycStr(r.excludeReason,120), deleted:!!r.deleted, deletedAt:cycStr(r.deletedAt,30), acceptedAt:cycStr(r.acceptedAt,30), status:"planned" }; }).sort(function(a,b){ return a.seq-b.seq; });
   f.reels.forEach(function(r){ r.status=cycStatusOf(r); });
-  f.settings={ normTrigger:bnd(c.settings&&c.settings.normTrigger,0,100)!=null?+c.settings.normTrigger:0.2, taxonomy:"SURF-RECOVERY-v1" };
-  if(Array.isArray(c.trips)) f.trips=c.trips.slice(0,500);
-  if(Array.isArray(c.readings)) f.readings=c.readings.slice(0,500);
-  if(Array.isArray(c.importLog)) f.importLog=c.importLog.slice(-50);
+  cycAssignSequences(f);
+  if(Array.isArray(c.trips)) f.trips=c.trips.filter(function(t){ return t&&typeof t==="object"&&!Array.isArray(t)&&/^[A-Z]\d{1,2}$/.test(String(t.reel||"").toUpperCase()); }).slice(0,2000).map(function(t){ return { tripId:(typeof t.tripId==="string"&&/^[a-z0-9]{1,24}$/.test(t.tripId))?t.tripId:cycUid(), cycleId:(typeof t.cycleId==="string"&&/^[a-z0-9]{1,24}$/.test(t.cycleId))?t.cycleId:null, reel:String(t.reel).toUpperCase(), occurrence:bnd(t.occurrence,1,999)||1, date:cycDate(t.date), trip:bnd(t.trip,0,999), hlvTp:bnd(t.hlvTp,0,999), weightTe:bnd(t.weightTe,0,2000), durationMin:bnd(t.durationMin,0,40320), lengthM:bnd(t.lengthM,0,50000), flowlineId:(t.flowlineId||t.flowline)&&cycFlowIdOk(String(t.flowlineId||t.flowline).toUpperCase())?String(t.flowlineId||t.flowline).toUpperCase():null, flowText:cycStr(t.flowText,60), src:(t.src&&typeof t.src==="object")?{sheet:cycStr(t.src.sheet,20),row:bnd(t.src.row,0,1000000)}:null }; });
+  if(Array.isArray(c.readings)) f.readings=c.readings.filter(function(x){ return x&&typeof x==="object"&&!Array.isArray(x)&&/^[A-Z]\d{1,2}$/.test(String(x.reel||"").toUpperCase())&&Array.isArray(x.readings); }).slice(0,2000).map(function(x){ return { readingId:(typeof x.readingId==="string"&&/^[a-z0-9]{1,24}$/.test(x.readingId))?x.readingId:cycUid(), cycleId:(typeof x.cycleId==="string"&&/^[a-z0-9]{1,24}$/.test(x.cycleId))?x.cycleId:null, reel:String(x.reel).toUpperCase(), occurrence:bnd(x.occurrence,1,999)||1, location:cycStr(x.location,60), readings:x.readings.map(function(v){ return bnd(v,0,1000); }).filter(function(v){ return v!=null; }).slice(0,8), recoveredM:bnd(x.recoveredM,0,50000), src:(x.src&&typeof x.src==="object")?{sheet:cycStr(x.src.sheet,20),row:bnd(x.src.row,0,1000000)}:null }; });
+  if(Array.isArray(c.importLog)) f.importLog=c.importLog.filter(function(l){ return l&&typeof l==="object"; }).slice(-60).map(function(l){ return { at:cycStr(l.at,30), file:cycStr(l.file,300), hash:/^[a-f0-9;]{0,520}$/.test(String(l.hash||""))?String(l.hash||""):"", size:bnd(l.size,0,1e10), sheets:Array.isArray(l.sheets)?l.sheets.map(function(s){ return cycStr(s,40); }).slice(0,20):[], added:bnd(l.added,0,1e6)||0, updated:bnd(l.updated,0,1e6)||0, unchanged:bnd(l.unchanged,0,1e6)||0, issues:bnd(l.issues,0,1e6)||0, decisions:Array.isArray(l.decisions)?l.decisions.map(function(d){ return cycStr(d,200); }).slice(0,50):[], reviewer:cycStr(l.reviewer,40), action:cycStr(l.action,200) }; });
+  var sp=(c.settings&&typeof c.settings==="object")?c.settings:{}; var np=(sp.normPolicy&&typeof sp.normPolicy==="object")?sp.normPolicy:{};
+  f.settings.normPolicy={ id:cycStr(np.id,40)||"NORM-TRIGGER-v1", measurement:cycStr(np.measurement,80)||f.settings.normPolicy.measurement, value:bnd(np.value,0,1000)!=null?+np.value:(bnd(sp.normTrigger,0,1000)!=null?+sp.normTrigger:0.2), unit:cycStr(np.unit,16)||"Bq/cm2", operator:([">",">=","<","<="].indexOf(np.operator)>=0)?np.operator:">", effectiveFrom:cycDate(np.effectiveFrom)||"2026-08-31", approvedBy:cycStr(np.approvedBy,40), note:cycStr(np.note,120) };
+  var stp=(sp.statsPolicy&&typeof sp.statsPolicy==="object")?sp.statsPolicy:{}; f.settings.statsPolicy={ minFit:bnd(stp.minFit,2,20)||3, minPlanning:bnd(stp.minPlanning,3,50)||5 };
+  f.settings.clientView=!!sp.clientView; f.revision=bnd(c.revision,0,1e9)||0;
   return f;
 }
+/* immutable sequences: campaign order by first assignment, cohort order within flowline and template */
+function cycAssignSequences(doc){
+  var d=doc||CYC; var reels=(d.reels||[]).slice().sort(function(a,b){ return (a.seq||0)-(b.seq||0); });
+  var maxCamp=0; reels.forEach(function(r){ if(r.campaignSeq>maxCamp) maxCamp=r.campaignSeq; });
+  reels.forEach(function(r){ if(!r.campaignSeq){ maxCamp++; r.campaignSeq=maxCamp; } });
+  var cohorts={}; reels.forEach(function(r){ var key=(r.flowlineId||"?")+"|"; if(r.cohortSeq){ cohorts[key]=Math.max(cohorts[key]||0, r.cohortSeq); } });
+  reels.sort(function(a,b){ return a.campaignSeq-b.campaignSeq; }).forEach(function(r){ var key=(r.flowlineId||"?")+"|"; if(!r.cohortSeq){ cohorts[key]=(cohorts[key]||0)+1; r.cohortSeq=cohorts[key]; } });
+}
+function cycBump(){ CYC.revision=(CYC.revision||0)+1; }
+/* analysis selection and frozen snapshot: every export and report is scoped by this */
+var CYC_UI={ flow:"", step:"cycle", midRule:"mean", open:{}, view:"overview", seqFrom:null, seqTo:null, includeExcluded:false };
+function cycSel(){ var rs=(CYC.reels||[]).filter(function(r){ return !r.deleted; }).sort(function(a,b){ return (a.campaignSeq||a.seq||0)-(b.campaignSeq||b.seq||0); }); if(CYC_UI.flow) rs=rs.filter(function(r){ return r.flowlineId===CYC_UI.flow; }); if(CYC_UI.seqFrom) rs=rs.filter(function(r){ return (r.cohortSeq||0)>=CYC_UI.seqFrom; }); if(CYC_UI.seqTo) rs=rs.filter(function(r){ return (r.cohortSeq||0)<=CYC_UI.seqTo; }); if(!CYC_UI.includeExcluded) rs=rs.filter(function(r){ return r.included!==false; }); return rs; }
+function cycFlows(){ var f=[]; (CYC.reels||[]).forEach(function(r){ if(!r.deleted && r.flowlineId && f.indexOf(r.flowlineId)<0) f.push(r.flowlineId); }); return f; }
+function cycSnapshot(){ var sel=cycSel(); var ids=sel.map(function(r){ return r.cycleId; }); var excl=(CYC.reels||[]).filter(function(r){ return !r.deleted && ids.indexOf(r.cycleId)<0; }).map(function(r){ return r.cycleId; }); var flows=CYC_UI.flow?[CYC_UI.flow]:cycFlows(); return { projectRevision:CYC.revision||0, generatedAt:new Date().toISOString(), build:APP_BUILD, project:curProject(), scope:CYC_UI.flow?CYC_UI.flow:"all flowlines", flowlines:flows, templates:flows.map(function(f){ var fl=cycFlow(f); return (fl&&fl.templateId)||"SURF-RECOVERY-v1"; }).filter(function(v,i,a){ return a.indexOf(v)===i; }), cohortSequenceRange:[CYC_UI.seqFrom||null, CYC_UI.seqTo||null], includedCycleIds:ids, excludedCycleIds:excl, midlineConvention:CYC_UI.midRule, normPolicy:JSON.parse(JSON.stringify(CYC.settings.normPolicy)), statsPolicy:JSON.parse(JSON.stringify(CYC.settings.statsPolicy)) }; }
+function cycScopeTag(){ return (CYC_UI.flow||"all")+(CYC_UI.seqFrom||CYC_UI.seqTo?" seq"+(CYC_UI.seqFrom||1)+"-"+(CYC_UI.seqTo||"end"):""); }
 </script>
 <script>
-/* ===== Recovery Cycles module, v2 presentation ===== */
-var CYC_UI={ flow:"", step:"cycle", midRule:"mean", open:{} };
+/* ===== Recovery Cycles workspace v3 ===== */
 var CYC_STEPCOL=["#E87722","#F0A26B","#F6C9A8","#1A1A1A","#4a4a4a","#8C8C8C","#BDBDBD","#D9D2C5"];
-function cycStepName(k){ var st=CYC_STEPS.filter(function(s){ return s.k===k; })[0]; return st?st.n:k; }
-function cycFlowName(id){ var f=(CYC.flowlines||[]).filter(function(x){ return x.id===id; })[0]; return f&&f.name&&f.name!==id?(id+" · "+f.name):id; }
+var CYC_VIEWS=[["overview","Overview"],["learning","Learning"],["stages","Stage comparison"],["productivity","Productivity"],["progress","Progress & NORM"],["quality","Data quality"],["register","Register"],["import","Import & settings"]];
 function cycH(m){ return cycMinFmt(m); }
 function cycPct(a,b){ if(!b) return null; return Math.round((a-b)/b*100); }
-function cycSel(){ var rs=(CYC.reels||[]).slice().sort(function(a,b){ return a.seq-b.seq; }); if(CYC_UI.flow) rs=rs.filter(function(r){ return r.flowline===CYC_UI.flow; }); return rs; }
-function cycFlows(){ var f=[]; (CYC.reels||[]).forEach(function(r){ if(r.flowline && f.indexOf(r.flowline)<0) f.push(r.flowline); }); return f; }
+function cycFlowName(id){ var f=cycFlow(id); return f&&f.name&&f.name!==id?(id+" · "+f.name):String(id||""); }
+function cycReelLabel(r){ var dup=(CYC.reels||[]).filter(function(x){ return !x.deleted && x.id===r.id; }).length>1; return r.id+(dup&&r.trip!=null?" (trip "+r.trip+")":dup?" (#"+r.occurrence+")":""); }
+function cycClient(){ return !!(CYC.settings&&CYC.settings.clientView); }
+function cycFmtNum(v){ return v==null?"–":Number(v).toLocaleString(); }
 
-/* line chart: points by reel ID, optional mean line and best marker, shared max */
+/* chart primitives: every string escaped, tooltips on points, no external libraries */
 function cycLine(o){
-  var pts=o.pts||[]; if(!pts.length) return '<div class="dim" style="padding:12px">No complete reels yet.</div>';
-  var W=o.width||560, H=o.height||230, PL=54, PR=30, PT=34, PB=44, cH=H-PT-PB, cW=W-PL-PR;
-  var maxV=o.max||Math.max.apply(null,pts.map(function(p){ return p.v; }))*1.15||1;
-  var inner=18; var step=pts.length>1?(cW-2*inner)/(pts.length-1):0, x0=pts.length>1?PL+inner:PL+cW/2;
+  var pts=o.pts||[]; if(!pts.length) return '<div class="dim" style="padding:12px">No included complete reels yet.</div>';
+  var W=o.width||560, H=o.height||236, PL=54, PR=56, PT=36, PB=46, cH=H-PT-PB, cW=W-PL-PR;
+  var maxV=o.max||Math.max.apply(null,pts.map(function(p){ return p.v; }))*1.15||1; var inner=18; var step=pts.length>1?(cW-2*inner)/(pts.length-1):0, x0=pts.length>1?PL+inner:PL+cW/2;
   var s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;max-width:'+W*1.6+'px" role="img" aria-label="'+esc(o.title||"")+'">';
-  s+='<text x="'+PL+'" y="16" font-size="12" font-weight="700" fill="#1A1A1A">'+esc(o.title||"")+'</text>';
-  if(o.sub) s+='<text x="'+PL+'" y="29" font-size="10" fill="#8C8C8C">'+esc(o.sub)+'</text>';
-  for(var g=0; g<=4; g++){ var gy=PT+cH*(1-g/4); s+='<line x1="'+PL+'" x2="'+(W-PR)+'" y1="'+gy+'" y2="'+gy+'" stroke="#e6e1d6"/><text x="'+(PL-6)+'" y="'+(gy+3)+'" font-size="9" text-anchor="end" fill="#8C8C8C">'+(o.fmt?o.fmt(maxV*g/4):Math.round(maxV*g/4))+'</text>'; }
-  if(o.mean!=null){ var my=PT+cH*(1-o.mean/maxV); s+='<line x1="'+PL+'" x2="'+(W-PR)+'" y1="'+my+'" y2="'+my+'" stroke="#8C8C8C" stroke-dasharray="5 4"/><text x="'+(W-PR)+'" y="'+(my+12)+'" font-size="9" text-anchor="end" fill="#8C8C8C">mean '+(o.fmt?o.fmt(o.mean):o.mean)+'</text>'; }
-  var poly=[]; pts.forEach(function(p,i){ poly.push((x0+i*step)+","+(PT+cH*(1-p.v/maxV))); });
-  s+='<polyline points="'+poly.join(" ")+'" fill="none" stroke="#E87722" stroke-width="2.5" stroke-linejoin="round"/>';
-  pts.forEach(function(p,i){ var px=x0+i*step, py=PT+cH*(1-p.v/maxV), best=(o.bestIdx===i);
-    s+='<circle cx="'+px+'" cy="'+py+'" r="'+(best?5.5:3.6)+'" fill="'+(best?"#2f7d4a":"#E87722")+'"><title>'+esc(p.l+" "+(o.fmt?o.fmt(p.v):p.v)+(p.d?" · "+p.d:""))+'</title></circle>';
-    s+='<text x="'+px+'" y="'+(py-9)+'" font-size="9.5" font-weight="700" text-anchor="middle" fill="#1A1A1A">'+(o.fmt?o.fmt(p.v):p.v)+'</text>';
-    s+='<text x="'+px+'" y="'+(H-PB+15)+'" font-size="10" font-weight="700" text-anchor="middle" fill="#1A1A1A">'+esc(p.l)+'</text>';
-    if(p.d) s+='<text x="'+px+'" y="'+(H-PB+27)+'" font-size="8.5" text-anchor="middle" fill="#8C8C8C">'+esc(p.d)+'</text>';
-  });
+  s+='<text x="'+PL+'" y="16" font-size="12" font-weight="700" fill="#1A1A1A">'+esc(o.title||"")+'</text>'; if(o.sub) s+='<text x="'+PL+'" y="29" font-size="9.5" fill="#8C8C8C">'+esc(o.sub)+'</text>';
+  for(var g=0; g<=4; g++){ var gy=PT+cH*(1-g/4); s+='<line x1="'+PL+'" x2="'+(W-PR)+'" y1="'+gy+'" y2="'+gy+'" stroke="#e6e1d6"/><text x="'+(PL-6)+'" y="'+(gy+3)+'" font-size="9" text-anchor="end" fill="#8C8C8C">'+esc(o.fmt?o.fmt(maxV*g/4):String(Math.round(maxV*g/4)))+'</text>'; }
+  if(o.mean!=null){ var my=PT+cH*(1-o.mean/maxV); s+='<line x1="'+PL+'" x2="'+(W-PR)+'" y1="'+my+'" y2="'+my+'" stroke="#8C8C8C" stroke-dasharray="5 4"/><text x="'+(PL+4)+'" y="'+(my+12)+'" font-size="9" text-anchor="start" fill="#8C8C8C">mean '+esc(o.fmt?o.fmt(o.mean):String(o.mean))+'</text>'; }
+  var poly=[]; pts.forEach(function(p,i){ poly.push((x0+i*step)+","+(PT+cH*(1-p.v/maxV))); }); s+='<polyline points="'+poly.join(" ")+'" fill="none" stroke="#E87722" stroke-width="2.5" stroke-linejoin="round"/>';
   if(o.fit && o.fit.ok){ var fp=[]; for(var fi=0; fi<pts.length; fi++){ fp.push((x0+fi*step)+","+(PT+cH*(1-Math.min(maxV,o.fit.predict(fi+1))/maxV))); } s+='<polyline points="'+fp.join(" ")+'" fill="none" stroke="#1A1A1A" stroke-width="1.4" stroke-dasharray="3 3" opacity="0.7"/>'; s+='<text x="'+PL+'" y="'+(H-6)+'" font-size="9" fill="#4a4a4a">fitted curve, learning rate '+Math.round(o.fit.learningRate*100)+'% (R² '+o.fit.r2.toFixed(2)+', n='+o.fit.n+')</text>'; }
+  pts.forEach(function(p,i){ var px=x0+i*step, py=PT+cH*(1-p.v/maxV), best=(o.bestIdx===i); s+='<circle cx="'+px+'" cy="'+py+'" r="'+(best?5.5:3.6)+'" fill="'+(best?"#2f7d4a":"#E87722")+'"><title>'+esc(p.l+" "+(o.fmt?o.fmt(p.v):String(p.v))+(p.d?" · "+p.d:""))+'</title></circle>'; s+='<text x="'+px+'" y="'+(py-9)+'" font-size="9.5" font-weight="700" text-anchor="middle" fill="#1A1A1A">'+esc(o.fmt?o.fmt(p.v):String(p.v))+'</text>'; s+='<text x="'+px+'" y="'+(H-PB+15)+'" font-size="10" font-weight="700" text-anchor="middle" fill="#1A1A1A">'+esc(p.l)+'</text>'; if(p.d) s+='<text x="'+px+'" y="'+(H-PB+27)+'" font-size="8.5" text-anchor="middle" fill="#8C8C8C">'+esc(p.d)+'</text>'; });
   if(o.bestIdx!=null) s+='<text x="'+(W-PR)+'" y="'+(H-6)+'" font-size="9" text-anchor="end" fill="#2f7d4a">● best</text>';
   return s+'</svg>';
 }
-/* stacked bars: one bar per reel, segments = steps in order */
 function cycStack(reels, midRule){
-  var rs=reels.filter(function(r){ return r.status==="complete"; });
-  if(!rs.length) return '<div class="dim" style="padding:12px">No complete reels yet.</div>';
-  var data=rs.map(function(r){ var d=cycDerive(r,midRule); return {r:r, d:d, total:d.sumSteps}; });
-  var maxV=Math.max.apply(null,data.map(function(x){ return x.total; }))*1.12;
-  var W=Math.max(620, 120+rs.length*84), H=280, PL=54, PR=20, PT=30, PB=50, cH=H-PT-PB, slot=(W-PL-PR)/rs.length, bw=Math.min(54,slot*0.62);
+  var rs=reels.filter(function(r){ return r.status==="complete"; }); if(!rs.length) return '<div class="dim" style="padding:12px">No included complete reels yet.</div>';
+  var data=rs.map(function(r){ var d=cycDerive(r,midRule); return {r:r, d:d, total:d.sumSteps}; }); var maxV=Math.max.apply(null,data.map(function(x){ return x.total; }))*1.12;
+  var W=Math.max(620, 120+rs.length*84), H=290, PL=54, PR=20, PT=30, PB=60, cH=H-PT-PB, slot=(W-PL-PR)/rs.length, bw=Math.min(54,slot*0.62);
   var s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;max-width:'+(W*1.5)+'px">';
   for(var g=0; g<=4; g++){ var gy=PT+cH*(1-g/4); s+='<line x1="'+PL+'" x2="'+(W-PR)+'" y1="'+gy+'" y2="'+gy+'" stroke="#e6e1d6"/><text x="'+(PL-6)+'" y="'+(gy+3)+'" font-size="9" text-anchor="end" fill="#8C8C8C">'+cycH(maxV*g/4)+'</text>'; }
-  data.forEach(function(x,i){ var cx=PL+slot*i+slot/2, y=PT+cH;
-    CYC_STEPS.forEach(function(st,si){ var v=x.d.stepMin[st.k]||0; if(!v) return; var h=cH*(v/maxV); y-=h;
-      s+='<rect x="'+(cx-bw/2)+'" y="'+y+'" width="'+bw+'" height="'+h+'" fill="'+CYC_STEPCOL[si]+'"><title>'+esc(x.r.id+" · "+st.n+" · "+cycH(v))+'</title></rect>';
-      if(h>13) s+='<text x="'+cx+'" y="'+(y+h/2+3.5)+'" font-size="8.5" text-anchor="middle" fill="'+((si<=2||si>=6)?"#1A1A1A":"#fff")+'">'+cycH(v)+'</text>'; });
-    s+='<text x="'+cx+'" y="'+(y-5)+'" font-size="10" font-weight="700" text-anchor="middle" fill="#1A1A1A">'+cycH(x.total)+'</text>';
-    s+='<text x="'+cx+'" y="'+(H-PB+15)+'" font-size="10.5" font-weight="700" text-anchor="middle" fill="#1A1A1A">'+esc(x.r.id)+'</text>';
-    s+='<text x="'+cx+'" y="'+(H-PB+27)+'" font-size="8.5" text-anchor="middle" fill="#8C8C8C">'+esc((x.r.flowline||"")+(x.r.dateStart?" · "+x.r.dateStart.slice(5):""))+'</text>';
-  });
-  s+='</svg>';
-  s+='<div class="cyc-legend">'+CYC_STEPS.map(function(st,i){ return '<span><i style="background:'+CYC_STEPCOL[i]+'"></i>'+esc(st.n)+'</span>'; }).join("")+'</div>';
-  return s;
+  data.forEach(function(x,i){ var cx=PL+slot*i+slot/2, y=PT+cH; CYC_STEPS.forEach(function(st,si){ var v=x.d.stepMin[st.k]||0; if(!v) return; var h=cH*(v/maxV); y-=h; s+='<rect x="'+(cx-bw/2)+'" y="'+y+'" width="'+bw+'" height="'+h+'" fill="'+CYC_STEPCOL[si]+'"><title>'+esc(x.r.id+" · "+st.n+" · "+cycH(v))+'</title></rect>'; if(h>13) s+='<text x="'+cx+'" y="'+(y+h/2+3.5)+'" font-size="8.5" text-anchor="middle" fill="'+((si<=2||si>=6)?"#1A1A1A":"#fff")+'">'+cycH(v)+'</text>'; });
+    s+='<text x="'+cx+'" y="'+(y-5)+'" font-size="10" font-weight="700" text-anchor="middle" fill="#1A1A1A">'+cycH(x.total)+'</text><text x="'+cx+'" y="'+(H-PB+15)+'" font-size="10.5" font-weight="700" text-anchor="middle" fill="#1A1A1A">'+esc(cycReelLabel(x.r))+'</text><text x="'+cx+'" y="'+(H-PB+27)+'" font-size="8.5" text-anchor="middle" fill="#8C8C8C">'+esc((x.r.flowlineId||"")+(x.r.dateStart?" · "+x.r.dateStart.slice(5):""))+'</text>'; });
+  return s+'</svg><div class="cyc-legend">'+CYC_STEPS.map(function(st,i){ return '<span><i style="background:'+CYC_STEPCOL[i]+'"></i>'+esc(st.n)+'</span>'; }).join("")+'</div>';
 }
-
 function cycGrouped(groups, o){
-  var labels=CYC_STEPS.map(function(st){ return st.s; });
   var maxV=1; groups.forEach(function(g){ CYC_STEPS.forEach(function(st){ var v=g.vals[st.k]||0; if(v>maxV) maxV=v; }); }); maxV*=1.15;
-  var W=Math.max(640, 90+labels.length*(groups.length*24+22)), H=250, PL=54, PR=16, PT=30, PB=48, cH=H-PT-PB, slot=(W-PL-PR)/labels.length, bw=Math.min(24,(slot-14)/groups.length);
-  var COL=["#E87722","#1A1A1A","#8C8C8C","#F0A26B"];
-  var s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;max-width:'+(W*1.5)+'px">';
-  s+='<text x="'+PL+'" y="16" font-size="12" font-weight="700" fill="#1A1A1A">'+esc(o.title||"")+'</text>';
+  var W=Math.max(680, 90+CYC_STEPS.length*(groups.length*24+26)), H=270, PL=54, PR=16, PT=30, PB=66, cH=H-PT-PB, slot=(W-PL-PR)/CYC_STEPS.length, bw=Math.min(24,(slot-14)/groups.length); var COL=["#E87722","#1A1A1A","#8C8C8C","#F0A26B"];
+  var s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;max-width:'+(W*1.5)+'px"><text x="'+PL+'" y="16" font-size="12" font-weight="700" fill="#1A1A1A">'+esc(o.title||"")+'</text>';
   for(var g=0; g<=4; g++){ var gy=PT+cH*(1-g/4); s+='<line x1="'+PL+'" x2="'+(W-PR)+'" y1="'+gy+'" y2="'+gy+'" stroke="#e6e1d6"/><text x="'+(PL-6)+'" y="'+(gy+3)+'" font-size="9" text-anchor="end" fill="#8C8C8C">'+cycH(maxV*g/4)+'</text>'; }
-  CYC_STEPS.forEach(function(st,i){ var cx=PL+slot*i+slot/2; s+='<text x="'+cx+'" y="'+(H-PB+15)+'" font-size="9.5" text-anchor="middle" fill="#1A1A1A">'+esc(st.s)+'</text>';
+  CYC_STEPS.forEach(function(st,i){ var cx=PL+slot*i+slot/2; var parts=st.n.split(" "); var l1=parts.slice(0,Math.ceil(parts.length/2)).join(" "), l2=parts.slice(Math.ceil(parts.length/2)).join(" "); s+='<text x="'+cx+'" y="'+(H-PB+15)+'" font-size="9" text-anchor="middle" fill="#1A1A1A">'+esc(l1)+'</text><text x="'+cx+'" y="'+(H-PB+27)+'" font-size="9" text-anchor="middle" fill="#1A1A1A">'+esc(l2)+'</text>';
     groups.forEach(function(gp,gi){ var v=gp.vals[st.k]; if(v==null) return; var h=cH*(v/maxV), x=cx-(bw*groups.length)/2+gi*bw, y=PT+cH-h; s+='<rect x="'+x+'" y="'+y+'" width="'+(bw-2)+'" height="'+h+'" fill="'+COL[gi%4]+'"><title>'+esc(gp.label+" · "+st.n+" · "+cycH(v))+'</title></rect>'; if(groups.length<=2) s+='<text x="'+(x+(bw-2)/2)+'" y="'+(y-3)+'" font-size="8" text-anchor="middle" fill="#1A1A1A">'+cycH(v)+'</text>'; }); });
-  s+='</svg><div class="cyc-legend">'+groups.map(function(gp,gi){ return '<span><i style="background:'+COL[gi%4]+'"></i>'+esc(gp.label)+'</span>'; }).join("")+'</div>';
-  return s;
-}
-function cycRenderChips(){
-  var flows=cycFlows(); var el=document.getElementById("cycFlowChips");
-  if(!flows.length){ el.innerHTML=""; return; }
-  el.innerHTML='<span class="dim" style="font-size:12px;margin-right:4px">Show:</span>'+['<button class="cyc-chip'+(CYC_UI.flow===""?" on":"")+'" onclick="CYC_UI.flow=\'\';renderCyc()">All flowlines</button>'].concat(flows.map(function(f){ return '<button class="cyc-chip'+(CYC_UI.flow===f?" on":"")+'" onclick="CYC_UI.flow=\''+esc(f)+'\';renderCyc()" title="'+esc(cycFlowName(f))+'">'+esc(f)+'</button>'; })).join("");
+  return s+'</svg><div class="cyc-legend">'+groups.map(function(gp,gi){ return '<span><i style="background:'+COL[gi%4]+'"></i>'+esc(gp.label)+'</span>'; }).join("")+'</div>';
 }
 
+/* data quality register: drives the badge, the Data quality view, the report and the agent */
+function cycQuality(){
+  var items=[]; var pol=CYC.settings.normPolicy; var all=(CYC.reels||[]).filter(function(r){ return !r.deleted; });
+  all.forEach(function(r){ var d=cycDerive(r,"mean"); if(r.status!=="complete" && r.status!=="planned") items.push({cls:"warning", text:cycReelLabel(r)+" is incomplete: missing "+d.missing.join(", "), cycleId:r.cycleId}); if(r.included===false) items.push({cls:"note", text:cycReelLabel(r)+" is excluded from analysis"+(r.excludeReason?": "+r.excludeReason:""), cycleId:r.cycleId}); if(d.unallocated!=null && Math.abs(d.unallocated)>120) items.push({cls:"warning", text:cycReelLabel(r)+" has "+cycH(d.unallocated)+" of cycle time not allocated to a stage", cycleId:r.cycleId}); if(r.status==="complete" && r.lengthM==null) items.push({cls:"warning", text:cycReelLabel(r)+" has no recovered length, so it cannot count towards progress or throughput", cycleId:r.cycleId}); });
+  cycFlows().forEach(function(f){ var p=cycProgress(f); if(p.over) items.push({cls:"blocking", text:f+": accepted recovered length "+cycFmtNum(p.accepted)+" m exceeds the control length "+cycFmtNum(p.control)+" m by "+cycFmtNum(p.variance)+" m; reconcile the baseline before reporting progress", flowlineId:f}); var fl=cycFlow(f); if(fl && !fl.lengthM) items.push({cls:"warning", text:f+" has no control length, so progress cannot be stated", flowlineId:f}); var t=cycTemplate(fl&&fl.templateId); if(t.status==="draft") items.push({cls:"note", text:f+" uses the "+t.name+", which has no validated stage set yet"}); });
+  (CYC.readings||[]).forEach(function(rd){ var st=cycNormStatus(rd.readings,pol); if(st.above) items.push({cls:"warning", text:"NORM reading on "+rd.reel+" ("+rd.location+") is "+st.label+" ("+rd.readings.join(" / ")+" "+pol.unit+", policy "+pol.id+")", readingId:rd.readingId}); });
+  var counts={blocking:0,conflict:0,warning:0,note:0}; items.forEach(function(i){ counts[i.cls]=(counts[i.cls]||0)+1; });
+  return { items:items, counts:counts, level:counts.blocking?"blocking":counts.warning?"warning":"clean" };
+}
+
+/* view builders return HTML strings so the screen, the report and print share one source */
+function cycV_kpis(sel){
+  var complete=sel.filter(function(r){ return r.status==="complete"; }); var norms=cycNorms(sel,CYC_UI.midRule); var c=norms.cycle;
+  var lenW=0, minW=0, recW=0, wtW=0; complete.forEach(function(r){ var d=cycDerive(r,CYC_UI.midRule); if(r.lengthM!=null && r.cycleMin){ lenW+=r.lengthM; minW+=r.cycleMin; recW+=(d.stepAll.recovery||0); wtW+=(r.weightTe||0); } });
+  var thr=minW?Math.round(lenW/(minW/60)):null, act=recW?Math.round(lenW/(recW/60)):null;
+  var tile=function(k,v,sub,cls){ return '<div class="cyc-tile"><div class="k">'+esc(k)+'</div><div class="v'+(cls?" "+cls:"")+'">'+v+'</div>'+(sub?'<div class="s">'+sub+'</div>':'')+'</div>'; };
+  return '<div class="cyc-tiles">'+tile("Included reels", complete.length+' <span style="font-size:12px;color:#8C8C8C;font-weight:400">of '+sel.length+' selected</span>')+tile("Accepted length", lenW?cycFmtNum(Math.round(lenW))+" m":"–", wtW?wtW.toFixed(1)+" t":"")+tile("First cycle", c?cycH(c.first)+" h":"–", c?esc(c.firstId):"")+tile("Best cycle", c?cycH(c.best)+" h":"–", c?esc(c.series.filter(function(x){ return x.v===c.best; })[0].id):"", "good")+tile("Mean cycle", c?cycH(c.mean)+" h":"–", c?"across "+c.n+" included reels":"")+tile("Campaign throughput", thr!=null?thr+" m/h":"–", "length per full cycle hour")+tile("Active recovery rate", act!=null?act+" m/h":"–", "length per recovery-stage hour")+'</div>';
+}
+function cycV_interp(sel){
+  var flows=CYC_UI.flow?[CYC_UI.flow]:cycFlows(); var out='';
+  flows.forEach(function(f){ var rs=sel.filter(function(r){ return r.flowlineId===f && r.status==="complete" && r.cycleMin!=null; }).sort(function(a,b){ return a.cohortSeq-b.cohortSeq; }); if(!rs.length) return; var fit=cycFit(rs.map(function(r){ return r.cycleMin; })); var first=rs[0].cycleMin, last=rs[rs.length-1].cycleMin;
+    out+='<div class="cyc-note ink"><b>'+esc(f)+' · Observed result.</b> '+(rs.length>1?('Cycle time '+(last<first?'reduced':'did not reduce')+' from '+cycH(first)+' on '+esc(rs[0].id)+' to '+cycH(last)+' on '+esc(rs[rs.length-1].id)+' across '+rs.length+' included reels.'):('One included reel, '+cycH(first)+'.'))+' <b>Model.</b> '+(fit.ok?('A Wright-style log-log curve fitted to '+fit.n+' included reels gives an indicative '+Math.round(fit.improvementPerDoubling*100)+'% improvement per doubling (learning rate '+Math.round(fit.learningRate*100)+'%, R² '+fit.r2.toFixed(2)+').'):('No curve is fitted: '+esc(fit.reason)+'.'))+' <b>Limit.</b> '+(fit.ok?(fit.grade==="planning"?('Five or more reels: the estimate may inform planning discussions but is not a contractual duration. Next reel on this trend: '+cycH(Math.round(fit.next))+', indicative range '+cycH(Math.round(fit.nextLo))+' to '+cycH(Math.round(fit.nextHi))+'.'):(fit.n+' reels are not enough for a planning commitment. The next-reel figure on this trend, '+cycH(Math.round(fit.next))+' with an indicative range of '+cycH(Math.round(fit.nextLo))+' to '+cycH(Math.round(fit.nextHi))+', is an indication, not a schedule duration.')):('A learning curve needs at least '+CYC.settings.statsPolicy.minFit+' included reels on the same line and template.'))+'</div>'; });
+  return out;
+}
+function cycV_curves(sel, height){
+  var flows=CYC_UI.flow?[CYC_UI.flow]:cycFlows(); var maxCycle=0; sel.forEach(function(r){ if(r.status==="complete" && r.cycleMin>maxCycle) maxCycle=r.cycleMin; });
+  var html=flows.map(function(f){ var rs=sel.filter(function(r){ return r.flowlineId===f && r.status==="complete" && r.cycleMin!=null; }).sort(function(a,b){ return a.cohortSeq-b.cohortSeq; }); if(!rs.length) return ''; var n=cycNorms(rs,CYC_UI.midRule).cycle, bestIdx=-1; rs.forEach(function(r,i){ if(n && r.cycleMin===n.best && bestIdx<0) bestIdx=i; }); var fit=cycFit(rs.map(function(r){ return r.cycleMin; }));
+    var rows=rs.map(function(r,i){ var dlt=i?cycPct(r.cycleMin, rs[i-1].cycleMin):null; return '<tr><td><b>'+esc(cycReelLabel(r))+'</b> <span class="dim">#'+r.cohortSeq+'</span></td><td>'+esc(r.dateStart||"")+'</td><td class="n">'+cycH(r.cycleMin)+'</td><td class="n '+(dlt==null?"dim":dlt<0?"good":"bad")+'">'+(dlt==null?"first":(dlt>0?"+":"")+dlt+"%")+'</td><td class="n">'+(r.lengthM!=null?cycFmtNum(Math.round(r.lengthM))+" m":"")+'</td></tr>'; }).join("");
+    return '<div><div style="font-weight:700;font-size:13px">'+esc(cycFlowName(f))+' <span class="dim" style="font-weight:400">· '+esc(cycTemplate((cycFlow(f)||{}).templateId).name)+'</span></div>'+cycLine({ title:"Cycle time by reel, "+f, sub:"start to offload · grey dash mean · black dots fitted curve · green best", pts:rs.map(function(r){ return {l:cycReelLabel(r), v:r.cycleMin, d:r.dateStart?r.dateStart.slice(5):""}; }), mean:n?n.mean:null, bestIdx:bestIdx, max:maxCycle*1.15, fmt:cycH, fit:fit, height:height })+'<table class="cyc-t"><thead><tr><th>Reel</th><th>Start</th><th class="n">Cycle</th><th class="n">vs previous</th><th class="n">Length</th></tr></thead><tbody>'+rows+'</tbody></table></div>'; }).join("");
+  return html||'<div class="dim">No included complete reels in this selection.</div>';
+}
+function cycV_stepTrend(sel){
+  var flows=CYC_UI.flow?[CYC_UI.flow]:cycFlows(); var opts=CYC_STEPS.map(function(st){ return '<option value="'+st.k+'"'+(CYC_UI.step===st.k?" selected":"")+'>'+esc(st.n)+'</option>'; }).join("");
+  var body=CYC_UI.step==="cycle"?'<div class="dim" style="font-size:12.5px">Choose a stage; the cut and clamp stages usually show the steepest learning.</div>':'<div class="cyc-grid2">'+(flows.map(function(f){ var pts=[]; sel.filter(function(r){ return r.flowlineId===f && r.status==="complete"; }).sort(function(a,b){ return a.cohortSeq-b.cohortSeq; }).forEach(function(r){ var v=cycDerive(r,CYC_UI.midRule).stepMin[CYC_UI.step]; if(v!=null) pts.push({l:cycReelLabel(r), v:v, d:r.dateStart?r.dateStart.slice(5):""}); }); if(!pts.length) return ''; var vals=pts.map(function(p){ return p.v; }); var mean=Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length); return '<div>'+cycLine({ title:cycStepName(CYC_UI.step)+", "+f, sub:"minutes per reel", pts:pts, mean:mean, bestIdx:vals.indexOf(Math.min.apply(null,vals)), fmt:cycH, height:210 })+'</div>'; }).join("")||'<div class="dim">No data for that stage.</div>')+'</div>';
+  return '<p class="cyc-h">Learning by stage</p><p class="cyc-sub">Pick a stage to see how it alone is trending reel on reel. <select class="noprint" onchange="CYC_UI.step=this.value;renderCyc()" style="font-size:12px;padding:3px 6px">'+(CYC_UI.step==="cycle"?'<option value="cycle">choose a stage</option>':'')+opts+'</select></p>'+body;
+}
+function cycV_norms(sel){
+  var flows=CYC_UI.flow?[CYC_UI.flow]:cycFlows(); var mid=CYC_UI.midRule;
+  var tables=flows.map(function(f){ var rs=sel.filter(function(r){ return r.flowlineId===f; }); var n=cycNorms(rs,mid); var cnt=rs.filter(function(r){ return r.status==="complete"; }).length; if(!cnt) return '';
+    var rows=CYC_STEPS.concat([{k:"cycle",n:"Cycle total, start to offload"}]).map(function(st){ var v=n[st.k]; if(!v) return ''; var ch=v.change; return '<tr'+(st.k==="cycle"?' style="font-weight:700;background:#faf7f1"':'')+'><td>'+esc(st.n)+'</td><td class="n">'+cycH(v.first)+' <span class="dim">'+esc(v.firstId)+'</span></td><td class="n good">'+cycH(v.best)+'</td><td class="n"><b>'+cycH(v.mean)+'</b></td><td class="n">'+cycH(v.last)+' <span class="dim">'+esc(v.lastId)+'</span></td><td class="n '+(ch==null?"dim":ch<0?"good":ch>0?"bad":"dim")+'">'+(ch==null?"–":(ch>0?"+":"")+ch+"%")+'</td></tr>'; }).join("");
+    return '<div><div style="font-weight:700;font-size:13px">'+esc(cycFlowName(f))+' <span class="dim" style="font-weight:400">· '+cnt+' included reel'+(cnt>1?"s":"")+'</span></div><table class="cyc-t"><thead><tr><th>Stage</th><th class="n">First</th><th class="n">Best</th><th class="n">Mean of included reels</th><th class="n">Latest</th><th class="n">First → latest</th></tr></thead><tbody>'+rows+'</tbody></table></div>'; }).join("");
+  var groups=flows.map(function(f){ var n=cycNorms(sel.filter(function(r){ return r.flowlineId===f; }),mid); var vals={}; CYC_STEPS.forEach(function(st){ if(n[st.k]) vals[st.k]=n[st.k].mean; }); return {label:f+" mean", vals:vals}; }).filter(function(g){ return Object.keys(g.vals).length; });
+  return '<p class="cyc-h">Stage norms per flowline</p><p class="cyc-sub">Mean of included reels is a reference value for discussion, not a commitment; first and latest show the learning. Recovery segments are summed per reel; two midlines are shown as the mean per midline event'+(mid==="sum"?" (currently summed)":"")+'. <button class="noprint" style="font-size:11px;padding:2px 8px" onclick="CYC_UI.midRule=CYC_UI.midRule===\'mean\'?\'sum\':\'mean\';renderCyc()">switch to '+(mid==="mean"?"summed":"mean per event")+' midlines</button></p><div class="cyc-grid2">'+(tables||'<div class="dim">No included complete reels.</div>')+'</div>'+(groups.length?'<div style="margin-top:12px">'+cycGrouped(groups,{title:"Mean minutes per stage by flowline"})+'</div>':'');
+}
+function cycV_compare(sel){
+  var flows=cycFlows(); if(flows.length<2 || CYC_UI.flow) return '';
+  var A=flows[0], B=flows[1], na=cycNorms(sel.filter(function(r){ return r.flowlineId===A; }),CYC_UI.midRule), nb=cycNorms(sel.filter(function(r){ return r.flowlineId===B; }),CYC_UI.midRule); var nA=na.cycle?na.cycle.n:0, nB=nb.cycle?nb.cycle.n:0; var comp=cycComparable(A,B,nA,nB); var fa=cycFlow(A)||{}, fb=cycFlow(B)||{};
+  var lowerB=0, tot=0, rows=CYC_STEPS.concat([{k:"cycle",n:"Cycle total"}]).map(function(st){ var x=na[st.k], y=nb[st.k]; if(!x||!y) return ''; var d=cycPct(y.mean,x.mean); if(st.k!=="cycle"){ tot++; if(d<0) lowerB++; } var word=comp.comparable?(d<0?Math.abs(d)+"% faster":d>0?d+"% slower":"same"):(d<0?Math.abs(d)+"% lower observed mean":d>0?d+"% higher observed mean":"same observed mean"); return '<tr'+(st.k==="cycle"?' style="font-weight:700;background:#faf7f1"':'')+'><td>'+esc(st.n)+'</td><td class="n">'+cycH(x.mean)+' <span class="dim">('+x.n+')</span></td><td class="n">'+cycH(y.mean)+' <span class="dim">('+y.n+')</span></td><td class="n '+(comp.comparable?(d<0?"good":d>0?"bad":"dim"):"dim")+'">'+esc(word)+'</td></tr>'; }).join("");
+  return '<p class="cyc-h">Flowline comparison'+(comp.comparable?' (comparable cohorts)':' (observed, not controlled)')+'</p><p class="cyc-sub">'+esc(cycFlowName(A))+' against '+esc(cycFlowName(B))+', mean minutes per stage. '+esc(B)+' has a lower observed mean on '+lowerB+' of '+tot+' recorded stages.</p><div class="cyc-note '+(comp.comparable?"ink":"")+'"><b>'+(comp.comparable?'Comparable cohort.':'Not a controlled comparison.')+'</b> '+esc(comp.reasons.map(function(x){ return x.charAt(0).toUpperCase()+x.slice(1); }).join("; "))+'. Product '+esc(fa.name||A)+' vs '+esc(fb.name||B)+'; included reels '+nA+' vs '+nB+'.'+(comp.comparable?'':' Differences are observations about these reels, not conclusions about the lines.')+'</div><table class="cyc-t"><thead><tr><th>Stage</th><th class="n">'+esc(A)+'</th><th class="n">'+esc(B)+'</th><th class="n">Difference</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+function cycV_productivity(sel){
+  var rows=sel.filter(function(r){ return r.status==="complete"; }).map(function(r){ var d=cycDerive(r,CYC_UI.midRule); return '<tr><td><b>'+esc(cycReelLabel(r))+'</b></td><td>'+esc(r.flowlineId||"")+'</td><td class="n">'+cycH(r.cycleMin)+'</td><td class="n">'+cycH(d.stepAll.recovery||0)+'</td><td class="n">'+(r.lengthM!=null?cycFmtNum(Math.round(r.lengthM)):"–")+'</td><td class="n">'+(d.mPerHr!=null?d.mPerHr:"–")+'</td><td class="n">'+(d.activeRate!=null?d.activeRate:"–")+'</td><td class="n">'+(d.intensity!=null?d.intensity:"–")+'</td><td class="n">'+(r.weightTe!=null?r.weightTe:"–")+'</td><td class="n">'+(d.tePerHr!=null?d.tePerHr:"–")+'</td></tr>'; }).join("");
+  var flows=CYC_UI.flow?[CYC_UI.flow]:cycFlows(); var pg=flows.map(function(f){ var pts=[]; sel.filter(function(r){ return r.flowlineId===f && r.status==="complete"; }).sort(function(a,b){ return a.cohortSeq-b.cohortSeq; }).forEach(function(r){ var d=cycDerive(r,CYC_UI.midRule); if(d.activeRate!=null) pts.push({l:cycReelLabel(r), v:d.activeRate}); }); return pts.length?'<div>'+cycLine({title:"Active recovery rate by reel, "+f, sub:"metres per recovery-stage hour", pts:pts, height:210})+'</div>':''; }).join("");
+  return '<p class="cyc-h">Productivity</p><p class="cyc-sub">Two rates, deliberately separate: campaign throughput is metres per full cycle hour (everything included); active recovery rate is metres per hour inside the recovery stage only. Cycle intensity is minutes per 100 m recovered.</p><table class="cyc-t"><thead><tr><th>Reel</th><th>Line</th><th class="n">Cycle</th><th class="n">Recovery stage</th><th class="n">Length m</th><th class="n">Throughput m/h</th><th class="n">Active rate m/h</th><th class="n">Intensity min/100 m</th><th class="n">Weight t</th><th class="n">t per cycle h</th></tr></thead><tbody>'+(rows||'<tr><td colspan="10" class="dim">No included complete reels.</td></tr>')+'</tbody></table><div class="cyc-grid2" style="margin-top:12px">'+pg+'</div>';
+}
+function cycV_progress(){
+  var pol=CYC.settings.normPolicy; var flows=CYC_UI.flow?[CYC_UI.flow]:cycFlows();
+  var prog=flows.map(function(f){ var p=cycProgress(f); if(p.control==null && !p.accepted) return ''; var tot=Math.max(p.control||0, p.accepted+p.provisional+p.planned); var seg=function(v,c){ return tot?'<div style="width:'+(v/tot*100)+'%;background:'+c+'"></div>':''; };
+    return '<div><div style="display:flex;justify-content:space-between;font-size:12.5px"><b>'+esc(cycFlowName(f))+'</b><span>'+(p.control!=null?cycFmtNum(p.accepted)+' of '+cycFmtNum(p.control)+' m accepted · <b>'+(p.pct!=null?p.pct+'%':'–')+'</b>':cycFmtNum(p.accepted)+' m accepted, no control length')+'</span></div><div class="cyc-prog" style="margin-top:4px">'+seg(p.accepted,"#E87722")+seg(p.provisional,"#F0A26B")+seg(p.planned,"#D9D2C5")+'</div><div class="dim" style="font-size:11.5px;margin-top:3px">accepted '+cycFmtNum(p.accepted)+' m · provisional (in progress) '+cycFmtNum(p.provisional)+' m · planned '+cycFmtNum(p.planned)+' m · excluded '+cycFmtNum(p.excluded)+' m'+(p.remaining!=null?' · remaining '+cycFmtNum(p.remaining)+' m'+(p.reelsLeft?' ≈ '+p.reelsLeft+' reel(s) at '+cycFmtNum(p.avgReel)+' m per reel':''):'')+'</div>'+(p.over?'<div class="cyc-note bad"><b>Reconciliation required.</b> Accepted recovered length exceeds the control length by '+cycFmtNum(p.variance)+' m. Either the control length or a reel length is wrong; progress is not stated until this is resolved.</div>':'')+'</div>'; }).join("");
+  var rd=(CYC.readings||[]).filter(function(x){ return !CYC_UI.flow || (CYC.reels||[]).some(function(r){ return r.cycleId===x.cycleId && r.flowlineId===CYC_UI.flow; }); });
+  var trips=(CYC.trips||[]).filter(function(t){ return !CYC_UI.flow || t.flowlineId===CYC_UI.flow; });
+  return '<p class="cyc-h">Physical recovery progress</p><p class="cyc-sub">Only complete, included reels with an accepted length count as recovered. In-progress reels are shown as provisional, planned reels as planned, excluded reels separately. Over-recovery is never clamped; it raises a reconciliation item.</p><div class="cyc-grid2">'+(prog||'<div class="dim">No flowline lengths yet.</div>')+'</div>'+
+    '<p class="cyc-h" style="margin-top:18px">NORM readings</p><p class="cyc-sub">Policy '+esc(pol.id)+': '+esc(pol.measurement)+', trigger '+esc(pol.operator)+' '+pol.value+' '+esc(pol.unit)+', effective '+esc(pol.effectiveFrom)+(pol.approvedBy?', approved by '+esc(pol.approvedBy):'')+'. The same rule is applied on screen, in every export and by Ask the Log.</p><div class="cyc-grid2"><div><table class="cyc-t"><thead><tr><th>Reel</th><th>Where</th><th class="n">Readings ('+esc(pol.unit)+')</th><th>Against policy</th></tr></thead><tbody>'+(rd.map(function(x){ var st=cycNormStatus(x.readings,pol); return '<tr'+(st.above?' style="background:#fdecea"':'')+'><td><b>'+esc(x.reel)+'</b></td><td>'+esc(x.location||"")+'</td><td class="n">'+esc(x.readings.join(" / "))+'</td><td class="'+(st.above?"bad":"good")+'">'+esc(st.label)+'</td></tr>'; }).join("")||'<tr><td colspan="4" class="dim">No readings imported.</td></tr>')+'</tbody></table></div><div><table class="cyc-t"><thead><tr><th>Trip date</th><th class="n">Trip</th><th class="n">HLV</th><th>Reel</th><th>Line</th><th class="n">Weight t</th><th class="n">Duration</th><th class="n">Length m</th></tr></thead><tbody>'+(trips.map(function(t){ return '<tr><td>'+esc(t.date||"")+'</td><td class="n">'+(t.trip!=null?t.trip:"")+'</td><td class="n">'+(t.hlvTp!=null?t.hlvTp:"")+'</td><td><b>'+esc(t.reel)+'</b></td><td>'+esc(t.flowlineId||"")+'</td><td class="n">'+(t.weightTe!=null?t.weightTe:"")+'</td><td class="n">'+cycH(t.durationMin)+'</td><td class="n">'+(t.lengthM!=null?cycFmtNum(t.lengthM):"")+'</td></tr>'; }).join("")||'<tr><td colspan="8" class="dim">No trips imported.</td></tr>')+'</tbody></table></div></div>';
+}
+function cycV_quality(){
+  var q=cycQuality(); var cls={blocking:"Blocking",conflict:"Conflict",warning:"Warning",note:"Note"};
+  return '<p class="cyc-h">Data quality</p><p class="cyc-sub">Everything that could change a number or a conclusion, in one place. Blocking items stop progress statements; warnings stay visible until resolved; notes are for the record. Included and excluded reels are both shown so nothing is hidden.</p>'+(q.items.length?q.items.map(function(i){ return '<div class="cyc-issue '+esc(i.cls)+'"><b>'+esc(cls[i.cls]||i.cls)+'.</b> '+esc(i.text)+'</div>'; }).join(""):'<div class="cyc-note ink">No data-quality items in the register.</div>')+'<p class="cyc-sub" style="margin-top:12px">Register revision '+(CYC.revision||0)+' · '+(CYC.reels||[]).filter(function(r){ return !r.deleted; }).length+' reels held, '+(CYC.reels||[]).filter(function(r){ return r.deleted; }).length+' deleted (retained for the record) · stage taxonomy '+esc(cycTemplate((cycFlow(cycFlows()[0])||{}).templateId).id)+'</p>';
+}
+function cycV_register(sel){
+  var client=cycClient(); var list=CYC_UI.includeExcluded?(CYC.reels||[]).filter(function(r){ return !CYC_UI.flow || r.flowlineId===CYC_UI.flow; }).sort(function(a,b){ return (a.campaignSeq||0)-(b.campaignSeq||0); }):sel;
+  var html=list.map(function(r){ var d=cycDerive(r,CYC_UI.midRule); var open=!!CYC_UI.open[r.cycleId];
+    var steps=(r.steps||[]).slice().sort(function(a,b){ var ka=(a.date||"")+"|"+("0000"+(a.start==null?9999:a.start)).slice(-4), kb=(b.date||"")+"|"+("0000"+(b.start==null?9999:b.start)).slice(-4); return ka<kb?-1:ka>kb?1:0; });
+    var srows=steps.map(function(s){ return '<tr><td>'+esc(s.name)+'</td><td class="n">'+(s.start!=null?cycH(s.start):"")+'</td><td class="n">'+(s.end!=null?(s.end===1440?"24:00":cycH(s.end)):"")+'</td><td class="n"><b>'+cycH(s.min)+'</b></td><td class="dim">'+esc(s.note||"")+(s.row?' <span style="font-size:10px">row '+s.row+'</span>':'')+'</td></tr>'; }).join("");
+    var notes=(r.notes||[]).filter(function(n){ return n && !/^total time/i.test(String(n).trim()); }).map(function(n){ return '<div class="cyc-note">'+esc(n)+'</div>'; }).join("");
+    var src=r.src?'<div class="dim" style="font-size:11.5px;margin-top:6px">Source: '+esc(r.src.file||"manual entry")+(r.src.row?', timings row '+r.src.row:'')+(r.src.hash?', file '+esc(String(r.src.hash).slice(0,12))+'…':'')+' · cycle '+esc(r.cycleId)+' · campaign #'+(r.campaignSeq||"")+', cohort #'+(r.cohortSeq||"")+'</div>':'';
+    var edit=client?'':'<div class="noprint" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px"><span class="dim">Correct a stage (minutes or h:mm; imported times stay on file'+(r.override&&Object.keys(r.override).length?'; corrected: '+esc(Object.keys(r.override).map(cycStepName).join(", ")):'')+'):</span>'+CYC_STEPS.map(function(st){ return '<label style="display:flex;flex-direction:column;font-size:10.5px;color:#7a7a7a">'+esc(st.s)+'<input value="'+(d.stepMin[st.k]!=null?cycH(d.stepMin[st.k]):"")+'" style="width:64px;padding:3px 5px;border:1px solid #d9d2c5;border-radius:3px" onchange="cycEditStep(\''+esc(r.cycleId)+'\',\''+st.k+'\',this.value,this)"></label>'; }).join("")+'<label style="display:flex;flex-direction:column;font-size:10.5px;color:#7a7a7a">Cycle<input value="'+(r.cycleMin!=null?cycH(r.cycleMin):"")+'" style="width:64px;padding:3px 5px;border:1px solid #d9d2c5;border-radius:3px" onchange="cycEditField(\''+esc(r.cycleId)+'\',\'cycleMin\',this.value,this)"></label><label style="display:flex;flex-direction:column;font-size:10.5px;color:#7a7a7a">Length m<input value="'+(r.lengthM!=null?r.lengthM:"")+'" style="width:70px;padding:3px 5px;border:1px solid #d9d2c5;border-radius:3px" onchange="cycEditField(\''+esc(r.cycleId)+'\',\'lengthM\',this.value,this)"></label><label style="display:flex;flex-direction:column;font-size:10.5px;color:#7a7a7a">Weight t<input value="'+(r.weightTe!=null?r.weightTe:"")+'" style="width:64px;padding:3px 5px;border:1px solid #d9d2c5;border-radius:3px" onchange="cycEditField(\''+esc(r.cycleId)+'\',\'weightTe\',this.value,this)"></label><span style="margin-left:auto"></span>'+(r.included===false?'<button class="ghost" onclick="cycInclude(\''+esc(r.cycleId)+'\')">Include again</button>':'<button class="ghost" onclick="cycExclude(\''+esc(r.cycleId)+'\')">Exclude from analysis</button>')+(r.deleted?'<button class="ghost" onclick="cycRestoreReel(\''+esc(r.cycleId)+'\')">Restore</button>':'<button class="ghost" onclick="cycDeleteReel(\''+esc(r.cycleId)+'\')">Delete</button>')+'</div>';
+    return '<div class="cyc-reel'+(open?" open":"")+(r.included===false||r.deleted?" excluded":"")+'"><div class="cyc-reel-h" onclick="CYC_UI.open[\''+esc(r.cycleId)+'\']=!CYC_UI.open[\''+esc(r.cycleId)+'\'];renderCyc()"><b>'+esc(cycReelLabel(r))+'</b><span>'+esc(r.flowlineId||"flowline ?")+'</span><span>'+esc(r.dateStart||"")+'</span>'+(r.trip!=null?'<span>trip '+r.trip+(r.hlvTp!=null?' · HLV '+r.hlvTp:'')+'</span>':'')+'<span><b>'+(r.cycleMin!=null?cycH(r.cycleMin)+" h cycle":esc(r.status))+'</b></span>'+(r.lengthM!=null?'<span>'+cycFmtNum(Math.round(r.lengthM))+' m</span>':'')+(r.weightTe!=null?'<span>'+r.weightTe+' t</span>':'')+(d.mPerHr!=null?'<span>'+d.mPerHr+' m/h</span>':'')+(d.unallocated!=null&&Math.abs(d.unallocated)>2?'<span class="warn">'+cycH(d.unallocated)+' unallocated</span>':'')+(d.missing.length&&r.status!=="planned"?'<span class="warn">missing: '+esc(d.missing.slice(0,3).join(", "))+(d.missing.length>3?" +"+(d.missing.length-3):"")+'</span>':'')+(r.included===false?'<span class="warn">excluded'+(r.excludeReason?": "+esc(r.excludeReason):"")+'</span>':'')+(r.deleted?'<span class="bad">deleted</span>':'')+'<span class="dim" style="margin-left:auto">'+esc(r.status)+' · '+(open?"hide":"details")+'</span></div><div class="cyc-reel-b">'+(srows?'<table class="cyc-t"><thead><tr><th>Stage</th><th class="n">Start</th><th class="n">Finish</th><th class="n">Duration</th><th>Comment</th></tr></thead><tbody>'+srows+'</tbody></table>':'<div class="dim" style="padding:8px 0">No stage times recorded yet.</div>')+notes+src+edit+'</div></div>'; }).join("");
+  return '<p class="cyc-h">Reel by reel</p><p class="cyc-sub">Every reel with its recorded stages, the offshore comments that came with them, and its source. Open a reel to see or correct its times; excluding a reel removes it from every calculation but never from the record.'+(client?'':' <label style="font-size:12px;margin-left:8px"><input type="checkbox" '+(CYC_UI.includeExcluded?"checked":"")+' onchange="CYC_UI.includeExcluded=this.checked;renderCyc()"> show excluded and deleted</label>')+'</p>'+(html||'<div class="dim">No reels in this selection.</div>');
+}
+function cycV_import(){
+  var pol=CYC.settings.normPolicy, sp=CYC.settings.statsPolicy;
+  var flowRows=(CYC.flowlines||[]).filter(function(f){ return (CYC.reels||[]).some(function(r){ return r.flowlineId===f.id && !r.deleted; }); }).map(function(f){ return '<tr><td><b>'+esc(f.id)+'</b> <span class="dim">'+esc(f.name!==f.id?f.name:"")+'</span></td><td class="n">'+(f.lengthM!=null?cycFmtNum(Math.round(f.lengthM))+" m":"")+'</td><td class="n">'+(f.nominalIn!=null?f.nominalIn+'"':"")+'</td><td><select onchange="cycSetFlowTemplate(\''+esc(f.id)+'\',this.value)" style="font-size:12px">'+(CYC.templates||[]).map(function(t){ return '<option value="'+esc(t.id)+'"'+(f.templateId===t.id?' selected':'')+'>'+esc(t.name)+'</option>'; }).join("")+'</select></td></tr>'; }).join("");
+  var logRows=(CYC.importLog||[]).slice(-10).reverse().map(function(l){ return '<div class="dim" style="font-size:12px;margin-top:3px">'+esc((l.at||"").replace("T"," ").slice(0,16))+' · '+esc(l.action||(l.file+": "+l.added+" added, "+l.updated+" updated, "+(l.unchanged||0)+" unchanged"+(l.issues?", "+l.issues+" item(s) reviewed":"")))+(l.reviewer?' · '+esc(l.reviewer):'')+(l.hash?' · '+esc(String(l.hash).slice(0,12))+'…':'')+(l.decisions&&l.decisions.length?'<div style="margin-left:14px">'+l.decisions.map(function(d){ return '· '+esc(d); }).join("<br>")+'</div>':'')+'</div>'; }).join("");
+  return '<p class="cyc-h">Import</p><p class="cyc-sub">Choose one or several timing workbooks. Nothing changes until the preview is reviewed: blocking items must be cleared, conflicts need a decision, warnings need acknowledgement, and every change to an existing reel is listed before it is accepted. Identical re-imports change nothing.</p><div class="cyc-actions"><button class="btn" onclick="document.getElementById(\'cycFile\').click()">Choose workbook(s)</button><input id="cycFile" type="file" accept=".xlsx,.xlsm,.xls" multiple style="display:none" onchange="cycImportFile(this)"><button class="btn" onclick="cycToggleForm(true)">+ Add a reel by hand</button></div><div id="cycImportPreview" class="cyc-import" style="display:none"></div><div id="cycFormWrap" style="display:none"></div>'+
+    '<p class="cyc-h" style="margin-top:20px">Settings</p><div class="cyc-grid2"><div><b style="font-size:13px">Flowlines and templates</b><table class="cyc-t"><thead><tr><th>Flowline</th><th class="n">Control length</th><th class="n">Nominal</th><th>Activity template</th></tr></thead><tbody>'+(flowRows||'<tr><td colspan="4" class="dim">No flowlines yet.</td></tr>')+'</tbody></table><div class="dim" style="font-size:11.5px;margin-top:6px">Templates: '+(CYC.templates||[]).map(function(t){ return esc(t.name)+' ['+esc(t.status)+']'; }).join(" · ")+'. Draft templates carry the SURF stage set until a validated set exists for that activity.</div></div><div><b style="font-size:13px">NORM policy</b><div class="cyc-form"><label>Policy ID<input id="npId" value="'+esc(pol.id)+'"></label><label>Trigger value<input id="npVal" type="number" step="0.01" min="0" value="'+pol.value+'"></label><label>Unit<input id="npUnit" value="'+esc(pol.unit)+'"></label><label>Operator<select id="npOp">'+[">",">=","<","<="].map(function(o){ return '<option'+(pol.operator===o?' selected':'')+'>'+o+'</option>'; }).join("")+'</select></label><label>Effective from<input id="npFrom" type="date" value="'+esc(pol.effectiveFrom)+'"></label><label>Approved by<input id="npBy" value="'+esc(pol.approvedBy||"")+'"></label></div><div class="cyc-actions" style="margin-top:8px"><button class="btn" onclick="cycSavePolicy()">Save NORM policy</button><span class="dim" style="font-size:11.5px">Changing the policy re-evaluates the screen and every new export; earlier issued reports keep the policy they were issued under.</span></div><div style="margin-top:12px"><b style="font-size:13px">Statistics policy</b> <span class="dim" style="font-size:12px">minimum reels for a fitted curve '+sp.minFit+'; planning-grade from '+sp.minPlanning+'</span></div><div style="margin-top:12px"><b style="font-size:13px">Import log</b>'+(logRows||'<div class="dim" style="font-size:12px">Nothing imported yet.</div>')+'</div></div></div>';
+}
+
+function cycRenderShell(){
+  var client=cycClient(); var q=cycQuality();
+  document.getElementById("cycTopActions").innerHTML=(client?'':'<button class="btn" onclick="CYC_UI.view=\'import\';renderCyc()">Import workbook</button>')+'<button class="btn" onclick="cycExportXLSX()">Export current analysis</button><button class="btn" onclick="cycExportReport()">Client report</button><button class="btn" onclick="cycPrint()">Print / PDF</button>'+(client?'':'<button class="ghost" onclick="cycExportRegister()">Full register</button><button class="ghost" onclick="cycExportExchange()">Data exchange</button>')+'<label style="font-size:12px;margin-left:6px"><input type="checkbox" '+(client?"checked":"")+' onchange="CYC.settings.clientView=this.checked;renderCyc()"> client view</label>';
+  var flows=cycFlows(); var dot=q.level==="blocking"?"#c0392b":q.level==="warning"?"#b9822b":"#2f7d4a";
+  document.getElementById("cycFilterBar").innerHTML=(flows.length?'<span class="cyc-chips"><span class="dim">Show:</span><button class="cyc-chip'+(CYC_UI.flow===""?" on":"")+'" onclick="CYC_UI.flow=\'\';renderCyc()">All flowlines</button>'+flows.map(function(f){ return '<button class="cyc-chip'+(CYC_UI.flow===f?" on":"")+'" onclick="CYC_UI.flow=\''+esc(f)+'\';renderCyc()" title="'+esc(cycFlowName(f))+'">'+esc(f)+'</button>'; }).join("")+'</span><label>Cohort reels <input type="number" min="1" placeholder="from" value="'+(CYC_UI.seqFrom||"")+'" onchange="CYC_UI.seqFrom=parseInt(this.value,10)||null;renderCyc()"> to <input type="number" min="1" placeholder="to" value="'+(CYC_UI.seqTo||"")+'" onchange="CYC_UI.seqTo=parseInt(this.value,10)||null;renderCyc()"></label>':'')+'<span class="cyc-dq" title="Data quality: '+q.counts.blocking+' blocking, '+q.counts.warning+' warning, '+q.counts.note+' note"><i style="background:'+dot+'"></i>data quality: '+(q.level==="clean"?"clean":q.level)+(q.items.length?' ('+q.items.length+')':'')+'</span><span class="dim">revision '+(CYC.revision||0)+' · scope '+esc(cycScopeTag())+'</span>';
+  document.getElementById("cycNav").innerHTML=CYC_VIEWS.filter(function(v){ return !(client && (v[0]==="import")); }).map(function(v){ return '<button class="'+(CYC_UI.view===v[0]?"on":"")+'" onclick="CYC_UI.view=\''+v[0]+'\';renderCyc()">'+esc(v[1])+(v[0]==="quality"&&q.items.length?'<span class="badge">'+q.items.length+'</span>':'')+'</button>'; }).join("");
+}
 function renderCyc(){
   if(!document.getElementById("view-cyc")) return;
-  var midRule=CYC_UI.midRule;
-  cycRenderChips();
-  var all=cycSel(), complete=all.filter(function(r){ return r.status==="complete"; });
-  var ids=["cycEmpty","cycHeadline","cycCurvePanel","cycStackPanel","cycStepPanel","cycNormsPanel","cycComparePanel","cycProgressPanel","cycReelsPanel","cycNormPanel"];
-  var hasAny=(CYC.reels||[]).length>0;
-  ids.forEach(function(id){ document.getElementById(id).style.display=(id==="cycEmpty")?(hasAny?"none":""):(hasAny?"":"none"); });
-  if(!hasAny){
-    document.getElementById("cycEmpty").innerHTML='<div class="cyc-empty"><h3>No reels in the register yet</h3><p>Import the offshore SURF timing workbook and every completed reel arrives with its step times, cycle total, weight, recovered length and NORM readings. Or add the first reel by hand. Norms and learning curves appear the moment there is one complete reel per flowline.</p><div class="cyc-actions noprint" style="justify-content:center"><button class="btn" onclick="document.getElementById(\'cycFile\').click()">Import timing workbook</button><button class="btn" onclick="cycToggleForm(true)">+ Add reel</button></div></div>';
-    return;
-  }
-  var norms=cycNorms(all, midRule), flows=cycFlows(), shownFlows=CYC_UI.flow?[CYC_UI.flow]:flows;
-
-  /* headline */
-  var lenTot=0, wtTot=0; complete.forEach(function(r){ lenTot+=r.lengthM||0; wtTot+=r.weightTe||0; });
-  var lenW=0, minW=0; complete.forEach(function(r){ if(r.lengthM!=null && r.cycleMin){ lenW+=r.lengthM; minW+=r.cycleMin; } }); var rateW=minW?Math.round(lenW/(minW/60)):null;
-  var rates=complete.map(function(r){ return cycDerive(r,midRule).mPerHr; }).filter(function(x){ return x!=null; });
-  var faster=0, counted=0; CYC_STEPS.forEach(function(st){ var n=norms[st.k]; if(n && n.n>=2){ counted++; if(n.last<n.first) faster++; } });
-  var c=norms.cycle;
-  var tile=function(k,v,sub,cls){ return '<div class="cyc-tile"><div class="k">'+k+'</div><div class="v'+(cls?" "+cls:"")+'">'+v+'</div>'+(sub?'<div class="s">'+sub+'</div>':'')+'</div>'; };
-  var sentence;
-  if(c && c.n>=2){ var imp=cycPct(c.best,c.first); sentence=complete.length+' reels recovered'+(CYC_UI.flow?' on '+esc(CYC_UI.flow):'')+' ('+Math.round(lenTot).toLocaleString()+' m). Cycle time has come down from <b>'+cycH(c.first)+'</b> on '+esc(c.firstId)+' to a best of <b>'+cycH(c.best)+'</b>'+(imp!=null?' (<b class="good">'+imp+'%</b>)':'')+'; the last reel took '+cycH(c.last)+' and the mean is '+cycH(c.mean)+'. '+(counted?faster+' of '+counted+' steps are faster on the latest reel than on the first.':''); }
-  else sentence=complete.length+' complete reel(s) in the register; learning curves need at least two complete reels on a flowline.';
-  document.getElementById("cycHeadline").innerHTML='<p class="cyc-h">Where we stand</p><p class="cyc-sub" style="font-size:13.5px;color:#1A1A1A">'+sentence+'</p><div class="cyc-tiles">'
-    +tile("Reels recovered", complete.length+' <span style="font-size:12px;color:#8C8C8C;font-weight:400">of '+all.length+' in register</span>')
-    +tile("Length recovered", lenTot?Math.round(lenTot).toLocaleString()+" m":"–", wtTot?wtTot.toFixed(1)+" Te":"")
-    +tile("First cycle", c?cycH(c.first)+" h":"–", c?esc(c.firstId):"")
-    +tile("Best cycle", c?cycH(c.best)+" h":"–", c?esc(c.series.filter(function(x){ return x.v===c.best; })[0].id):"", "good")
-    +tile("Mean cycle", c?cycH(c.mean)+" h":"–", c?"across "+c.n+" reels":"")
-    +tile("Recovery rate", rateW!=null?rateW+" m/hr":"–", "total length over total cycle hours")
-    +'</div>';
-
-  /* learning curves: one panel per flowline, shared scale */
-  var maxCycle=0; complete.forEach(function(r){ if(r.cycleMin>maxCycle) maxCycle=r.cycleMin; });
-  var curves=shownFlows.map(function(f){
-    var rs=all.filter(function(r){ return r.flowline===f && r.status==="complete" && r.cycleMin!=null; });
-    if(!rs.length) return '';
-    var n=cycNorms(rs,midRule).cycle, bestIdx=-1; rs.forEach(function(r,i){ if(n && r.cycleMin===n.best && bestIdx<0) bestIdx=i; });
-    var fit=cycFit(rs.map(function(r){ return r.cycleMin; }));
-    var qual = fit.ok ? '<div class="cyc-note" style="border-left-color:#1A1A1A">Learning curve (log-log fit over '+fit.n+' reels): each doubling of reels cuts cycle time by about <b>'+Math.round(fit.improvementPerDoubling*100)+'%</b> (learning rate '+Math.round(fit.learningRate*100)+'%, R² '+fit.r2.toFixed(2)+'). On that trend the next reel would take about <b>'+cycH(Math.round(fit.next))+'</b>.'+(fit.thin?' Fewer than five reels: treat the projection as indicative.':'')+'</div>' : '<div class="cyc-note">'+fit.n+' complete reel'+(fit.n===1?'':'s')+' on this line: a trend can be shown but a learning curve needs at least three reels, so no rate or projection is stated.</div>';
-    var deltas=rs.map(function(r,i){ return i?cycPct(r.cycleMin, rs[i-1].cycleMin):null; });
-    var rows=rs.map(function(r,i){ return '<tr><td><b>'+esc(r.id)+'</b></td><td>'+esc(r.dateStart||"")+'</td><td class="n">'+cycH(r.cycleMin)+'</td><td class="n '+(deltas[i]==null?"dim":deltas[i]<0?"good":"bad")+'">'+(deltas[i]==null?"first":(deltas[i]>0?"+":"")+deltas[i]+"%")+'</td><td class="n">'+(r.lengthM!=null?Math.round(r.lengthM).toLocaleString()+" m":"")+'</td></tr>'; }).join("");
-    return '<div><div style="font-weight:700;font-size:13px">'+esc(cycFlowName(f))+'</div>'+cycLine({ title:"Cycle time by reel, "+f, sub:"start to offload · grey dash mean · black dots fitted curve · green best", pts:rs.map(function(r){ return {l:r.id, v:r.cycleMin, d:r.dateStart?r.dateStart.slice(5):""}; }), mean:n?n.mean:null, bestIdx:bestIdx, max:maxCycle*1.15, fmt:cycH, fit:fit })+qual+'<table class="cyc-t"><thead><tr><th>Reel</th><th>Start</th><th class="n">Cycle</th><th class="n">vs previous</th><th class="n">Length</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
-  }).join("");
-  document.getElementById("cycCurvePanel").innerHTML='<p class="cyc-h">Learning curve</p><p class="cyc-sub">Cycle time per reel in the order they were recovered, one chart per flowline on the same scale so lines compare like with like. Lower is better.</p><div class="cyc-grid2">'+(curves||'<div class="dim">No complete reels yet.</div>')+'</div>';
-
-  /* composition */
-  document.getElementById("cycStackPanel").innerHTML='<p class="cyc-h">What each cycle was made of</p><p class="cyc-sub">Each bar is one reel, built from its steps in the order they happen. Watch which segments shrink as the crew learns; the number on top is the sum of steps'+(complete.some(function(r){ return cycDerive(r,midRule).unallocated>2; })?', which can be less than the cycle total where time was not allocated to a step':'')+'.</p>'+cycStack(all, midRule);
-
-  /* per-step trend */
-  var stepOpts=CYC_STEPS.map(function(st){ return '<option value="'+st.k+'"'+(CYC_UI.step===st.k?" selected":"")+'>'+esc(st.n)+'</option>'; }).join("");
-  var stepCurves=shownFlows.map(function(f){ var rs=all.filter(function(r){ return r.flowline===f && r.status==="complete"; }); var pts=[]; rs.forEach(function(r){ var v=cycDerive(r,midRule).stepMin[CYC_UI.step]; if(v!=null) pts.push({l:r.id, v:v, d:r.dateStart?r.dateStart.slice(5):""}); }); if(!pts.length) return ''; var vals=pts.map(function(p){ return p.v; }); var mean=Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length), best=Math.min.apply(null,vals); return '<div>'+cycLine({ title:cycStepName(CYC_UI.step)+", "+f, sub:"minutes per reel", pts:pts, mean:mean, bestIdx:vals.indexOf(best), fmt:cycH, height:210 })+'</div>'; }).join("");
-  document.getElementById("cycStepPanel").innerHTML='<p class="cyc-h">Learning curve by step</p><p class="cyc-sub">Pick a step to see how it alone is trending reel on reel. <select class="noprint" onchange="CYC_UI.step=this.value;renderCyc()" style="font-size:12px;padding:3px 6px">'+(CYC_UI.step==="cycle"?'<option value="cycle">choose a step</option>':'')+stepOpts+'</select></p>'+(CYC_UI.step==="cycle"?'<div class="dim" style="font-size:12.5px">Choose a step above; the cut and clamp steps usually show the steepest learning.</div>':'<div class="cyc-grid2">'+(stepCurves||'<div class="dim">No data for that step.</div>')+'</div>');
-
-  /* norms per flowline */
-  var normsHtml=shownFlows.map(function(f){ var rs=all.filter(function(r){ return r.flowline===f; }); var n=cycNorms(rs,midRule); var cnt=rs.filter(function(r){ return r.status==="complete"; }).length; if(!cnt) return '';
-    var rows=CYC_STEPS.concat([{k:"cycle",n:"Cycle total, start to offload"}]).map(function(st){ var v=n[st.k]; if(!v) return ''; var ch=v.change; return '<tr'+(st.k==="cycle"?' style="font-weight:700;background:#faf7f1"':'')+'><td>'+esc(st.n)+'</td><td class="n">'+cycH(v.first)+' <span class="dim">'+esc(v.firstId)+'</span></td><td class="n good">'+cycH(v.best)+'</td><td class="n"><b>'+cycH(v.mean)+'</b></td><td class="n">'+cycH(v.last)+' <span class="dim">'+esc(v.lastId)+'</span></td><td class="n '+(ch==null?"dim":ch<0?"good":ch>0?"bad":"dim")+'">'+(ch==null?"–":(ch>0?"+":"")+ch+"%")+'</td></tr>'; }).join("");
-    return '<div><div style="font-weight:700;font-size:13px">'+esc(cycFlowName(f))+' <span class="dim" style="font-weight:400">· '+cnt+' complete reel'+(cnt>1?"s":"")+'</span></div><table class="cyc-t"><thead><tr><th>Step</th><th class="n">First</th><th class="n">Best</th><th class="n">Mean (norm)</th><th class="n">Latest</th><th class="n">First → latest</th></tr></thead><tbody>'+rows+'</tbody></table></div>'; }).join("");
-  var normGroups=shownFlows.map(function(f){ var rs=all.filter(function(r){ return r.flowline===f; }); var n=cycNorms(rs,midRule); var vals={}; CYC_STEPS.forEach(function(st){ if(n[st.k]) vals[st.k]=n[st.k].mean; }); return {label:f+" mean", vals:vals}; }).filter(function(g){ return Object.keys(g.vals).length; });
-  var normChart=normGroups.length?'<div style="margin-top:12px">'+cycGrouped(normGroups,{title:"Mean minutes per stage by flowline"})+'</div>':'';
-  document.getElementById("cycNormsPanel").innerHTML='<p class="cyc-h">Achieved norms per flowline</p><p class="cyc-sub">Mean is the norm to plan on; first and latest show the learning. Recovery segments are summed per reel; where a reel needed two midlines the time shown is the mean per midline event'+(midRule==="sum"?" (currently summed)":"")+'. <button class="noprint" style="font-size:11px;padding:2px 8px" onclick="CYC_UI.midRule=CYC_UI.midRule===\'mean\'?\'sum\':\'mean\';renderCyc()">switch to '+(midRule==="mean"?"summed":"mean per event")+' midlines</button></p><div class="cyc-grid2">'+(normsHtml||'<div class="dim">No complete reels yet.</div>')+'</div>'+normChart;
-
-  /* comparison */
-  var cmp='';
-  if(flows.length>=2 && !CYC_UI.flow){
-    var A=flows[0], B=flows[1], na=cycNorms(all.filter(function(r){ return r.flowline===A; }),midRule), nb=cycNorms(all.filter(function(r){ return r.flowline===B; }),midRule);
-    var fasterB=0, tot=0, rows2=CYC_STEPS.concat([{k:"cycle",n:"Cycle total"}]).map(function(st){ var x=na[st.k], y=nb[st.k]; if(!x||!y) return ''; var d=cycPct(y.mean,x.mean); if(st.k!=="cycle"){ tot++; if(d<0) fasterB++; } return '<tr'+(st.k==="cycle"?' style="font-weight:700;background:#faf7f1"':'')+'><td>'+esc(st.n)+'</td><td class="n">'+cycH(x.mean)+' <span class="dim">('+x.n+')</span></td><td class="n">'+cycH(y.mean)+' <span class="dim">('+y.n+')</span></td><td class="n '+(d<0?"good":d>0?"bad":"dim")+'">'+(d>0?"+":"")+d+'% · '+esc(B)+' '+(d<0?"faster":d>0?"slower":"same")+'</td></tr>'; }).join("");
-    var fa=(CYC.flowlines||[]).filter(function(x){ return x.id===A; })[0]||{}, fb=(CYC.flowlines||[]).filter(function(x){ return x.id===B; })[0]||{};
-    var dA=(fa.name||"").match(/(\d+(?:\.\d+)?)\s*"/), dB=(fb.name||"").match(/(\d+(?:\.\d+)?)\s*"/);
-    var sameType=(fa.type||cycTypeFor(A))===(fb.type||cycTypeFor(B));
-    var nA=na.cycle?na.cycle.n:0, nB=nb.cycle?nb.cycle.n:0;
-    var comparability='<div class="cyc-note" style="border-left-color:#1A1A1A"><b>Comparability:</b> activity type '+(sameType?'same ('+esc(fa.type||cycTypeFor(A))+')':'<span class="warn">different</span>')+'; product '+esc(fa.name||A)+' vs '+esc(fb.name||B)+(dA&&dB?'; nominal size '+dA[1]+'" vs '+dB[1]+'"':'')+'; reels '+nA+' vs '+nB+(nA<3||nB<3?' <span class="warn">(fewer than three on at least one line, so means are provisional)</span>':'')+'; recovery method, equipment and crew are not recorded in the register. Read this as an observed difference, not a controlled comparison.</div>';
-    cmp='<p class="cyc-h">Flowline versus flowline (observed)</p><p class="cyc-sub">'+esc(cycFlowName(A))+' against '+esc(cycFlowName(B))+', mean minutes per step. '+esc(B)+' is faster on '+fasterB+' of '+tot+' steps.</p>'+comparability+'<table class="cyc-t"><thead><tr><th>Step</th><th class="n">'+esc(A)+'</th><th class="n">'+esc(B)+'</th><th class="n">Difference</th></tr></thead><tbody>'+rows2+'</tbody></table>';
-  }
-  document.getElementById("cycComparePanel").style.display=cmp?"":"none"; document.getElementById("cycComparePanel").innerHTML=cmp;
-
-  /* progress per flowline */
-  var prog=(CYC.flowlines||[]).filter(function(f){ return f.lengthM && (all.some(function(r){ return r.flowline===f.id; })); }).map(function(f){ var rec=0, n=0; (CYC.reels||[]).forEach(function(r){ if(r.flowline===f.id && r.lengthM){ rec+=r.lengthM; n++; } }); var pct=Math.min(100,Math.round(rec/f.lengthM*100)); var rem=Math.max(0,f.lengthM-rec); var avg=n?rec/n:0; return '<div><div style="display:flex;justify-content:space-between;font-size:12.5px"><b>'+esc(cycFlowName(f.id))+'</b><span>'+Math.round(rec).toLocaleString()+' of '+Math.round(f.lengthM).toLocaleString()+' m recovered · <b>'+pct+'%</b></span></div><div class="cyc-prog" style="margin-top:4px"><div style="width:'+pct+'%"></div></div><div class="dim" style="font-size:11.5px;margin-top:3px">'+Math.round(rem).toLocaleString()+' m remaining'+(avg?' ≈ '+Math.ceil(rem/avg)+' more reel(s) at the average of '+Math.round(avg).toLocaleString()+' m per reel':'')+'</div></div>'; }).join("");
-  document.getElementById("cycProgressPanel").style.display=prog?"":"none";
-  document.getElementById("cycProgressPanel").innerHTML='<p class="cyc-h">Recovery progress by flowline</p><p class="cyc-sub">Recovered length against the line length from the register; reels-remaining is an estimate at the average reel length so far, not a schedule.</p><div class="cyc-grid2">'+prog+'</div>';
-
-  /* reels */
-  var reelsHtml=all.map(function(r){ var d=cycDerive(r,midRule); var open=!!CYC_UI.open[r.seq];
-    var steps=r.steps.slice().sort(function(a,b){ var ka=(a.date||"")+"|"+("0000"+(a.start==null?9999:a.start)).slice(-4), kb=(b.date||"")+"|"+("0000"+(b.start==null?9999:b.start)).slice(-4); return ka<kb?-1:ka>kb?1:0; });
-    var srows=steps.map(function(s){ return '<tr><td>'+esc(s.name)+'</td><td class="n">'+(s.start!=null?cycH(s.start):"")+'</td><td class="n">'+(s.end!=null?(s.end===1440?"24:00":cycH(s.end)):"")+'</td><td class="n"><b>'+cycH(s.min)+'</b></td><td class="dim">'+esc(s.note||"")+'</td></tr>'; }).join("");
-    var notes=(r.notes||[]).filter(function(n){ return n && !/^total time/i.test(String(n).trim()); }).map(function(n){ return '<div class="cyc-note">'+esc(n)+'</div>'; }).join("");
-    var edit='<div class="noprint" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px"><span class="dim">Correct a step (minutes or h:mm; the imported times stay on file'+(r.override&&Object.keys(r.override).length?'; corrected: '+esc(Object.keys(r.override).map(cycStepName).join(", ")):'')+'):</span>'+CYC_STEPS.map(function(st){ return '<label style="display:flex;flex-direction:column;font-size:10.5px;color:#7a7a7a">'+esc(st.s)+'<input value="'+(d.stepMin[st.k]!=null?cycH(d.stepMin[st.k]):"")+'" style="width:58px;padding:3px 5px;border:1px solid #d9d2c5;border-radius:3px" onchange="cycEditStep('+r.seq+',\''+st.k+'\',this.value)"></label>'; }).join("")+'<label style="display:flex;flex-direction:column;font-size:10.5px;color:#7a7a7a">Cycle<input value="'+(r.cycleMin!=null?cycH(r.cycleMin):"")+'" style="width:58px;padding:3px 5px;border:1px solid #d9d2c5;border-radius:3px" onchange="cycEditField('+r.seq+',\'cycleMin\',this.value)"></label><label style="display:flex;flex-direction:column;font-size:10.5px;color:#7a7a7a">Length m<input value="'+(r.lengthM!=null?r.lengthM:"")+'" style="width:64px;padding:3px 5px;border:1px solid #d9d2c5;border-radius:3px" onchange="cycEditField('+r.seq+',\'lengthM\',this.value)"></label><label style="display:flex;flex-direction:column;font-size:10.5px;color:#7a7a7a">Weight Te<input value="'+(r.weightTe!=null?r.weightTe:"")+'" style="width:58px;padding:3px 5px;border:1px solid #d9d2c5;border-radius:3px" onchange="cycEditField('+r.seq+',\'weightTe\',this.value)"></label><button class="ghost" style="margin-left:auto" onclick="cycDeleteReel('+r.seq+')">Delete reel</button></div>';
-    return '<div class="cyc-reel'+(open?" open":"")+'"><div class="cyc-reel-h" onclick="CYC_UI.open['+r.seq+']=!CYC_UI.open['+r.seq+'];renderCyc()"><b>'+esc(r.id)+'</b><span>'+esc(r.flowline||"flowline ?")+'</span><span>'+esc(r.dateStart||"")+'</span>'+(r.trip!=null?'<span>trip '+r.trip+(r.hlvTp!=null?' · HLV '+r.hlvTp:'')+'</span>':'')+'<span><b>'+(r.cycleMin!=null?cycH(r.cycleMin)+" h cycle":r.status)+'</b></span>'+(r.lengthM!=null?'<span>'+Math.round(r.lengthM).toLocaleString()+' m</span>':'')+(r.weightTe!=null?'<span>'+r.weightTe+' Te</span>':'')+(d.mPerHr!=null?'<span>'+d.mPerHr+' m/hr</span>':'')+(d.unallocated!=null&&Math.abs(d.unallocated)>2?'<span class="warn">'+cycH(d.unallocated)+' unallocated</span>':'')+(d.missing.length&&r.status!=="planned"?'<span class="warn">missing: '+esc(d.missing.slice(0,3).join(", "))+(d.missing.length>3?" +"+(d.missing.length-3):"")+'</span>':'')+'<span class="dim" style="margin-left:auto">'+esc(r.status)+' · '+(open?"hide":"details")+'</span></div><div class="cyc-reel-b">'+(srows?'<table class="cyc-t"><thead><tr><th>Step</th><th class="n">Start</th><th class="n">Finish</th><th class="n">Duration</th><th>Comment</th></tr></thead><tbody>'+srows+'</tbody></table>':'<div class="dim" style="padding:8px 0">No step times recorded yet.</div>')+notes+edit+'</div></div>'; }).join("");
-  document.getElementById("cycReelsPanel").innerHTML='<p class="cyc-h">Reel by reel</p><p class="cyc-sub">Every reel in the register with its recorded steps and the offshore comments that came with them. Open a reel to see or correct its times; everything above recalculates.</p>'+reelsHtml;
-
-  /* NORM readings and trips */
-  var trig=(CYC.settings&&CYC.settings.normTrigger!=null)?CYC.settings.normTrigger:0.2;
-  var rd=(CYC.readings||[]).filter(function(x){ return !CYC_UI.flow || (CYC.reels||[]).some(function(r){ return r.id===x.reel && r.flowline===CYC_UI.flow; }); }).map(function(x){ return Object.assign({}, x, {above:(x.readings||[]).some(function(v){ return v>trig; })}); });
-  var trips=(CYC.trips||[]).filter(function(t){ return !CYC_UI.flow || t.flowline===CYC_UI.flow; });
-  document.getElementById("cycNormPanel").style.display=(rd.length||trips.length)?"":"none";
-  var flowRows=(CYC.flowlines||[]).filter(function(f){ return (CYC.reels||[]).some(function(r){ return r.flowline===f.id; }); }).map(function(f){ return '<tr><td><b>'+esc(f.id)+'</b> <span class="dim">'+esc(f.name!==f.id?f.name:"")+'</span></td><td class="n">'+(f.lengthM!=null?Math.round(f.lengthM).toLocaleString()+" m":"")+'</td><td><select onchange="cycSetFlowType(\''+esc(f.id)+'\',this.value)" style="font-size:12px">'+CYC_DEFAULT_TYPES.map(function(t){ return '<option'+((f.type||cycTypeFor(f.id))===t?' selected':'')+'>'+esc(t)+'</option>'; }).join("")+'</select></td></tr>'; }).join("");
-  var logRows=(CYC.importLog||[]).slice(-8).reverse().map(function(l){ return '<div class="dim" style="font-size:12px">'+esc((l.at||"").replace("T"," ").slice(0,16))+' · '+esc(l.action||(l.file+": "+l.added+" added, "+l.updated+" updated"+(l.issues?", "+l.issues+" note(s)":"")))+(l.hash?' · sha256 '+esc(String(l.hash).slice(0,12))+'…':'')+'</div>'; }).join("");
-  var dp=document.getElementById("cycDataPanel"); dp.style.display=""; dp.innerHTML='<p class="cyc-h">Data and settings</p><p class="cyc-sub">Activity type per flowline drives the grouping; the NORM trigger drives the highlighting; the import log records every file with its fingerprint. Stage taxonomy: '+esc((CYC.settings&&CYC.settings.taxonomy)||"SURF-RECOVERY-v1")+'.</p><div class="cyc-grid2"><div><table class="cyc-t"><thead><tr><th>Flowline</th><th class="n">Length</th><th>Activity type</th></tr></thead><tbody>'+(flowRows||'<tr><td colspan="3" class="dim">No flowlines yet.</td></tr>')+'</tbody></table></div><div><label style="font-size:12.5px">NORM trigger (Bq/cm²) <input type="number" step="0.01" min="0" value="'+trig+'" style="width:80px;padding:4px 6px;border:1px solid #d9d2c5;border-radius:4px" onchange="cycSetTrigger(this.value)"></label><div style="margin-top:10px;font-weight:600;font-size:12.5px">Import log</div>'+(logRows||'<div class="dim" style="font-size:12px">Nothing imported yet.</div>')+'</div></div>';
-  document.getElementById("cycNormPanel").innerHTML='<p class="cyc-h">NORM readings and reel trips</p><p class="cyc-sub">Swab readings per reel end against the '+trig+' Bq/cm² trigger (set in Data and settings); anything above is highlighted. Trip weights, durations and recovered lengths as recorded offshore.</p><div class="cyc-grid2"><div><table class="cyc-t"><thead><tr><th>Reel</th><th>Where</th><th class="n">Readings (Bq/cm²)</th><th>Against trigger</th></tr></thead><tbody>'+(rd.map(function(x){ return '<tr'+(x.above?' style="background:#fdecea"':'')+'><td><b>'+esc(x.reel)+'</b></td><td>'+esc(x.location||"")+'</td><td class="n">'+x.readings.join(" / ")+'</td><td class="'+(x.above?"bad":"good")+'">'+(x.above?"ABOVE "+trig:"below")+'</td></tr>'; }).join("")||'<tr><td colspan="4" class="dim">No readings imported.</td></tr>')+'</tbody></table></div><div><table class="cyc-t"><thead><tr><th>Trip date</th><th class="n">Trip</th><th class="n">HLV</th><th>Reel</th><th>Line</th><th class="n">Weight Te</th><th class="n">Duration</th><th class="n">Length m</th></tr></thead><tbody>'+(trips.map(function(t){ return '<tr><td>'+esc(t.date||"")+'</td><td class="n">'+(t.trip!=null?t.trip:"")+'</td><td class="n">'+(t.hlvTp!=null?t.hlvTp:"")+'</td><td><b>'+esc(t.reel)+'</b></td><td>'+esc(t.flowline||"")+'</td><td class="n">'+(t.weightTe!=null?t.weightTe:"")+'</td><td class="n">'+cycH(t.durationMin)+'</td><td class="n">'+(t.lengthM!=null?t.lengthM.toLocaleString():"")+'</td></tr>'; }).join("")||'<tr><td colspan="8" class="dim">No trips imported.</td></tr>')+'</tbody></table></div></div>';
+  var hasAny=(CYC.reels||[]).some(function(r){ return !r.deleted; });
+  cycRenderShell(); var body=document.getElementById("cycBody");
+  if(!hasAny && CYC_UI.view!=="import"){ body.innerHTML='<div class="panel"><div class="cyc-empty"><h3>No reels in the register yet</h3><p>Import the offshore SURF timing workbook and every completed reel arrives with its stage times, cycle total, weight, recovered length and NORM readings, reviewed before anything is committed. Or add the first reel by hand.</p><div class="cyc-actions noprint" style="justify-content:center"><button class="btn" onclick="CYC_UI.view=\'import\';renderCyc()">Go to import</button></div></div></div>'; return; }
+  var sel=cycSel(); var v=CYC_UI.view; var h='';
+  if(v==="overview"){ h='<div class="panel cyc-sec"><p class="cyc-h">Where we stand</p>'+cycV_kpis(sel)+cycV_interp(sel)+'</div><div class="panel cyc-sec"><p class="cyc-h">Learning curve</p><p class="cyc-sub">Cycle time per reel in the order recovered, one chart per flowline on the same scale. Lower is better.</p><div class="cyc-grid2">'+cycV_curves(sel,236)+'</div></div><div class="panel cyc-sec">'+cycV_norms(sel)+'</div>'; }
+  else if(v==="learning"){ h='<div class="panel cyc-sec"><p class="cyc-h">Learning curve</p><p class="cyc-sub">Cycle time per reel in the order recovered, one chart per flowline on the same scale, with the fitted curve where the cohort allows it.</p><div class="cyc-grid2">'+cycV_curves(sel,250)+'</div>'+cycV_interp(sel)+'</div><div class="panel cyc-sec">'+cycV_stepTrend(sel)+'</div>'; }
+  else if(v==="stages"){ h='<div class="panel cyc-sec"><p class="cyc-h">What each cycle was made of</p><p class="cyc-sub">Each bar is one included reel built from its stages in the order they happen; the number on top is the sum of stages.</p>'+cycStack(sel,CYC_UI.midRule)+'</div><div class="panel cyc-sec">'+cycV_norms(sel)+'</div>'+(function(){ var c=cycV_compare(sel); return c?'<div class="panel cyc-sec">'+c+'</div>':''; })(); }
+  else if(v==="productivity"){ h='<div class="panel cyc-sec">'+cycV_productivity(sel)+'</div>'; }
+  else if(v==="progress"){ h='<div class="panel cyc-sec">'+cycV_progress()+'</div>'; }
+  else if(v==="quality"){ h='<div class="panel cyc-sec">'+cycV_quality()+'</div>'; }
+  else if(v==="register"){ h='<div class="panel cyc-sec">'+cycV_register(sel)+'</div>'; }
+  else if(v==="import"){ h='<div class="panel cyc-sec">'+cycV_import()+'</div>'; }
+  body.innerHTML=h;
+  if(v==="import" && __cycPending) cycRenderPreview();
 }
 
-/* add-reel form */
+/* mutators: strict, field-level errors, evidence preserved, read-only respected */
+function cycFieldErr(el,msg){ if(!el) { alert(msg); return; } var n=el.nextSibling; if(n && n.className==="cyc-err") n.remove(); var s=document.createElement("span"); s.className="cyc-err"; s.textContent=msg; el.parentNode.appendChild(s); el.style.borderColor="#c0392b"; }
+function cycReel(id){ return (CYC.reels||[]).filter(function(x){ return x.cycleId===id; })[0]; }
+function cycEditStep(id,key,val,el){
+  if(pelRO()){ renderCyc(); return; } var rl=cycReel(id); if(!rl) return; var v=String(val==null?"":val).trim();
+  var n=v===""?null:cycTime(v,"dur"); if(v!=="" && n==null){ cycFieldErr(el,"enter minutes (141) or h:mm (2:21), not negative"); return; }
+  var tpl=cycTemplateOf(rl); if(n!=null && n>tpl.bounds.stageMaxMin){ cycFieldErr(el,"above the template limit of "+cycH(tpl.bounds.stageMaxMin)); return; }
+  rl.override=rl.override||{}; if(n==null) delete rl.override[key]; else rl.override[key]=n; rl.status=cycStatusOf(rl); cycBump(); save(); renderCyc();
+}
+function cycEditField(id,field,val,el){
+  if(pelRO()){ renderCyc(); return; } var rl=cycReel(id); if(!rl) return; var v=String(val==null?"":val).trim(); var tpl=cycTemplateOf(rl); var n;
+  if(field==="cycleMin"){ n=v===""?null:cycTime(v,"dur"); if(v!=="" && (n==null || n>tpl.bounds.cycleMaxMin)){ cycFieldErr(el,"enter a duration such as 16:26 within the template limit"); return; } }
+  else if(field==="lengthM"){ n=v===""?null:cycNumStrict(v,0,tpl.bounds.lengthMaxM); if(v!=="" && n==null){ cycFieldErr(el,"length must be a number from 0 to "+tpl.bounds.lengthMaxM+" m"); return; } }
+  else if(field==="weightTe"){ n=v===""?null:cycNumStrict(v,0,tpl.bounds.weightMaxTe); if(v!=="" && n==null){ cycFieldErr(el,"weight must be a number from 0 to "+tpl.bounds.weightMaxTe+" t"); return; } }
+  else return;
+  rl[field]=n; rl.status=cycStatusOf(rl); cycBump(); save(); renderCyc();
+}
+function cycExclude(id){ if(pelRO()) return; var rl=cycReel(id); if(!rl) return; var reason=prompt("Reason for excluding "+cycReelLabel(rl)+" from analysis (kept in the record):"); if(reason==null) return; rl.included=false; rl.excludeReason=String(reason).slice(0,120); cycBump(); save(); renderCyc(); }
+function cycInclude(id){ if(pelRO()) return; var rl=cycReel(id); if(!rl) return; rl.included=true; rl.excludeReason=""; cycBump(); save(); renderCyc(); }
+function cycDeleteReel(id){ if(pelRO()) return; var rl=cycReel(id); if(!rl) return; if(!confirm("Delete reel "+cycReelLabel(rl)+"? It is kept in the record as deleted and its sequence numbers do not change.")) return; rl.deleted=true; rl.deletedAt=new Date().toISOString(); CYC.importLog.push({ at:new Date().toISOString(), action:"deleted reel "+cycReelLabel(rl)+" (cycle "+rl.cycleId+")", reviewer:curUser()||"" }); cycBump(); save(); renderCyc(); }
+function cycRestoreReel(id){ if(pelRO()) return; var rl=cycReel(id); if(!rl) return; rl.deleted=false; rl.deletedAt=""; cycBump(); save(); renderCyc(); }
+function cycSetFlowTemplate(fid,tid){ if(pelRO()) return; var f=cycFlow(fid); if(f && cycTemplate(tid).id===tid){ f.templateId=tid; cycBump(); save(); renderCyc(); } }
+function cycSetFlowType(fid,activity){ cycSetFlowTemplate(fid, cycTemplateForActivity(activity)); }
+function cycSetTrigger(v){ if(pelRO()) return; var n=cycNumStrict(v,0,1000); if(n==null) return; CYC.settings.normPolicy.value=n; cycBump(); save(); renderCyc(); }
+function cycSavePolicy(){ if(pelRO()) return; var g=function(i){ var e=document.getElementById(i); return e?e.value:""; }; var n=cycNumStrict(g("npVal"),0,1000); if(n==null){ alert("Trigger value must be a non-negative number."); return; } CYC.settings.normPolicy={ id:cycStr(g("npId"),40)||"NORM-TRIGGER-v1", measurement:CYC.settings.normPolicy.measurement, value:n, unit:cycStr(g("npUnit"),16)||"Bq/cm2", operator:([">",">=","<","<="].indexOf(g("npOp"))>=0)?g("npOp"):">", effectiveFrom:cycDate(g("npFrom"))||CYC.settings.normPolicy.effectiveFrom, approvedBy:cycStr(g("npBy"),40), note:CYC.settings.normPolicy.note }; cycBump(); save(); renderCyc(); }
+
+/* add a reel by hand */
 function cycToggleForm(show){
-  var w=document.getElementById("cycFormWrap"); if(!show){ w.style.display="none"; w.innerHTML=""; return; }
-  var flows=cycFlows().concat((CYC.flowlines||[]).map(function(f){ return f.id; })).filter(function(v,i,a){ return a.indexOf(v)===i; });
-  w.style.display="";
-  w.innerHTML='<div class="cyc-import" style="border-left-color:#1A1A1A"><b>Add a reel</b> <span class="dim">Enter each step as minutes (141) or hours:minutes (2:21). Start and finish times are optional; if you give both, the duration is worked out for you, midnight included.</span>'+
-    '<div class="cyc-form"><label>Reel ID<input id="cfId" placeholder="D1"></label><label>Flowline<input id="cfFlow" list="cfFlows" placeholder="FL5"><datalist id="cfFlows">'+flows.map(function(f){ return '<option value="'+esc(f)+'">'; }).join("")+'</datalist></label><label>Start date<input id="cfDate" type="date"></label><label>Trip<input id="cfTrip" type="number" min="1"></label><label>Cycle total (start to offload)<input id="cfCycle" placeholder="16:26"></label><label>Recovered length m<input id="cfLen" type="number" step="0.1"></label><label>Weight Te<input id="cfWt" type="number" step="0.1"></label></div>'+
-    '<table class="cyc-steps"><thead><tr><th style="text-align:left;font-size:11px;color:#7a7a7a">Step</th><th style="font-size:11px;color:#7a7a7a">Start</th><th style="font-size:11px;color:#7a7a7a">Finish</th><th style="font-size:11px;color:#7a7a7a">Duration</th></tr></thead><tbody>'+CYC_STEPS.map(function(st){ return '<tr><td>'+esc(st.n)+'</td><td><input id="cfS_'+st.k+'" placeholder="08:12"></td><td><input id="cfE_'+st.k+'" placeholder="10:33"></td><td><input id="cfD_'+st.k+'" placeholder="2:21"></td></tr>'; }).join("")+'</tbody></table>'+
-    '<div class="cyc-actions" style="margin-top:10px"><button class="btn" onclick="cycSaveForm()">Save reel</button><button class="ghost" onclick="cycToggleForm(false)">Cancel</button></div></div>';
+  CYC_UI.view="import"; renderCyc(); var w=document.getElementById("cycFormWrap"); if(!w) return; if(!show){ w.style.display="none"; w.innerHTML=""; return; }
+  var flows=cycFlows().concat((CYC.flowlines||[]).map(function(f){ return f.id; })).filter(function(v,i,a){ return a.indexOf(v)===i; }); w.style.display="";
+  w.innerHTML='<div class="cyc-import" style="border-left-color:#1A1A1A"><b>Add a reel</b> <span class="dim">Stages as minutes (141) or hours:minutes (2:21). Start and finish are optional; with both, the duration is worked out, midnight included. Negative or impossible values are refused.</span><div class="cyc-form"><label>Reel ID<input id="cfId" placeholder="D1"></label><label>Flowline<input id="cfFlow" list="cfFlows" placeholder="FL5"><datalist id="cfFlows">'+flows.map(function(f){ return '<option value="'+esc(f)+'">'; }).join("")+'</datalist></label><label>Start date<input id="cfDate" type="date"></label><label>Trip<input id="cfTrip" type="number" min="1"></label><label>Cycle total (start to offload)<input id="cfCycle" placeholder="16:26"></label><label>Recovered length m<input id="cfLen" type="number" step="0.1" min="0"></label><label>Weight t<input id="cfWt" type="number" step="0.1" min="0"></label></div><table class="cyc-steps"><thead><tr><th style="text-align:left;font-size:11px;color:#7a7a7a">Stage</th><th style="font-size:11px;color:#7a7a7a">Start</th><th style="font-size:11px;color:#7a7a7a">Finish</th><th style="font-size:11px;color:#7a7a7a">Duration</th></tr></thead><tbody>'+CYC_STEPS.map(function(st){ return '<tr><td>'+esc(st.n)+'</td><td><input id="cfS_'+st.k+'" placeholder="08:12"></td><td><input id="cfE_'+st.k+'" placeholder="10:33"></td><td><input id="cfD_'+st.k+'" placeholder="2:21"></td></tr>'; }).join("")+'</tbody></table><div class="cyc-actions" style="margin-top:10px"><button class="btn" onclick="cycSaveForm()">Save reel</button><button class="ghost" onclick="cycToggleForm(false)">Cancel</button><span id="cfErr" class="cyc-err"></span></div></div>';
 }
 function cycSaveForm(){
-  if(pelRO()) return;
-  var id=String(document.getElementById("cfId").value||"").trim().toUpperCase(); if(!id){ alert("Reel ID is required."); return; }
-  var flow=String(document.getElementById("cfFlow").value||"").trim().toUpperCase()||null;
-  var steps=[];
-  CYC_STEPS.forEach(function(st){ var s=cycClock(document.getElementById("cfS_"+st.k).value), e=cycClock(document.getElementById("cfE_"+st.k).value), dv=document.getElementById("cfD_"+st.k).value; var d=cycTime(dv); if(d==null && String(dv).trim()!=="" && isFinite(parseFloat(dv))) d=Math.round(parseFloat(dv)); if(d==null && s!=null && e!=null) d=(e>=s)?(e-s):(e+1440-s); if(d!=null) steps.push({ k:st.k, name:st.n, start:s, end:e, min:d, note:"" }); });
-  var cyc=cycTime(document.getElementById("cfCycle").value); if(cyc==null && steps.length){ var f0=steps.filter(function(s){ return s.start!=null; })[0]; }
-  var r={ id:id, seq:(CYC.reels||[]).length+1, occurrence:(CYC.reels||[]).filter(function(x){ return x.id===id; }).length+1, flowline:flow, dateStart:document.getElementById("cfDate").value||null, trip:cycNum(document.getElementById("cfTrip").value), hlvTp:null, steps:steps, cycleMin:cyc, weightTe:cycNum(document.getElementById("cfWt").value), lengthM:cycNum(document.getElementById("cfLen").value), notes:[], status:"in-progress" };
-  cycAddReelData(r); cycToggleForm(false);
+  if(pelRO()) return; var err=function(m){ var e=document.getElementById("cfErr"); if(e) e.textContent=m; };
+  var id=String(document.getElementById("cfId").value||"").trim().toUpperCase(); if(!cycIdOk(id)){ err("Reel ID is required (letters and numbers, up to 12)."); return; }
+  var flow=String(document.getElementById("cfFlow").value||"").trim().toUpperCase().replace(/\s+/g,"")||null; if(flow && !cycFlowIdOk(flow)){ err("Flowline must look like FL5 or UMB3."); return; }
+  var date=cycDate(document.getElementById("cfDate").value)||null; var steps=[];
+  for(var i=0;i<CYC_STEPS.length;i++){ var st=CYC_STEPS[i]; var sv=document.getElementById("cfS_"+st.k).value, ev=document.getElementById("cfE_"+st.k).value, dv=document.getElementById("cfD_"+st.k).value; var s=cycClock(sv), e=cycClock(ev), d=cycTime(dv,"dur"); if((sv&&s==null)||(ev&&e==null)){ err(st.n+": start or finish is not a valid clock time."); return; } if(dv && d==null){ err(st.n+": duration must be minutes or h:mm, not negative."); return; } if(d==null && s!=null && e!=null) d=(e>=s)?(e-s):(e+1440-s); if(d!=null) steps.push({ k:st.k, name:st.n, start:s, end:e, min:d, note:"", date:date }); }
+  var cyc=cycTime(document.getElementById("cfCycle").value,"dur"); if(document.getElementById("cfCycle").value && cyc==null){ err("Cycle total must be a duration such as 16:26."); return; }
+  var len=cycNumStrict(document.getElementById("cfLen").value,0,50000), wt=cycNumStrict(document.getElementById("cfWt").value,0,2000); if((document.getElementById("cfLen").value&&len==null)||(document.getElementById("cfWt").value&&wt==null)){ err("Length and weight must be non-negative numbers."); return; }
+  cycAddReelData({ id:id, flowlineId:flow, dateStart:date, trip:cycNumStrict(document.getElementById("cfTrip").value,0,999), steps:steps, cycleMin:cyc, weightTe:wt, lengthM:len, notes:[], src:{file:"manual entry"} }); cycToggleForm(false); CYC_UI.view="register"; renderCyc();
 }
-function cycSetFlowType(id,type){ if(pelRO()) return; var f=(CYC.flowlines||[]).filter(function(x){ return x.id===id; })[0]; if(f){ f.type=type; save(); renderCyc(); } }
-function cycSetTrigger(v){ if(pelRO()) return; var n=parseFloat(v); if(!isFinite(n)||n<0) return; CYC.settings=CYC.settings||{}; CYC.settings.normTrigger=n; save(); renderCyc(); }
-function cycAddReelData(r){ if(pelRO()) return false; r.uid=r.uid||cycUid(); r.seq=(CYC.reels.length?Math.max.apply(null,CYC.reels.map(function(x){ return x.seq; }))+1:1); r.status=cycStatusOf(r); CYC.reels.push(r); save(); renderCyc(); return true; }
-function cycAddReel(){ cycToggleForm(true); }
+function cycAddReelData(r){ if(pelRO()) return false; if(!cycIdOk(String(r.id||"").toUpperCase())) return false; var maxSeq=(CYC.reels||[]).reduce(function(a,x){ return Math.max(a,x.seq||0); },0); var rl=cycSanitise({reels:[Object.assign({}, r, {seq:maxSeq+1, occurrence:(CYC.reels||[]).filter(function(x){ return x.id===String(r.id).toUpperCase(); }).length+1})]}).reels[0]; if(!rl) return false; rl.cohortSeq=null; rl.campaignSeq=null; if(flow_needs(rl)) CYC.flowlines.push({ id:rl.flowlineId, name:rl.flowlineId, lengthM:null, templateId:cycTemplateForActivity(cycTypeFor(rl.flowlineId)), product:"", nominalIn:null }); CYC.reels.push(rl); cycAssignSequences(CYC); cycBump(); save(); renderCyc(); return true; }
+function flow_needs(rl){ return rl.flowlineId && !cycFlow(rl.flowlineId); }
 
+/* import transaction */
 var __cycPending=null;
 function cycImportFile(inp){
-  if(pelRO()){ inp.value=""; return; }
-  var files=Array.prototype.slice.call(inp.files||[]); inp.value=""; if(!files.length) return;
+  if(pelRO()){ inp.value=""; return; } var files=Array.prototype.slice.call(inp.files||[]); inp.value=""; if(!files.length) return;
   if(!window.XLSX){ alert("The spreadsheet reader did not load. Check the connection and try again."); return; }
   var results=[];
-  function next(i){
-    if(i>=files.length){ cycPreviewMany(results); return; }
-    var f=files[i], rd=new FileReader();
-    rd.onload=function(e){
-      var buf=e.target.result;
-      var finish=function(hash){
-        try{
-          var wb=XLSX.read(buf,{type:"array"}); var sheets={}; wb.SheetNames.forEach(function(n){ sheets[n]=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,blankrows:false,defval:""}); });
-          var parsed=cycParseAny(sheets);
-          results.push({ fname:f.name, size:f.size, hash:hash, sheets:wb.SheetNames.slice(), parsed:parsed });
-        }catch(err){ results.push({ fname:f.name, size:f.size, hash:hash, sheets:[], parsed:{reels:[],trips:[],flowlines:[],readings:[],issues:["Could not read: "+(err&&err.message?err.message:err)]} }); }
-        next(i+1);
-      };
-      try{ if(window.crypto && crypto.subtle && crypto.subtle.digest){ crypto.subtle.digest("SHA-256", buf).then(function(h){ finish(Array.prototype.map.call(new Uint8Array(h), function(b){ return ("0"+b.toString(16)).slice(-2); }).join("")); }).catch(function(){ finish(null); }); } else finish(null); }catch(e){ finish(null); }
-    };
-    rd.readAsArrayBuffer(f);
-  }
+  function next(i){ if(i>=files.length){ cycPreviewMany(results); return; } var f=files[i], rd=new FileReader();
+    rd.onload=function(e){ var buf=e.target.result; var finish=function(hash){ try{ var wb=XLSX.read(buf,{type:"array"}); var sheets={}; wb.SheetNames.forEach(function(n){ sheets[n]=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,blankrows:false,defval:""}); }); results.push({ fname:f.name, size:f.size, hash:hash, sheets:wb.SheetNames.slice(), parsed:cycParseAny(sheets) }); }catch(err){ results.push({ fname:f.name, size:f.size, hash:hash, sheets:[], parsed:{reels:[],trips:[],flowlines:[],readings:[],issues:[{cls:"blocking",text:"Could not read: "+(err&&err.message?err.message:err)}]} }); } next(i+1); };
+      try{ if(window.crypto && crypto.subtle && crypto.subtle.digest){ crypto.subtle.digest("SHA-256", buf).then(function(h){ finish(Array.prototype.map.call(new Uint8Array(h), function(b){ return ("0"+b.toString(16)).slice(-2); }).join("")); }).catch(function(){ finish(null); }); } else finish(null); }catch(e2){ finish(null); } };
+    rd.readAsArrayBuffer(f); }
   next(0);
 }
-/* canonical round-trip: a sheet named "PEL Cycles JSON" produced by this app is read back with full fidelity */
 function cycParseAny(sheets){
   var names=Object.keys(sheets||{});
-  for(var i=0;i<names.length;i++){
-    if(/^PEL Cycles JSON$/i.test(names[i])){
-      try{ var txt=(sheets[names[i]]||[]).map(function(r){ return String((r||[])[0]||""); }).join(""); var c=cycSanitise(JSON.parse(txt)); return { reels:c.reels, trips:c.trips, flowlines:c.flowlines, readings:c.readings, issues:[], canonical:true }; }
-      catch(e){ return { reels:[], trips:[], flowlines:[], readings:[], issues:["PEL Cycles JSON sheet could not be read: "+(e&&e.message?e.message:e)] }; }
-    }
-  }
+  for(var i=0;i<names.length;i++){ if(/^PEL Cycles JSON$/i.test(names[i])){ try{ var txt=(sheets[names[i]]||[]).map(function(r){ return String((r||[])[0]||""); }).join(""); var c=cycSanitise(JSON.parse(txt)); return { reels:c.reels, trips:c.trips, flowlines:c.flowlines, readings:c.readings, issues:[], canonical:true }; } catch(e){ return { reels:[], trips:[], flowlines:[], readings:[], issues:[{cls:"blocking",text:"PEL Cycles JSON sheet could not be read: "+(e&&e.message?e.message:e)}] }; } } }
   return parseSurfWorkbook(sheets);
 }
+function cycNormIssues(list){ return (list||[]).map(function(x){ return typeof x==="string"?{cls:"note",text:x}:x; }); }
 function cycPreviewMany(results){
-  if(results.length===1){ var r0=results[0]; __cycPending={parsed:r0.parsed, fname:r0.fname, size:r0.size, hash:r0.hash, sheets:r0.sheets}; cycPreview(r0.parsed, r0.fname); return; }
-  var merged={reels:[],trips:[],flowlines:[],readings:[],issues:[]}, lines=[];
-  results.forEach(function(r){ var pr=r.parsed; pr.reels.forEach(function(rl){ rl.src=rl.src||{}; rl.src.file=r.fname; if(r.hash) rl.src.hash=r.hash; merged.reels.push(rl); }); merged.trips=merged.trips.concat(pr.trips); merged.flowlines=merged.flowlines.concat(pr.flowlines); merged.readings=merged.readings.concat(pr.readings); pr.issues.forEach(function(x){ merged.issues.push(r.fname+": "+x); }); lines.push(r.fname+": "+pr.reels.length+" reel(s), "+pr.trips.length+" trip row(s), "+pr.readings.length+" NORM set(s)"); });
+  if(results.length===1){ var r0=results[0]; cycPreview(r0.parsed, r0.fname, {size:r0.size, hash:r0.hash, sheets:r0.sheets, files:[{fname:r0.fname,hash:r0.hash,size:r0.size,reels:r0.parsed.reels.length,trips:r0.parsed.trips.length,readings:r0.parsed.readings.length}]}); return; }
+  var merged={reels:[],trips:[],flowlines:[],readings:[],issues:[]}, files=[];
+  results.forEach(function(r){ var pr=r.parsed; pr.reels.forEach(function(rl){ rl.src=rl.src||{}; rl.src.file=r.fname; if(r.hash) rl.src.hash=r.hash; merged.reels.push(rl); }); merged.trips=merged.trips.concat(pr.trips); pr.flowlines.forEach(function(f){ if(!merged.flowlines.some(function(x){ return x.id===f.id; })) merged.flowlines.push(f); }); merged.readings=merged.readings.concat(pr.readings); cycNormIssues(pr.issues).forEach(function(x){ merged.issues.push(Object.assign({}, x, {text:r.fname+": "+x.text})); }); files.push({fname:r.fname,hash:r.hash,size:r.size,reels:pr.reels.length,trips:pr.trips.length,readings:pr.readings.length}); });
   merged.reels.forEach(function(rl,i){ rl.seq=i+1; });
-  __cycPending={parsed:merged, fname:results.length+" files ("+results.map(function(r){ return r.fname; }).join(", ")+")", size:results.reduce(function(a,r){ return a+(r.size||0); },0), hash:results.map(function(r){ return r.hash||""; }).join(";"), sheets:[]};
-  cycPreview(merged, __cycPending.fname);
-  var el=document.getElementById("cycImportPreview"); el.innerHTML='<div class="dim" style="font-size:12px;margin-bottom:6px">'+lines.map(esc).join("<br>")+'</div>'+el.innerHTML;
+  cycPreview(merged, results.length+" files", {size:results.reduce(function(a,r){ return a+(r.size||0); },0), hash:results.map(function(r){ return r.hash||""; }).join(";"), sheets:[], files:files});
 }
-function cycPreview(parsed, fname){
-  __cycPending=Object.assign({}, __cycPending&&__cycPending.parsed===parsed?__cycPending:{}, {parsed:parsed, fname:fname||"workbook"});
-  var el=document.getElementById("cycImportPreview"); el.style.display="";
+/* match incoming reels against the register; ambiguity is a blocking conflict, never a fallback */
+function cycMatchIncoming(parsed){
+  var changes=[]; var blocking=[];
+  parsed.reels.forEach(function(r){ var cands=(CYC.reels||[]).filter(function(x){ return !x.deleted && x.id===r.id && (!r.flowlineId||!x.flowlineId||x.flowlineId===r.flowlineId) && ((r.dateStart&&x.dateStart)?x.dateStart===r.dateStart:x.occurrence===r.occurrence); });
+    if(cands.length>1){ blocking.push({cls:"blocking", text:r.id+(r.dateStart?" ("+r.dateStart+")":"")+" matches "+cands.length+" existing reels; identity is ambiguous, so this reel is not applied"}); r.__skip=true; return; }
+    if(!cands.length){ changes.push({incoming:r, current:null, kind:"new", fields:[]}); return; }
+    var x=cands[0]; var fields=[]; var cmp=function(name,a,b,fmt){ var sa=JSON.stringify(a==null?null:a), sb=JSON.stringify(b==null?null:b); if(sa!==sb) fields.push({name:name, current:b, incoming:a, currentText:fmt?fmt(b):String(b==null?"–":b), incomingText:fmt?fmt(a):String(a==null?"–":a)}); };
+    cmp("Start date", r.dateStart, x.dateStart); cmp("Flowline", r.flowlineId, x.flowlineId); cmp("Trip", r.trip, x.trip); cmp("HLV", r.hlvTp, x.hlvTp); cmp("Cycle total", r.cycleMin, x.cycleMin, cycH); cmp("Length m", r.lengthM, x.lengthM); cmp("Weight t", r.weightTe, x.weightTe);
+    var sumIn=(r.steps||[]).reduce(function(a,s){ return a+s.min; },0), sumCur=(x.steps||[]).reduce(function(a,s){ return a+s.min; },0); if((r.steps||[]).length!==(x.steps||[]).length || sumIn!==sumCur) fields.push({name:"Stage records", current:(x.steps||[]).length+" rows, "+cycH(sumCur), incoming:(r.steps||[]).length+" rows, "+cycH(sumIn), currentText:(x.steps||[]).length+" rows, "+cycH(sumCur), incomingText:(r.steps||[]).length+" rows, "+cycH(sumIn)});
+    changes.push({incoming:r, current:x, kind:fields.length?"changed":"unchanged", fields:fields, decision:fields.every(function(f){ return f.current==null; })?"accept":"keep"}); });
+  return {changes:changes, blocking:blocking};
+}
+function cycPreview(parsed, fname, meta){
+  parsed.issues=cycNormIssues(parsed.issues); var m=cycMatchIncoming(parsed);
+  __cycPending={ parsed:parsed, fname:fname||"workbook", size:meta&&meta.size, hash:meta&&meta.hash, sheets:(meta&&meta.sheets)||[], files:(meta&&meta.files)||[], changes:m.changes, issues:parsed.issues.concat(m.blocking), conflictChoice:{}, ack:false, reviewer:curUser()||"" };
+  CYC_UI.view="import"; renderCyc();
+}
+function cycRenderPreview(){
+  var P=__cycPending; var el=document.getElementById("cycImportPreview"); if(!el||!P) return; el.style.display="";
+  var parsed=P.parsed; var counts={blocking:0,conflict:0,warning:0,note:0}; P.issues.forEach(function(i){ counts[i.cls]=(counts[i.cls]||0)+1; });
   var comp=parsed.reels.filter(function(r){ return r.status==="complete"; }).length, prog=parsed.reels.filter(function(r){ return r.status==="in-progress"; }).length, plan=parsed.reels.length-comp-prog;
-  if(!parsed.reels.length){
-    el.innerHTML='<b>Nothing to import from '+esc(fname)+'.</b> No reel blocks were found. The timing sheet needs a header row containing <i>Start</i>, <i>finished</i> and <i>Total</i>, with the reel name (A1, A2 ...) in the column to the left of Start above its steps. If this is a different layout, send the file to Endura and it will be added to the reader.'+(parsed.trips.length||parsed.readings.length?'<br>Read anyway: '+parsed.trips.length+' trip row(s), '+parsed.readings.length+' NORM reading set(s).':'')+'<div style="margin-top:8px"><button class="ghost" onclick="cycCancelImport()">Close</button></div>';
-    return;
-  }
-  el.innerHTML='<b>Found '+parsed.reels.length+' reel'+(parsed.reels.length>1?"s":"")+' in '+esc(fname)+':</b> '+comp+' complete'+(prog?', '+prog+' in progress':'')+(plan?', '+plan+' planned':'')+' ('+esc(parsed.reels.map(function(r){ return r.id+(r.status!=="complete"?" "+r.status:""); }).join(", "))+'). Also read '+parsed.trips.length+' trip row(s), '+parsed.flowlines.length+' flowline'+(parsed.flowlines.length!==1?"s":"")+' with lengths, and '+parsed.readings.length+' NORM reading set(s).'
-    +(parsed.issues.length?'<br><b>Checked and noted ('+parsed.issues.length+'):</b><div style="max-height:140px;overflow:auto;margin:4px 0 0;padding:6px 8px;background:#fff;border:1px solid #e6e1d6;border-radius:4px;font-size:12px">'+parsed.issues.map(function(x){ return '<div>· '+esc(x)+'</div>'; }).join("")+'</div>Written totals are kept; the notes stay on file with the import.':'<br>Every step total agrees with its start and finish times and no cross-sheet conflicts were found.')
-    +'<div style="margin-top:8px" class="cyc-actions"><button class="btn" onclick="cycApplyImport()">Add these to the register</button><button class="ghost" onclick="cycCancelImport()">Cancel</button><span class="dim" style="font-size:12px">Reels already in the register are updated, not duplicated.</span></div>';
+  var newN=P.changes.filter(function(c){ return c.kind==="new"; }).length, chN=P.changes.filter(function(c){ return c.kind==="changed"; }).length, sameN=P.changes.filter(function(c){ return c.kind==="unchanged"; }).length;
+  var h='<b>'+(parsed.reels.length?'Found '+parsed.reels.length+' reel'+(parsed.reels.length>1?"s":"")+' in '+esc(P.fname)+':':'Nothing to import from '+esc(P.fname)+'.')+'</b> '+(parsed.reels.length?comp+' complete'+(prog?', '+prog+' in progress':'')+(plan?', '+plan+' planned':'')+'. Against the register: <b>'+newN+' new</b>, <b>'+chN+' changed</b>, '+sameN+' unchanged. Also read '+parsed.trips.length+' trip row(s), '+parsed.flowlines.length+' flowline'+(parsed.flowlines.length!==1?"s":"")+' and '+parsed.readings.length+' NORM reading set(s).':'No reel blocks were found. The timing sheet needs a header row containing Start, finished and Total, with the reel name in the column to the left of Start above its stages.');
+  if(P.files.length>1) h+='<div class="dim" style="font-size:12px;margin-top:4px">'+P.files.map(function(f){ return esc(f.fname)+': '+f.reels+' reel(s), '+f.trips+' trip row(s), '+f.readings+' NORM set(s)'+(f.hash?' · '+esc(String(f.hash).slice(0,12))+'…':''); }).join("<br>")+'</div>';
+  var ci=0; h+='<div style="margin-top:8px"><b>Review ('+P.issues.length+' item'+(P.issues.length!==1?"s":"")+'; '+counts.blocking+' blocking, '+counts.conflict+' conflict, '+counts.warning+' warning, '+counts.note+' note):</b>'+(P.issues.length?'<div style="max-height:220px;overflow:auto;margin-top:4px">'+P.issues.map(function(i,idx){ var row='<div class="cyc-issue '+esc(i.cls)+'"><b>'+esc(i.cls.charAt(0).toUpperCase()+i.cls.slice(1))+'.</b> '+esc(i.text); if(i.cls==="conflict" && i.options){ row+='<div style="margin-top:4px">'+i.options.map(function(o,oi){ return '<label style="margin-right:12px;font-size:12px"><input type="radio" name="cycConf'+idx+'" '+(P.conflictChoice[idx]===oi?"checked":"")+' onchange="__cycPending.conflictChoice['+idx+']='+oi+'"> '+esc(o.label)+'</label>'; }).join("")+'</div>'; } return row+'</div>'; }).join("")+'</div>':'<div class="dim" style="font-size:12px">Every stage total agrees with its start and finish times and no cross-sheet conflicts were found.</div>')+'</div>';
+  if(chN) h+='<div style="margin-top:8px"><b>Changes to existing reels</b> <span class="dim" style="font-size:12px">(default: keep the current value where one exists; accept where the register is empty)</span><table class="cyc-t"><thead><tr><th>Reel</th><th>Field</th><th class="n">Current</th><th class="n">Incoming</th><th>Decision</th></tr></thead><tbody>'+P.changes.filter(function(c){ return c.kind==="changed"; }).map(function(c,i){ var idx=P.changes.indexOf(c); return c.fields.map(function(f,fi){ return '<tr><td>'+(fi===0?'<b>'+esc(cycReelLabel(c.current))+'</b>':'')+'</td><td>'+esc(f.name)+'</td><td class="n">'+esc(f.currentText)+'</td><td class="n">'+esc(f.incomingText)+'</td><td>'+(fi===0?'<select style="font-size:12px" onchange="__cycPending.changes['+idx+'].decision=this.value"><option value="keep"'+(c.decision==="keep"?" selected":"")+'>keep current</option><option value="accept"'+(c.decision==="accept"?" selected":"")+'>accept incoming</option></select>':'')+'</td></tr>'; }).join(""); }).join("")+'</tbody></table></div>';
+  var undecided=P.issues.filter(function(i,idx){ return i.cls==="conflict" && i.options && P.conflictChoice[idx]==null; }).length;
+  var canApply=(parsed.reels.length||parsed.trips.length||parsed.readings.length) && counts.blocking===0 && undecided===0 && (counts.warning===0 || P.ack);
+  h+='<div style="margin-top:10px" class="cyc-actions">'+(counts.warning?'<label style="font-size:12px"><input type="checkbox" '+(P.ack?"checked":"")+' onchange="__cycPending.ack=this.checked;cycRenderPreview()"> I have read the warnings; the written totals are kept and the notes stay on file</label>':'')+'<label style="font-size:12px">Reviewer <input value="'+esc(P.reviewer)+'" style="width:110px;padding:3px 6px;border:1px solid #d9d2c5;border-radius:4px" onchange="__cycPending.reviewer=this.value"></label><button class="btn" '+(canApply?'':'disabled title="clear blocking items, decide conflicts and acknowledge warnings first"')+' onclick="cycApplyImport()">'+(newN+chN?'Apply '+newN+' new and '+P.changes.filter(function(c){ return c.kind==="changed" && c.decision==="accept"; }).length+' accepted change(s)':'Nothing to apply')+'</button><button class="ghost" onclick="cycCancelImport()">Cancel</button>'+(counts.blocking?'<span class="bad" style="font-size:12px">'+counts.blocking+' blocking item(s) prevent this import</span>':undecided?'<span class="warn" style="font-size:12px">'+undecided+' conflict(s) need a decision</span>':'')+'</div>';
+  el.innerHTML=h;
 }
-function cycCancelImport(){ __cycPending=null; var el=document.getElementById("cycImportPreview"); el.style.display="none"; el.innerHTML=""; }
-function cycApplyImport(){
-  if(pelRO()) return; if(!__cycPending) return;
-  var p=__cycPending.parsed, added=0, updated=0;
-  p.flowlines.forEach(function(f){ var ex=(CYC.flowlines||[]).filter(function(x){ return x.id===f.id; })[0]; if(ex){ ex.lengthM=f.lengthM; if(f.name&&f.name!==f.id) ex.name=f.name; } else CYC.flowlines.push(f); });
-  p.reels.forEach(function(r){ r.src=r.src||{}; r.src.file=__cycPending.fname; if(__cycPending.hash) r.src.hash=__cycPending.hash;
-    var ex=(CYC.reels||[]).filter(function(x){ return x.id===r.id && ((x.dateStart&&r.dateStart)?x.dateStart===r.dateStart:x.occurrence===r.occurrence); })[0];
-    if(ex){ var keep={seq:ex.seq, uid:ex.uid, override:ex.override||{}}; for(var k in r) ex[k]=r[k]; ex.seq=keep.seq; ex.uid=keep.uid; ex.override=keep.override; ex.status=cycStatusOf(ex); updated++; } else { r.seq=(CYC.reels.length?Math.max.apply(null,CYC.reels.map(function(x){ return x.seq; }))+1:1); CYC.reels.push(r); added++; } });
-  p.trips.forEach(function(t){ var i=(CYC.trips||[]).findIndex(function(x){ return x.reel===t.reel && x.occurrence===t.occurrence; }); if(i>=0) CYC.trips[i]=t; else CYC.trips.push(t); });
-  p.readings.forEach(function(rd){ var i=(CYC.readings||[]).findIndex(function(x){ return x.reel===rd.reel && (x.location||"")===(rd.location||""); }); if(i>=0) CYC.readings[i]=rd; else CYC.readings.push(rd); });
-  CYC.importLog.push({ at:new Date().toISOString(), file:__cycPending.fname, hash:__cycPending.hash||null, size:__cycPending.size||null, sheets:__cycPending.sheets||[], added:added, updated:updated, issues:p.issues.length });
-  cycCancelImport();
-  document.getElementById("cycImportNote").textContent="Register updated: "+added+" reel(s) added, "+updated+" updated"+(p.issues.length?"; "+p.issues.length+" timing note(s) kept on file.":".");
-  save(); renderCyc();
+function cycCancelImport(){ __cycPending=null; var el=document.getElementById("cycImportPreview"); if(el){ el.style.display="none"; el.innerHTML=""; } }
+function cycApplyImport(opts){
+  if(pelRO()) return false; var P=__cycPending; if(!P) return false; opts=opts||{};
+  if(opts.conflicts){ for(var k in opts.conflicts) P.conflictChoice[k]=opts.conflicts[k]; } if(opts.conflictDefault!=null){ P.issues.forEach(function(i,idx){ if(i.cls==="conflict" && i.options && P.conflictChoice[idx]==null) P.conflictChoice[idx]=opts.conflictDefault; }); } if(opts.acknowledge) P.ack=true; if(opts.decisions){ P.changes.forEach(function(c){ if(c.current && opts.decisions[c.current.cycleId]) c.decision=opts.decisions[c.current.cycleId]; }); } if(opts.decisionDefault) P.changes.forEach(function(c){ if(c.kind==="changed") c.decision=opts.decisionDefault; }); if(opts.reviewer) P.reviewer=opts.reviewer;
+  var counts={blocking:0,warning:0}; P.issues.forEach(function(i){ counts[i.cls]=(counts[i.cls]||0)+1; }); var undecided=P.issues.filter(function(i,idx){ return i.cls==="conflict" && i.options && P.conflictChoice[idx]==null; }).length;
+  if(counts.blocking){ alert(counts.blocking+" blocking item(s) prevent this import."); return false; } if(undecided){ alert(undecided+" conflict(s) need a decision before applying."); return false; } if(counts.warning && !P.ack){ alert("Acknowledge the warnings before applying."); return false; }
+  var backup=JSON.stringify(CYC); var decisions=[];
+  try{
+    var p=P.parsed;
+    P.issues.forEach(function(i,idx){ if(i.cls==="conflict" && i.options && P.conflictChoice[idx]!=null){ var o=i.options[P.conflictChoice[idx]]; decisions.push(i.text+" → "+o.label); if(i.field==="nominalIn" && i.flowlineId){ var pf=p.flowlines.filter(function(f){ return f.id===i.flowlineId; })[0]; if(pf) pf.nominalIn=o.value; } if(i.field==="lengthM" && i.cycleId){ var pr=p.reels.filter(function(r){ return r.cycleId===i.cycleId; })[0]; if(pr) pr.lengthM=o.value; } if(i.field==="weightTe" && i.cycleId){ var pw=p.reels.filter(function(r){ return r.cycleId===i.cycleId; })[0]; if(pw) pw.weightTe=o.value; } } });
+    p.flowlines.forEach(function(f){ var ex=cycFlow(f.id); if(ex){ if(f.lengthM!=null && !ex.lengthApproved) ex.lengthM=f.lengthM; if(f.name && f.name!==f.id) ex.name=f.name; if(f.nominalIn!=null) ex.nominalIn=f.nominalIn; if(f.product) ex.product=f.product; } else CYC.flowlines.push(cycSanitise({flowlines:[f]}).flowlines[0]); });
+    var added=0, updated=0, unchanged=0;
+    P.changes.forEach(function(c){ if(c.incoming.__skip) return; var r=c.incoming; r.src=r.src||{}; r.src.file=r.src.file||P.fname; if(P.hash && !r.src.hash) r.src.hash=String(P.hash).split(";")[0]; if(c.kind==="new"){ var s=cycSanitise({reels:[Object.assign({}, r, {seq:(CYC.reels||[]).reduce(function(a,x){ return Math.max(a,x.seq||0); },0)+1})]}).reels[0]; if(s){ s.cohortSeq=null; s.campaignSeq=null; s.acceptedAt=new Date().toISOString(); CYC.reels.push(s); added++; } } else if(c.kind==="changed" && c.decision==="accept"){ var x=c.current; ["dateStart","flowlineId","trip","hlvTp","cycleMin","lengthM","weightTe","steps","notes","started"].forEach(function(f){ if(r[f]!==undefined) x[f]=JSON.parse(JSON.stringify(r[f])); }); x.src=r.src; x.status=cycStatusOf(x); x.acceptedAt=new Date().toISOString(); updated++; decisions.push(cycReelLabel(x)+": accepted "+c.fields.map(function(f){ return f.name; }).join(", ")); } else if(c.kind==="changed"){ unchanged++; decisions.push(cycReelLabel(c.current)+": kept current values"); } else unchanged++; });
+    cycAssignSequences(CYC);
+    p.trips.forEach(function(t){ var cy=(CYC.reels||[]).filter(function(x){ return !x.deleted && x.id===t.reel && x.occurrence===t.occurrence; })[0]; if(cy) t.cycleId=cy.cycleId; var i=(CYC.trips||[]).findIndex(function(x){ return (t.cycleId&&x.cycleId===t.cycleId)||(x.reel===t.reel && x.occurrence===t.occurrence); }); var st=cycSanitise({trips:[t]}).trips[0]; if(!st) return; if(i>=0){ st.tripId=CYC.trips[i].tripId; CYC.trips[i]=st; } else CYC.trips.push(st); });
+    p.readings.forEach(function(rd){ var cy=(CYC.reels||[]).filter(function(x){ return !x.deleted && x.id===rd.reel && x.occurrence===rd.occurrence; })[0]; if(cy) rd.cycleId=cy.cycleId; var i=(CYC.readings||[]).findIndex(function(x){ return (rd.cycleId&&x.cycleId===rd.cycleId&&(x.location||"")===(rd.location||""))||(x.reel===rd.reel && x.occurrence===rd.occurrence && (x.location||"")===(rd.location||"")); }); var srd=cycSanitise({readings:[rd]}).readings[0]; if(!srd) return; if(i>=0){ srd.readingId=CYC.readings[i].readingId; CYC.readings[i]=srd; } else CYC.readings.push(srd); });
+    CYC.importLog.push({ at:new Date().toISOString(), file:P.fname, hash:P.hash||"", size:P.size||null, sheets:P.sheets||[], added:added, updated:updated, unchanged:unchanged, issues:P.issues.length, decisions:decisions.slice(0,50), reviewer:P.reviewer||"" });
+    cycBump(); CYC=cycSanitise(CYC); var note="Register updated: "+added+" reel(s) added, "+updated+" updated, "+unchanged+" unchanged"+(P.issues.length?"; "+P.issues.length+" item(s) reviewed.":".");
+    cycCancelImport(); save(); CYC_UI.view=added||updated?"overview":"import"; renderCyc(); var pe=document.getElementById("cycPurpose"); if(pe) pe.textContent=note; return true;
+  }catch(e){ CYC=cycSanitise(JSON.parse(backup)); alert("Import failed and was rolled back: "+(e&&e.message?e.message:e)); renderCyc(); return false; }
 }
-function cycEditStep(seq,key,val){
-  if(pelRO()){ renderCyc(); return; }
-  var rl=(CYC.reels||[]).filter(function(x){ return x.seq===seq; })[0]; if(!rl) return;
-  var n=cycTime(val); if(n==null && String(val).trim()!=="" && isFinite(parseFloat(val))) n=Math.round(parseFloat(val));
-  if(n==null && String(val).trim()!==""){ alert("Enter minutes (141) or hours:minutes (2:21)."); renderCyc(); return; }
-  rl.override=rl.override||{};
-  if(n==null) delete rl.override[key]; else rl.override[key]=n;
-  rl.status=cycStatusOf(rl);
-  save(); renderCyc();
-}
-function cycEditField(seq,field,val){
-  if(pelRO()){ renderCyc(); return; }
-  var rl=(CYC.reels||[]).filter(function(x){ return x.seq===seq; })[0]; if(!rl) return;
-  var n=(field==="cycleMin")?(cycTime(val)!=null?cycTime(val):(isFinite(parseFloat(val))?Math.round(parseFloat(val)):null)):(isFinite(parseFloat(val))?parseFloat(val):null);
-  rl[field]=n; save(); renderCyc();
-}
-function cycDeleteReel(seq){
-  if(pelRO()) return; var rl=(CYC.reels||[]).filter(function(x){ return x.seq===seq; })[0]; if(!rl) return;
-  if(!confirm("Delete reel "+rl.id+" from the register?")) return;
-  CYC.reels=CYC.reels.filter(function(x){ return x.seq!==seq; }); CYC.importLog.push({ at:new Date().toISOString(), action:"deleted reel "+rl.id+" (seq "+seq+", uid "+(rl.uid||"")+")" });
-  save(); renderCyc();
-}
-function cycQ(v){ var t=String(v==null?"":v); if(/^[=+\-@\t\r]/.test(t)) t="'"+t; return '"'+t.replace(/"/g,'""')+'"'; }
-function cycFileName(ext){ return "Project Event Log - Recovery Cycles - "+curProject()+" - "+new Date().toISOString().slice(0,10)+(ext?"."+ext:""); }
-function cycRows(midRule){
-  var rows=[["Seq","Reel","Flowline","Activity type","Start date","Trip","HLV TP"].concat(CYC_STEPS.map(function(s){ return s.n+" (min)"; })).concat(["Sum of steps (min)","Cycle total (min)","Unallocated (min)","Length m","Weight Te","m/hr","Te/hr","Status"])];
-  cycSel().forEach(function(rl){ var d=cycDerive(rl,midRule); rows.push([rl.seq,rl.id,rl.flowline||"",cycTypeOf(rl),rl.dateStart||"",rl.trip!=null?rl.trip:"",rl.hlvTp!=null?rl.hlvTp:""].concat(CYC_STEPS.map(function(s){ return d.stepMin[s.k]!=null?d.stepMin[s.k]:""; })).concat([d.sumSteps||"",rl.cycleMin!=null?rl.cycleMin:"",d.unallocated!=null?d.unallocated:"",rl.lengthM!=null?rl.lengthM:"",rl.weightTe!=null?rl.weightTe:"",d.mPerHr!=null?d.mPerHr:"",d.tePerHr!=null?d.tePerHr:"",rl.status])); });
-  return rows;
-}
-function cycNormRows(midRule){
-  var rows=[["Flowline","Step","Reels","First (min)","Best (min)","Mean (min)","Latest (min)","First to latest %"]];
-  (CYC_UI.flow?[CYC_UI.flow]:cycFlows().concat(["ALL"])).forEach(function(f){ var rs=cycSel().filter(function(rl){ return f==="ALL"||rl.flowline===f; }); var n=cycNorms(rs,midRule); CYC_STEPS.concat([{k:"cycle",n:"Cycle total"}]).forEach(function(st){ var v=n[st.k]; if(v) rows.push([f,st.n,v.n,v.first,v.best,v.mean,v.last,v.change!=null?v.change:""]); }); });
-  return rows;
-}
-function cycExportCSV(){
-  var midRule=CYC_UI.midRule;
-  var csv="RECOVERY CYCLE REGISTER"+(CYC_UI.flow?" ("+CYC_UI.flow+" only)":"")+"\n"+cycRows(midRule).map(function(r){ return r.map(cycQ).join(","); }).join("\n")+"\n\nACHIEVED NORMS\n"+cycNormRows(midRule).map(function(r){ return r.map(cycQ).join(","); }).join("\n")+"\n";
-  try{ csv+="\n"+exportMetaLine(); }catch(e){}
-  dl(csv, cycFileName("csv"), "text/csv");
-}
-function cycExportXLSX(){
-  if(!window.XLSX || !XLSX.utils || !XLSX.writeFile){ alert("Excel writer not available offline; use Export CSV."); return; }
-  var midRule=CYC_UI.midRule, wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cycRows(midRule)), "Cycle register");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cycNormRows(midRule)), "Norms");
-  var lc=[["Seq","Reel","Flowline","Start date","Cycle total (min)"].concat(CYC_STEPS.map(function(s){ return s.n+" (min)"; })).concat(["Length m","m/hr"])];
-  (CYC.reels||[]).filter(function(r){ return r.status==="complete"; }).sort(function(a,b){ return a.seq-b.seq; }).forEach(function(rl){ var d=cycDerive(rl,midRule); lc.push([rl.seq,rl.id,rl.flowline||"",rl.dateStart||"",rl.cycleMin!=null?rl.cycleMin:""].concat(CYC_STEPS.map(function(s){ return d.stepMin[s.k]!=null?d.stepMin[s.k]:""; })).concat([rl.lengthM!=null?rl.lengthM:"",d.mPerHr!=null?d.mPerHr:""])); });
+
+/* exports: every output is scoped by the frozen selection snapshot, or explicitly labelled full */
+function cycQ(v){ var t=String(v==null?"":v); if(/^\s*[=+\-@\t\r]/.test(t)) t="'"+t; return '"'+t.replace(/"/g,'""')+'"'; }
+function cycFileName(kind, ext){ return "Project Event Log - Recovery Cycles - "+curProject()+" - "+kind+" - "+new Date().toISOString().slice(0,10)+(ext?"."+ext:""); }
+function cycRowsFor(reels, midRule){ var rows=[["Campaign #","Cohort #","Reel","Flowline","Activity template","Start date","Trip","HLV TP"].concat(CYC_STEPS.map(function(s){ return s.n+" (min)"; })).concat(["Sum of stages (min)","Cycle total (min)","Unallocated (min)","Length m","Weight t","Throughput m/h","Active recovery m/h","Status","Included","Cycle ID","Source"])]; reels.forEach(function(rl){ var d=cycDerive(rl,midRule); rows.push([rl.campaignSeq||"",rl.cohortSeq||"",rl.id,rl.flowlineId||"",cycTemplateOf(rl).id,rl.dateStart||"",rl.trip!=null?rl.trip:"",rl.hlvTp!=null?rl.hlvTp:""].concat(CYC_STEPS.map(function(s){ return d.stepMin[s.k]!=null?d.stepMin[s.k]:""; })).concat([d.sumSteps||"",rl.cycleMin!=null?rl.cycleMin:"",d.unallocated!=null?d.unallocated:"",rl.lengthM!=null?rl.lengthM:"",rl.weightTe!=null?rl.weightTe:"",d.mPerHr!=null?d.mPerHr:"",d.activeRate!=null?d.activeRate:"",rl.status,rl.included===false?"excluded"+(rl.excludeReason?": "+rl.excludeReason:""):"yes",rl.cycleId,(rl.src&&rl.src.file)||""])); }); return rows; }
+function cycNormRowsFor(reels, flows, midRule){ var rows=[["Flowline","Stage","Included reels","First (min)","Best (min)","Mean (min)","Latest (min)","First to latest %"]]; flows.forEach(function(f){ var n=cycNorms(reels.filter(function(r){ return r.flowlineId===f; }),midRule); CYC_STEPS.concat([{k:"cycle",n:"Cycle total"}]).forEach(function(st){ var v=n[st.k]; if(v) rows.push([f,st.n,v.n,v.first,v.best,v.mean,v.last,v.change!=null?v.change:""]); }); }); return rows; }
+function cycManifestRows(snap, label){ var pol=snap.normPolicy; return [["Output",label],["Project",snap.project],["Generated",snap.generatedAt],["Build",snap.build],["Register revision",snap.projectRevision],["Scope",snap.scope],["Flowlines",snap.flowlines.join(", ")],["Activity templates",snap.templates.join(", ")],["Cohort sequence range",(snap.cohortSequenceRange[0]||"start")+" to "+(snap.cohortSequenceRange[1]||"end")],["Included cycles",snap.includedCycleIds.length],["Excluded from this output",snap.excludedCycleIds.length],["Midline convention",snap.midlineConvention],["NORM policy",pol.id+" "+pol.operator+" "+pol.value+" "+pol.unit+" effective "+pol.effectiveFrom],["Statistics policy","fit from "+snap.statsPolicy.minFit+" reels, planning grade from "+snap.statsPolicy.minPlanning],["Note","Charts are produced in the application, its client report and its printed output; this workbook carries the data behind them. Sheets named with the scope contain only the selected cycles and their linked records."]]; }
+function cycBookFor(reels, label, snap){
+  var mid=CYC_UI.midRule, ids=reels.map(function(r){ return r.cycleId; }), flows=reels.map(function(r){ return r.flowlineId; }).filter(function(v,i,a){ return v && a.indexOf(v)===i; });
+  var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cycManifestRows(snap,label)), "Manifest");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cycRowsFor(reels,mid)), "Cycle register");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cycNormRowsFor(reels,flows,mid)), "Stage norms");
+  var lc=[["Cohort #","Reel","Flowline","Start date","Cycle total (min)"].concat(CYC_STEPS.map(function(s){ return s.n+" (min)"; })).concat(["Length m","Throughput m/h","Active recovery m/h"])]; reels.filter(function(r){ return r.status==="complete"; }).forEach(function(rl){ var d=cycDerive(rl,mid); lc.push([rl.cohortSeq||"",rl.id,rl.flowlineId||"",rl.dateStart||"",rl.cycleMin!=null?rl.cycleMin:""].concat(CYC_STEPS.map(function(s){ return d.stepMin[s.k]!=null?d.stepMin[s.k]:""; })).concat([rl.lengthM!=null?rl.lengthM:"",d.mPerHr!=null?d.mPerHr:"",d.activeRate!=null?d.activeRate:""])); });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lc), "Learning curve data");
-  var sd=[["Reel","Flowline","Step","Start","Finish","Duration (min)","Comment"]];
-  (CYC.reels||[]).slice().sort(function(a,b){ return a.seq-b.seq; }).forEach(function(rl){ rl.steps.forEach(function(s){ sd.push([rl.id,rl.flowline||"",s.name,s.start!=null?cycH(s.start):"",s.end!=null?(s.end===1440?"24:00":cycH(s.end)):"",s.min,s.note||""]); }); });
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sd), "Step times");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Trip date","Trip","HLV TP","Reel","Flowline","Weight Te","Duration (min)","Length m"]].concat((CYC.trips||[]).map(function(t){ return [t.date||"",t.trip!=null?t.trip:"",t.hlvTp!=null?t.hlvTp:"",t.reel,t.flowline||"",t.weightTe!=null?t.weightTe:"",t.durationMin!=null?t.durationMin:"",t.lengthM!=null?t.lengthM:""]; }))), "Trips");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Reel","Location","Readings Bq/cm2","Above 0.2 trigger"]].concat((CYC.readings||[]).map(function(x){ return [x.reel,x.location||"",x.readings.join(" / "),x.above?"YES":"no"]; }))), "NORM readings");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Generated",new Date().toISOString()],["Build",APP_BUILD],["Project",curProject()],["Filter",CYC_UI.flow||"all flowlines"],["Note","Charts are produced in the application, its printed report and the HTML report export; this workbook carries the data behind them. The sheet named PEL Cycles JSON re-imports into the app with full fidelity."]]), "About");
-  var js=JSON.stringify(CYC); var chunks=[]; for(var ci=0; ci<js.length; ci+=30000) chunks.push([js.slice(ci,ci+30000)]);
+  var fitRows=[["Flowline","Included reels","Grade","Learning rate","Improvement per doubling %","R squared","Next reel (min)","Range low (min)","Range high (min)","Reason"]]; flows.forEach(function(f){ var rs=reels.filter(function(r){ return r.flowlineId===f && r.status==="complete" && r.cycleMin!=null; }).sort(function(a,b){ return a.cohortSeq-b.cohortSeq; }); var ft=cycFit(rs.map(function(r){ return r.cycleMin; })); fitRows.push([f, ft.n, ft.grade, ft.ok?Math.round(ft.learningRate*1000)/1000:"", ft.ok?Math.round(ft.improvementPerDoubling*100):"", ft.ok?Math.round(ft.r2*100)/100:"", ft.ok?Math.round(ft.next):"", ft.ok?Math.round(ft.nextLo):"", ft.ok?Math.round(ft.nextHi):"", ft.ok?"":ft.reason]); });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(fitRows), "Learning fit");
+  var sd=[["Reel","Flowline","Stage","Start","Finish","Duration (min)","Comment","Source row"]]; reels.forEach(function(rl){ (rl.steps||[]).forEach(function(s){ sd.push([rl.id,rl.flowlineId||"",s.name,s.start!=null?cycH(s.start):"",s.end!=null?(s.end===1440?"24:00":cycH(s.end)):"",s.min,s.note||"",s.row||""]); }); });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sd), "Stage times");
+  var pol=snap.normPolicy; var prog=[["Flowline","Control length m","Accepted recovered m","Provisional m","Planned m","Excluded m","Remaining m","Recovered %","Variance to control m","Reconciliation required"]]; flows.forEach(function(f){ var p=cycProgress(f); prog.push([f,p.control!=null?p.control:"",p.accepted,p.provisional,p.planned,p.excluded,p.remaining!=null?p.remaining:"",p.pct!=null?p.pct:"",p.variance!=null?p.variance:"",p.over?"YES":"no"]); });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(prog), "Progress");
+  var trips=(CYC.trips||[]).filter(function(t){ return ids.indexOf(t.cycleId)>=0; }), rds=(CYC.readings||[]).filter(function(x){ return ids.indexOf(x.cycleId)>=0; });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Trip date","Trip","HLV TP","Reel","Flowline","Weight t","Duration (min)","Length m"]].concat(trips.map(function(t){ return [t.date||"",t.trip!=null?t.trip:"",t.hlvTp!=null?t.hlvTp:"",t.reel,t.flowlineId||"",t.weightTe!=null?t.weightTe:"",t.durationMin!=null?t.durationMin:"",t.lengthM!=null?t.lengthM:""]; }))), "Trips");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Reel","Location","Readings "+pol.unit,"Policy","Trigger","Result"]].concat(rds.map(function(x){ var st=cycNormStatus(x.readings,pol); return [x.reel,x.location||"",x.readings.join(" / "),pol.id,pol.operator+" "+pol.value+" "+pol.unit,st.label]; }))), "NORM readings");
+  var sub={ version:3, revision:CYC.revision, templates:CYC.templates, flowlines:(CYC.flowlines||[]).filter(function(f){ return flows.indexOf(f.id)>=0; }), reels:reels, trips:trips, readings:rds, importLog:[], settings:CYC.settings, scope:label }; var js=JSON.stringify(sub); var chunks=[]; for(var ci=0; ci<js.length; ci+=30000) chunks.push([js.slice(ci,ci+30000)]);
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(chunks), "PEL Cycles JSON");
-  wb.SheetNames.forEach(function(n){ var ws=wb.Sheets[n]; var ref=ws["!ref"]; if(!ref) return; var cols=XLSX.utils.decode_range(ref).e.c+1; ws["!cols"]=[]; for(var k=0;k<cols;k++) ws["!cols"].push({wch:k===0?18:14}); });
-  XLSX.writeFile(wb, cycFileName("xlsx"));
+  wb.SheetNames.forEach(function(n){ var ws=wb.Sheets[n]; var ref=ws["!ref"]; if(!ref) return; var cols=XLSX.utils.decode_range(ref).e.c+1; ws["!cols"]=[]; for(var k=0;k<cols;k++) ws["!cols"].push({wch:k===0?20:14}); });
+  return wb;
 }
-function cycPrint(){ showTab("cyc"); (CYC.reels||[]).forEach(function(r){ CYC_UI.open[r.seq]=true; }); renderCyc(); var prev=document.title; setTimeout(function(){ document.title=cycFileName(""); var restore=function(){ document.title=prev; window.removeEventListener("afterprint",restore); }; window.addEventListener("afterprint",restore); window.print(); setTimeout(restore, 4000); }, 200); }
+function cycExportXLSX(){ if(!window.XLSX || !XLSX.utils || !XLSX.writeFile){ alert("Excel writer not available offline; use the CSV export."); return; } var snap=cycSnapshot(); XLSX.writeFile(cycBookFor(cycSel(),"Current analysis, scope "+snap.scope,snap), cycFileName("analysis "+cycScopeTag(),"xlsx")); }
+function cycExportRegister(){ if(!window.XLSX || !XLSX.utils || !XLSX.writeFile){ alert("Excel writer not available offline; use the CSV export."); return; } var f0=CYC_UI.flow, s0=CYC_UI.seqFrom, t0=CYC_UI.seqTo, x0=CYC_UI.includeExcluded; CYC_UI.flow=""; CYC_UI.seqFrom=null; CYC_UI.seqTo=null; CYC_UI.includeExcluded=true; var snap=cycSnapshot(); snap.scope="FULL REGISTER, all flowlines, including excluded reels"; var wb=cycBookFor(cycSel(),"FULL REGISTER",snap); CYC_UI.flow=f0; CYC_UI.seqFrom=s0; CYC_UI.seqTo=t0; CYC_UI.includeExcluded=x0; XLSX.writeFile(wb, cycFileName("FULL REGISTER","xlsx")); }
+function cycExportExchange(){ dl(JSON.stringify({ kind:"PEL recovery cycles data exchange (complete register, not a client report)", project:curProject(), build:APP_BUILD, generatedAt:new Date().toISOString(), cycles:CYC }, null, 1), cycFileName("DATA EXCHANGE","json"), "application/json"); }
+function cycExportCSV(){ var snap=cycSnapshot(); var reels=cycSel(); var flows=CYC_UI.flow?[CYC_UI.flow]:cycFlows(); var csv="RECOVERY CYCLE REGISTER, scope: "+snap.scope+" (current analysis; excluded from this output: "+snap.excludedCycleIds.length+" cycles)\n"+cycRowsFor(reels,CYC_UI.midRule).map(function(r){ return r.map(cycQ).join(","); }).join("\n")+"\n\nSTAGE NORMS\n"+cycNormRowsFor(reels,flows,CYC_UI.midRule).map(function(r){ return r.map(cycQ).join(","); }).join("\n")+"\n\nMANIFEST\n"+cycManifestRows(snap,"Current analysis CSV").map(function(r){ return r.map(cycQ).join(","); }).join("\n")+"\n"; try{ csv+="\n"+exportMetaLine(); }catch(e){} dl(csv, cycFileName("analysis "+cycScopeTag(),"csv"), "text/csv"); }
 function cycExportReport(){
-  (CYC.reels||[]).forEach(function(r){ CYC_UI.open[r.seq]=true; }); renderCyc();
-  var css=(document.getElementById("view-cyc").querySelector("style")||{}).innerHTML||"";
-  var body=document.getElementById("view-cyc").innerHTML.replace(/<style>[\s\S]*?<\/style>/,"");
-  var html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(cycFileName(""))+'</title><style>body{font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#1A1A1A;background:#fff;margin:24px;max-width:1200px}.panel{border:1px solid #e6e1d6;border-radius:6px;margin:14px 0;background:#fff}.noprint{display:none !important}.cyc-reel-b{display:block !important}'+css.replace(/#view-cyc\s*/g,"")+'</style></head><body><div style="font-size:11px;color:#8C8C8C">Project Event Log · '+esc(curProject())+' · Recovery cycles report · '+new Date().toISOString().slice(0,10)+' · build '+esc(APP_BUILD)+'</div>'+body+'</body></html>';
-  dl(html, cycFileName("html"), "text/html");
+  var snap=cycSnapshot(); var sel=cycSel(); var prevClient=CYC.settings.clientView, prevOpen=JSON.parse(JSON.stringify(CYC_UI.open)); CYC.settings.clientView=true; sel.forEach(function(r){ CYC_UI.open[r.cycleId]=true; });
+  var css=(document.getElementById("view-cyc").querySelector("style")||{}).innerHTML||""; var pol=snap.normPolicy;
+  var manifest='<div style="border:1px solid #e6e1d6;border-radius:6px;padding:12px 14px;font-size:12px;color:#4a4a4a;margin-bottom:14px"><div style="font-size:16px;font-weight:700;color:#1A1A1A">Recovery cycles report · '+esc(snap.project)+'</div><div>Scope '+esc(snap.scope)+' · cohort reels '+(snap.cohortSequenceRange[0]||"start")+' to '+(snap.cohortSequenceRange[1]||"end")+' · '+snap.includedCycleIds.length+' included cycles, '+snap.excludedCycleIds.length+' excluded from this report · register revision '+snap.projectRevision+' · generated '+esc(snap.generatedAt.replace("T"," ").slice(0,16))+' UTC · build '+esc(snap.build)+'</div><div>NORM policy '+esc(pol.id)+' ('+esc(pol.operator)+' '+pol.value+' '+esc(pol.unit)+', effective '+esc(pol.effectiveFrom)+') · statistics policy: fit from '+snap.statsPolicy.minFit+' reels, planning grade from '+snap.statsPolicy.minPlanning+' · midlines: '+esc(snap.midlineConvention)+'</div><div style="margin-top:4px">This report is a frozen analysis snapshot. It is not a contractual performance statement, and estimates from fewer than five reels are indicative.</div></div>';
+  var body='<div class="panel cyc-sec"><p class="cyc-h">Where we stand</p>'+cycV_kpis(sel)+cycV_interp(sel)+'</div><div class="panel cyc-sec"><p class="cyc-h">Learning curve</p><div class="cyc-grid2">'+cycV_curves(sel,236)+'</div></div><div class="panel cyc-sec"><p class="cyc-h">What each cycle was made of</p>'+cycStack(sel,CYC_UI.midRule)+'</div><div class="panel cyc-sec">'+cycV_norms(sel)+'</div>'+(function(){ var c=cycV_compare(sel); return c?'<div class="panel cyc-sec">'+c+'</div>':''; })()+'<div class="panel cyc-sec">'+cycV_productivity(sel)+'</div><div class="panel cyc-sec">'+cycV_progress()+'</div><div class="panel cyc-sec">'+cycV_quality()+'</div><div class="panel cyc-sec">'+cycV_register(sel)+'</div>';
+  CYC.settings.clientView=prevClient; CYC_UI.open=prevOpen;
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(cycFileName("report "+cycScopeTag(),""))+'</title><style>body{font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#1A1A1A;background:#fff;margin:24px;max-width:1200px}.panel{border:1px solid #e6e1d6;border-radius:6px;margin:14px 0;background:#fff}.noprint{display:none !important}.cyc-reel-b{display:block !important}'+css.replace(/#view-cyc\s*/g,"")+'</style></head><body>'+manifest+body+'</body></html>';
+  dl(html, cycFileName("report "+cycScopeTag(),"html"), "text/html"); renderCyc();
 }
+function cycPrint(){ showTab("cyc"); var prevOpen=JSON.parse(JSON.stringify(CYC_UI.open)), prevView=CYC_UI.view; cycSel().forEach(function(r){ CYC_UI.open[r.cycleId]=true; }); renderCyc(); var prev=document.title; setTimeout(function(){ document.title=cycFileName("report "+cycScopeTag(),""); var restore=function(){ document.title=prev; CYC_UI.open=prevOpen; CYC_UI.view=prevView; renderCyc(); window.removeEventListener("afterprint",restore); }; window.addEventListener("afterprint",restore); window.print(); setTimeout(restore, 4000); }, 200); }
+
+/* agent context: register, norms, fit facts, progress and the policies, from the same functions as the screen */
 function cycAgentSummary(){
-  var reels=(CYC.reels||[]).slice().sort(function(a,b){ return a.seq-b.seq; }).slice(-200); if(!reels.length) return null;
-  var out={ steps:CYC_STEPS.map(function(s){ return s.k+": "+s.n; }), midline_convention:"mean minutes per midline event", reels:reels.map(function(rl){ var d=cycDerive(rl,"mean"); return { seq:rl.seq, reel:rl.id, flowline:rl.flowline, activity:cycTypeOf(rl), date:rl.dateStart, trip:rl.trip, status:rl.status, step_min:d.stepMin, sum_steps_min:d.sumSteps, cycle_min:rl.cycleMin, unallocated_min:d.unallocated, length_m:rl.lengthM, weight_te:rl.weightTe, m_per_hr:d.mPerHr, notes:(rl.notes||[]).slice(0,4) }; }), norms:{}, progress:{} };
-  cycFlows().forEach(function(f){ var n=cycNorms(reels.filter(function(rl){ return rl.flowline===f; }),"mean"); var o={}; for(var k in n){ o[k]={ n:n[k].n, mean_min:n[k].mean, best_min:n[k].best, first_min:n[k].first, last_min:n[k].last, change_pct:n[k].change }; } var ft=cycFit(reels.filter(function(rl){ return rl.flowline===f && rl.status==="complete" && rl.cycleMin!=null; }).map(function(rl){ return rl.cycleMin; })); o.learning_curve = ft.ok ? { n:ft.n, learning_rate:Math.round(ft.learningRate*1000)/1000, improvement_per_doubling_pct:Math.round(ft.improvementPerDoubling*100), r2:Math.round(ft.r2*100)/100, projected_next_reel_min:Math.round(ft.next), thin_sample:!!ft.thin } : { n:ft.n, insufficient:true, reason:ft.reason }; out.norms[f]=o; var fl=(CYC.flowlines||[]).filter(function(x){ return x.id===f; })[0]; if(fl&&fl.lengthM){ var rec=0; reels.forEach(function(rl){ if(rl.flowline===f&&rl.lengthM) rec+=rl.lengthM; }); out.progress[f]={ length_m:fl.lengthM, recovered_m:Math.round(rec), remaining_m:Math.round(fl.lengthM-rec), recovered_pct:Math.round(rec/fl.lengthM*100) }; } });
+  var reels=(CYC.reels||[]).filter(function(r){ return !r.deleted; }).sort(function(a,b){ return (a.campaignSeq||0)-(b.campaignSeq||0); }).slice(-200); if(!reels.length) return null;
+  var out={ taxonomy:CYC_STEPS.map(function(s){ return s.k+": "+s.n; }), midline_convention:"mean minutes per midline event", norm_policy:JSON.parse(JSON.stringify(CYC.settings.normPolicy)), statistics_policy:JSON.parse(JSON.stringify(CYC.settings.statsPolicy)), register_revision:CYC.revision||0, reels:reels.map(function(rl){ var d=cycDerive(rl,"mean"); return { campaign_seq:rl.campaignSeq, cohort_seq:rl.cohortSeq, reel:rl.id, cycle_id:rl.cycleId, flowline:rl.flowlineId, template:cycTemplateOf(rl).id, activity:cycTypeOf(rl), date:rl.dateStart, trip:rl.trip, status:rl.status, included:rl.included!==false, exclude_reason:rl.excludeReason||"", step_min:d.stepMin, sum_steps_min:d.sumSteps, cycle_min:rl.cycleMin, unallocated_min:d.unallocated, missing_stages:d.missing, length_m:rl.lengthM, weight_t:rl.weightTe, throughput_m_per_h:d.mPerHr, active_recovery_m_per_h:d.activeRate, notes:(rl.notes||[]).slice(0,4) }; }), norms:{}, progress:{}, data_quality:cycQuality().items.map(function(i){ return i.cls+": "+i.text; }).slice(0,40) };
+  cycFlows().forEach(function(f){ var rs=reels.filter(function(rl){ return rl.flowlineId===f; }); var n=cycNorms(rs,"mean"); var o={}; for(var k in n){ o[k]={ n:n[k].n, mean_min:n[k].mean, best_min:n[k].best, first_min:n[k].first, last_min:n[k].last, change_pct:n[k].change }; } var ft=cycFit(rs.filter(function(rl){ return rl.status==="complete" && cycIncluded(rl) && rl.cycleMin!=null; }).sort(function(a,b){ return a.cohortSeq-b.cohortSeq; }).map(function(rl){ return rl.cycleMin; })); o.learning_curve = ft.ok ? { n:ft.n, grade:ft.grade, learning_rate:Math.round(ft.learningRate*1000)/1000, improvement_per_doubling_pct:Math.round(ft.improvementPerDoubling*100), r2:Math.round(ft.r2*100)/100, projected_next_reel_min:Math.round(ft.next), indicative_range_min:[Math.round(ft.nextLo),Math.round(ft.nextHi)], not_a_schedule_commitment:true } : { n:ft.n, insufficient:true, reason:ft.reason }; out.norms[f]=o; out.progress[f]=cycProgress(f); });
+  var fl=cycFlows(); if(fl.length>=2){ var na=cycNorms(reels.filter(function(r){ return r.flowlineId===fl[0]; }),"mean").cycle, nb=cycNorms(reels.filter(function(r){ return r.flowlineId===fl[1]; }),"mean").cycle; out.comparability={ flowlines:[fl[0],fl[1]], assessment:cycComparable(fl[0],fl[1],na?na.n:0,nb?nb.n:0) }; }
   return out;
 }
 </script>
+
 
 </body>
 </html>
