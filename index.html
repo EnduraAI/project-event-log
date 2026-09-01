@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-09-01.1 - deploy check string: PEL-BUILD-2026-09-01.1 -->
+<!-- Endura Project Event Log - build 2026-09-02.1 - deploy check string: PEL-BUILD-2026-09-02.1 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -271,7 +271,7 @@
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-01.1</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-02.1</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -579,7 +579,7 @@
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-09-01.1";
+var APP_BUILD="2026-09-02.1";
 var PEL_ENV={env:"TEST",agent:true,schema:6};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
@@ -3392,7 +3392,8 @@ function parseSurfWorkbook(sheets){
     var hm=D.match(/^\{?\s*([A-Z]\d{1,2})\s*\}?(.*)$/i);
     if(hm && cycTime(G)==null && cycClock(E)==null && !/clamp|end|recovery|cut|offload|transfer/i.test(D)){
       var id=hm[1].toUpperCase(); occ[id]=(occ[id]||0)+1; var tm=D.match(/trip\s*#?\s*(\d+)/i), hv2=D.match(/hlv\s*trip\s*#?\s*(\d+)/i);
-      cur={ cycleId:cycUid(), id:id, occurrence:occ[id], flowlineId:null, flowHint:flowHint, tripHint:tm?parseInt(tm[1],10):null, hlvHint:hv2?parseInt(hv2[1],10):null, dateStart:null, steps:[], override:{}, cycleMin:null, weightTe:null, lengthM:null, notes:[], status:"planned", included:true, excludeReason:"", deleted:false, src:{sheet:"timings", row:i+1} };
+      var hdrDate=(B!==""&&B!=null)?cycDate(B):null; if(hdrDate) dateCarry=hdrDate;
+      cur={ cycleId:cycUid(), id:id, occurrence:occ[id], flowlineId:null, flowHint:flowHint, tripHint:tm?parseInt(tm[1],10):null, hlvHint:hv2?parseInt(hv2[1],10):null, dateStart:hdrDate, steps:[], override:{}, cycleMin:null, weightTe:null, lengthM:null, notes:[], status:"planned", included:true, excludeReason:"", deleted:false, src:{sheet:"timings", row:i+1} };
       if(H) cur.notes.push(H); out.reels.push(cur); continue; }
     if(!cur) continue;
     var key=cycStepKey(D);
@@ -3651,7 +3652,7 @@ function cycV_import(){
   var pol=CYC.settings.normPolicy, sp=CYC.settings.statsPolicy;
   var flowRows=(CYC.flowlines||[]).filter(function(f){ return (CYC.reels||[]).some(function(r){ return r.flowlineId===f.id && !r.deleted; }); }).map(function(f){ return '<tr><td><b>'+esc(f.id)+'</b> <span class="dim">'+esc(f.name!==f.id?f.name:"")+'</span></td><td class="n">'+(f.lengthM!=null?cycFmtNum(Math.round(f.lengthM))+" m":"")+'</td><td class="n">'+(f.nominalIn!=null?f.nominalIn+'"':"")+'</td><td><select onchange="cycSetFlowTemplate(\''+esc(f.id)+'\',this.value)" style="font-size:12px">'+(CYC.templates||[]).map(function(t){ return '<option value="'+esc(t.id)+'"'+(f.templateId===t.id?' selected':'')+'>'+esc(t.name)+'</option>'; }).join("")+'</select></td></tr>'; }).join("");
   var logRows=(CYC.importLog||[]).slice(-10).reverse().map(function(l){ return '<div class="dim" style="font-size:12px;margin-top:3px">'+esc((l.at||"").replace("T"," ").slice(0,16))+' · '+esc(l.action||(l.file+": "+l.added+" added, "+l.updated+" updated, "+(l.unchanged||0)+" unchanged"+(l.issues?", "+l.issues+" item(s) reviewed":"")))+(l.reviewer?' · '+esc(l.reviewer):'')+(l.hash?' · '+esc(String(l.hash).slice(0,12))+'…':'')+(l.decisions&&l.decisions.length?'<div style="margin-left:14px">'+l.decisions.map(function(d){ return '· '+esc(d); }).join("<br>")+'</div>':'')+'</div>'; }).join("");
-  return '<p class="cyc-h">Import</p><p class="cyc-sub">Choose one or several timing workbooks. Nothing changes until the preview is reviewed: blocking items must be cleared, conflicts need a decision, warnings need acknowledgement, and every change to an existing reel is listed before it is accepted. Identical re-imports change nothing.</p><div class="cyc-actions"><button class="btn" onclick="document.getElementById(\'cycFile\').click()">Choose workbook(s)</button><input id="cycFile" type="file" accept=".xlsx,.xlsm,.xls" multiple style="display:none" onchange="cycImportFile(this)"><button class="btn" onclick="cycToggleForm(true)">+ Add a reel by hand</button><button class="btn" onclick="cycImportFromLog()" title="Build reels from Daily Log lines written as: A2 · 1st end in tensioner">Build from Daily Log lines</button></div><div class="cyc-note ink" style="margin-top:8px"><b>Daily Log convention.</b> Log each stage on its own line at the time it starts, reel first: <i>A2 · Clamp deployment</i>, <i>A2 · 1st end at LOA</i>, <i>A2 · 1st end in tensioner</i>, <i>A2 · 1st end on reel</i>, <i>A2 · Recovery</i>, <i>A2 · Anode removal and midline</i>, <i>A2 · 2nd end cut</i>, <i>A2 · 2nd end secure on reel</i>, and close with <i>A2 · Offload 299.6 t 2192.5 m</i>. Name the flowline once on the first line (FL5). Each line ends the previous stage for that reel; Build from Daily Log lines turns them into reels through the same review as a workbook import.</div><div id="cycImportPreview" class="cyc-import" style="display:none"></div><div id="cycFormWrap" style="display:none"></div>'+
+  return '<p class="cyc-h">Import</p><p class="cyc-sub">Choose one or several timing workbooks. Nothing changes until the preview is reviewed: blocking items must be cleared, conflicts need a decision, warnings need acknowledgement, and every change to an existing reel is listed before it is accepted. Identical re-imports change nothing.</p><div class="cyc-actions"><button class="btn" onclick="document.getElementById(\'cycFile\').click()">Choose workbook(s)</button><input id="cycFile" type="file" accept=".xlsx,.xlsm,.xls" multiple style="display:none" onchange="cycImportFile(this)"><button class="btn" onclick="cycToggleForm(true)">+ Add a reel by hand</button><button class="btn" onclick="cycImportFromLog()" title="Build reels from Daily Log lines written as: A2 · 1st end in tensioner">Build from Daily Log lines</button><button class="btn" onclick="document.getElementById(\'cycDprFiles\').click()" title="Derive reel cycles from contractor Daily Progress Report PDFs">Import DPR PDFs</button><input id="cycDprFiles" type="file" accept=".pdf,application/pdf" multiple style="display:none" onchange="cycImportDprFiles(this)"></div><div class="cyc-note" style="margin-top:8px"><b>From DPRs.</b> Choose the contractor Daily Progress Report PDFs for the days covering the reels (several at once). The app reads each report\'s detailed activity log, finds each reel\'s block and the lines that bound every stage, and builds the reels through the same review as a workbook import, with the DPR line quoted under every stage. Image-only reports cannot be read and are listed as gaps.</div><div class="cyc-note ink" style="margin-top:8px"><b>Daily Log convention.</b> Log each stage on its own line at the time it starts, reel first: <i>A2 · Clamp deployment</i>, <i>A2 · 1st end at LOA</i>, <i>A2 · 1st end in tensioner</i>, <i>A2 · 1st end on reel</i>, <i>A2 · Recovery</i>, <i>A2 · Anode removal and midline</i>, <i>A2 · 2nd end cut</i>, <i>A2 · 2nd end secure on reel</i>, and close with <i>A2 · Offload 299.6 t 2192.5 m</i>. Name the flowline once on the first line (FL5). Each line ends the previous stage for that reel; Build from Daily Log lines turns them into reels through the same review as a workbook import.</div><div id="cycImportPreview" class="cyc-import" style="display:none"></div><div id="cycFormWrap" style="display:none"></div>'+
     '<p class="cyc-h" style="margin-top:20px">Settings</p><div class="cyc-grid2"><div><b style="font-size:13px">Flowlines and templates</b><table class="cyc-t"><thead><tr><th>Flowline</th><th class="n">Control length</th><th class="n">Nominal</th><th>Activity template</th></tr></thead><tbody>'+(flowRows||'<tr><td colspan="4" class="dim">No flowlines yet.</td></tr>')+'</tbody></table><div class="dim" style="font-size:11.5px;margin-top:6px">Templates: '+(CYC.templates||[]).map(function(t){ return esc(t.name)+' ['+esc(t.status)+']'; }).join(" · ")+'. Draft templates carry the SURF stage set until a validated set exists for that activity.</div></div><div><b style="font-size:13px">NORM policy</b><div class="cyc-form"><label>Policy ID<input id="npId" value="'+esc(pol.id)+'"></label><label>Trigger value<input id="npVal" type="number" step="0.01" min="0" value="'+pol.value+'"></label><label>Unit<input id="npUnit" value="'+esc(pol.unit)+'"></label><label>Operator<select id="npOp">'+[">",">=","<","<="].map(function(o){ return '<option'+(pol.operator===o?' selected':'')+'>'+o+'</option>'; }).join("")+'</select></label><label>Effective from<input id="npFrom" type="date" value="'+esc(pol.effectiveFrom)+'"></label><label>Approved by<input id="npBy" value="'+esc(pol.approvedBy||"")+'"></label></div><div class="cyc-actions" style="margin-top:8px"><button class="btn" onclick="cycSavePolicy()">Save NORM policy</button><span class="dim" style="font-size:11.5px">Changing the policy re-evaluates the screen and every new export; earlier issued reports keep the policy they were issued under.</span></div><div style="margin-top:12px"><b style="font-size:13px">Statistics policy</b> <span class="dim" style="font-size:12px">minimum reels for a fitted curve '+sp.minFit+'; planning-grade from '+sp.minPlanning+'</span></div><div style="margin-top:12px"><b style="font-size:13px">Import log</b>'+(logRows||'<div class="dim" style="font-size:12px">Nothing imported yet.</div>')+'</div></div></div>'+provHtml();
 }
 
@@ -3753,18 +3754,20 @@ function cycPreviewMany(results){
 /* match incoming reels against the register; ambiguity is a blocking conflict, never a fallback */
 function cycMatchIncoming(parsed){
   var changes=[]; var blocking=[];
-  parsed.reels.forEach(function(r){ var cands=(CYC.reels||[]).filter(function(x){ return !x.deleted && x.id===r.id && (!r.flowlineId||!x.flowlineId||x.flowlineId===r.flowlineId) && ((r.dateStart&&x.dateStart)?x.dateStart===r.dateStart:x.occurrence===r.occurrence); });
+  parsed.reels.forEach(function(r){ var same=function(x){ return !x.deleted && x.id===r.id && (!r.flowlineId||!x.flowlineId||x.flowlineId===r.flowlineId); }; var cands=(CYC.reels||[]).filter(function(x){ return same(x) && ((r.dateStart&&x.dateStart)?x.dateStart===r.dateStart:x.occurrence===r.occurrence); });
+    if(!cands.length && r.dateStart){ var near=(CYC.reels||[]).filter(function(x){ return same(x) && x.dateStart && Math.abs(cycDayNum(x.dateStart)-cycDayNum(r.dateStart))<=2; }); if(near.length===1) cands=near; else if(near.length>1) cands=near; }
     if(cands.length>1){ blocking.push({cls:"blocking", text:r.id+(r.dateStart?" ("+r.dateStart+")":"")+" matches "+cands.length+" existing reels; identity is ambiguous, so this reel is not applied"}); r.__skip=true; return; }
     if(!cands.length){ changes.push({incoming:r, current:null, kind:"new", fields:[]}); return; }
-    var x=cands[0]; var fields=[]; var cmp=function(name,a,b,fmt){ var sa=JSON.stringify(a==null?null:a), sb=JSON.stringify(b==null?null:b); if(sa!==sb) fields.push({name:name, current:b, incoming:a, currentText:fmt?fmt(b):String(b==null?"–":b), incomingText:fmt?fmt(a):String(a==null?"–":a)}); };
+    var x=cands[0]; var fields=[]; var cmp=function(name,a,b,fmt){ if(a==null && b!=null) return; var sa=JSON.stringify(a==null?null:a), sb=JSON.stringify(b==null?null:b); if(sa!==sb) fields.push({name:name, current:b, incoming:a, currentText:fmt?fmt(b):String(b==null?"–":b), incomingText:fmt?fmt(a):String(a==null?"–":a)}); };
     cmp("Start date", r.dateStart, x.dateStart); cmp("Flowline", r.flowlineId, x.flowlineId); cmp("Trip", r.trip, x.trip); cmp("HLV", r.hlvTp, x.hlvTp); cmp("Cycle total", r.cycleMin, x.cycleMin, cycH); cmp("Length m", r.lengthM, x.lengthM); cmp("Weight t", r.weightTe, x.weightTe);
-    var sumIn=(r.steps||[]).reduce(function(a,s){ return a+s.min; },0), sumCur=(x.steps||[]).reduce(function(a,s){ return a+s.min; },0); if((r.steps||[]).length!==(x.steps||[]).length || sumIn!==sumCur) fields.push({name:"Stage records", current:(x.steps||[]).length+" rows, "+cycH(sumCur), incoming:(r.steps||[]).length+" rows, "+cycH(sumIn), currentText:(x.steps||[]).length+" rows, "+cycH(sumCur), incomingText:(r.steps||[]).length+" rows, "+cycH(sumIn)});
+    var dIn=cycDerive(r,"mean"), dCur=cycDerive(x,"mean"); var stageDiff=0; CYC_STEPS.forEach(function(st){ var a=dIn.stepMin[st.k], b=dCur.stepMin[st.k]; if(a==null && b==null) return; if(a!==b){ stageDiff++; fields.push({name:"Stage: "+st.n, current:b, incoming:a, currentText:b==null?"–":cycH(b), incomingText:a==null?"–":cycH(a)+(a!=null&&b!=null?" ("+(a-b>0?"+":"")+(a-b)+" min)":"")}); } });
+    if(!stageDiff){ var sumIn=(r.steps||[]).reduce(function(a,s){ return a+s.min; },0), sumCur=(x.steps||[]).reduce(function(a,s){ return a+s.min; },0); if((r.steps||[]).length!==(x.steps||[]).length || sumIn!==sumCur) fields.push({name:"Stage records", current:(x.steps||[]).length+" rows, "+cycH(sumCur), incoming:(r.steps||[]).length+" rows, "+cycH(sumIn), currentText:(x.steps||[]).length+" rows, "+cycH(sumCur), incomingText:(r.steps||[]).length+" rows, "+cycH(sumIn)}); }
     changes.push({incoming:r, current:x, kind:fields.length?"changed":"unchanged", fields:fields, decision:fields.every(function(f){ return f.current==null; })?"accept":"keep"}); });
   return {changes:changes, blocking:blocking};
 }
 function cycPreview(parsed, fname, meta){
   parsed.issues=cycNormIssues(parsed.issues); var m=cycMatchIncoming(parsed);
-  __cycPending={ parsed:parsed, fname:fname||"workbook", size:meta&&meta.size, hash:meta&&meta.hash, sheets:(meta&&meta.sheets)||[], files:(meta&&meta.files)||[], changes:m.changes, issues:parsed.issues.concat(m.blocking), conflictChoice:{}, ack:false, reviewer:curUser()||"" };
+  __cycPending={ parsed:parsed, fname:fname||"workbook", size:meta&&meta.size, hash:meta&&meta.hash, sheets:(meta&&meta.sheets)||[], files:(meta&&meta.files)||[], changes:m.changes, issues:parsed.issues.concat(m.blocking), conflictChoice:{}, ack:false, reviewer:curUser()||"", dprConv:parsed.conv||null };
   CYC_UI.view="import"; renderCyc();
 }
 function cycRenderPreview(){
@@ -3773,7 +3776,8 @@ function cycRenderPreview(){
   var comp=parsed.reels.filter(function(r){ return r.status==="complete"; }).length, prog=parsed.reels.filter(function(r){ return r.status==="in-progress"; }).length, plan=parsed.reels.length-comp-prog;
   var newN=P.changes.filter(function(c){ return c.kind==="new"; }).length, chN=P.changes.filter(function(c){ return c.kind==="changed"; }).length, sameN=P.changes.filter(function(c){ return c.kind==="unchanged"; }).length;
   var h='<b>'+(parsed.reels.length?'Found '+parsed.reels.length+' reel'+(parsed.reels.length>1?"s":"")+' in '+esc(P.fname)+':':'Nothing to import from '+esc(P.fname)+'.')+'</b> '+(parsed.reels.length?comp+' complete'+(prog?', '+prog+' in progress':'')+(plan?', '+plan+' planned':'')+'. Against the register: <b>'+newN+' new</b>, <b>'+chN+' changed</b>, '+sameN+' unchanged. Also read '+parsed.trips.length+' trip row(s), '+parsed.flowlines.length+' flowline'+(parsed.flowlines.length!==1?"s":"")+' and '+parsed.readings.length+' NORM reading set(s).':'No reel blocks were found. The timing sheet needs a header row containing Start, finished and Total, with the reel name in the column to the left of Start above its stages.');
-  if(P.files.length>1) h+='<div class="dim" style="font-size:12px;margin-top:4px">'+P.files.map(function(f){ return esc(f.fname)+': '+f.reels+' reel(s), '+f.trips+' trip row(s), '+f.readings+' NORM set(s)'+(f.hash?' · '+esc(String(f.hash).slice(0,12))+'…':''); }).join("<br>")+'</div>';
+  if(P.files.length>1 && !P.dprConv) h+='<div class="dim" style="font-size:12px;margin-top:4px">'+P.files.map(function(f){ return esc(f.fname)+': '+f.reels+' reel(s), '+f.trips+' trip row(s), '+f.readings+' NORM set(s)'+(f.hash?' · '+esc(String(f.hash).slice(0,12))+'…':''); }).join("<br>")+'</div>';
+  if(P.dprConv){ h+=cycDprConvHtml(P.dprConv); h+='<table class="cyc-t" style="margin-top:8px"><thead><tr><th>Reel</th><th>Start</th><th>Line</th><th class="n">Trip</th><th class="n">Stages found</th><th class="n">Cycle</th><th>Source</th><th>Notes</th></tr></thead><tbody>'+parsed.reels.map(function(r){ var d=cycDerive(r,"mean"); var found=CYC_STEPS.filter(function(st){ return d.stepMin[st.k]!=null; }).length; return '<tr><td><b>'+esc(r.id)+'</b></td><td>'+esc(r.dateStart||"")+'</td><td>'+esc(r.flowlineId||"?")+'</td><td class="n">'+(r.trip!=null?r.trip:"")+'</td><td class="n">'+found+' of '+CYC_STEPS.length+'</td><td class="n">'+(r.cycleMin!=null?cycH(r.cycleMin):"–")+'</td><td>'+esc((r.src&&r.src.file)||"")+'</td><td class="dim" style="font-size:11.5px">'+esc((d.missing.length?"missing: "+d.missing.join(", "):"complete"))+'</td></tr>'; }).join("")+'</tbody></table>'; }
   var ci=0; h+='<div style="margin-top:8px"><b>Review ('+P.issues.length+' item'+(P.issues.length!==1?"s":"")+'; '+counts.blocking+' blocking, '+counts.conflict+' conflict, '+counts.warning+' warning, '+counts.note+' note):</b>'+(P.issues.length?'<div style="max-height:220px;overflow:auto;margin-top:4px">'+P.issues.map(function(i,idx){ var row='<div class="cyc-issue '+esc(i.cls)+'"><b>'+esc(i.cls.charAt(0).toUpperCase()+i.cls.slice(1))+'.</b> '+esc(i.text); if(i.cls==="conflict" && i.options){ row+='<div style="margin-top:4px">'+i.options.map(function(o,oi){ return '<label style="margin-right:12px;font-size:12px"><input type="radio" name="cycConf'+idx+'" '+(P.conflictChoice[idx]===oi?"checked":"")+' onchange="__cycPending.conflictChoice['+idx+']='+oi+'"> '+esc(o.label)+'</label>'; }).join("")+'</div>'; } return row+'</div>'; }).join("")+'</div>':'<div class="dim" style="font-size:12px">Every stage total agrees with its start and finish times and no cross-sheet conflicts were found.</div>')+'</div>';
   if(chN) h+='<div style="margin-top:8px"><b>Changes to existing reels</b> <span class="dim" style="font-size:12px">(default: keep the current value where one exists; accept where the register is empty)</span><table class="cyc-t"><thead><tr><th>Reel</th><th>Field</th><th class="n">Current</th><th class="n">Incoming</th><th>Decision</th></tr></thead><tbody>'+P.changes.filter(function(c){ return c.kind==="changed"; }).map(function(c,i){ var idx=P.changes.indexOf(c); return c.fields.map(function(f,fi){ return '<tr><td>'+(fi===0?'<b>'+esc(cycReelLabel(c.current))+'</b>':'')+'</td><td>'+esc(f.name)+'</td><td class="n">'+esc(f.currentText)+'</td><td class="n">'+esc(f.incomingText)+'</td><td>'+(fi===0?'<select style="font-size:12px" onchange="__cycPending.changes['+idx+'].decision=this.value"><option value="keep"'+(c.decision==="keep"?" selected":"")+'>keep current</option><option value="accept"'+(c.decision==="accept"?" selected":"")+'>accept incoming</option></select>':'')+'</td></tr>'; }).join(""); }).join("")+'</tbody></table></div>';
   var undecided=P.issues.filter(function(i,idx){ return i.cls==="conflict" && i.options && P.conflictChoice[idx]==null; }).length;
@@ -3963,6 +3967,176 @@ function cycAddReadingForm(){ var reel=document.getElementById("nrReel").value, 
 /* hooks into the existing views */
 var __renderLog318=renderLog; renderLog=function(){ var r=__renderLog318.apply(this,arguments); try{ dprDayNote(); }catch(e){} return r; };
 var __showTab318=showTab; showTab=function(t){ var r=__showTab318.apply(this,arguments); try{ if(t==="dpr") renderDprLog(); }catch(e){} return r; };
+</script>
+<script>
+/* ===== DPR to Recovery Cycles: timeline extraction, stage recognition with explicit conventions, reel assembly ===== */
+var DPR_CONV_DEFAULT={ clampEnd:"installation", tensionerEnd:"squeeze", midlineEnd:"continue", cutStart:"stop" };
+var DPR_CONV_OPTIONS={
+  clampEnd:[["installation","Clamp stage ends at 'completed clamp installation'"],["retorque","Clamp stage ends at the completed retorque (if any)"]],
+  tensionerEnd:[["squeeze","Tensioner stage ends when the tensioner closes and squeezes"],["hold","Tensioner stage ends at 'tensioner hold completed'"]],
+  midlineEnd:[["continue","Midline ends at the first 'continue recovery' after the transfer back to the tensioner"],["transfer","Midline ends at the transfer back to the tensioner itself"]],
+  cutStart:[["stop","Cut starts when the vessel stops for the cut"],["deploy","Cut starts when the DWS is deployed"]]
+};
+function dprRx(p){ return new RegExp(p,"i"); }
+var DPR_PAT={
+  commence: dprRx("\\bcommence\\b.*\\bTP-?\\s?\\d+\\b.*\\(?\\s*reel\\s*#?\\s*([A-Z]\\d)"),
+  complete: dprRx("\\bcompleted?\\b.*\\bTP-?\\s?\\d+\\b.*\\breel\\s*#?\\s*([A-Z]\\d)|\\breel\\s*#?\\s*([A-Z]\\d)\\b.*\\bsecured\\b.*\\btransit|\\bsecured reel\\s*#?\\s*\\d|stern reel .*secured for transit|secured .*for transit"),
+  reelMention: dprRx("\\breel\\s*#?\\s*([A-Z]\\d)\\b"),
+  flow: dprRx("\\b(FL-?\\s?\\d+|UMB-?\\s?\\d+)\\b"),
+  trip: dprRx("\\btrip\\s*#?\\s*(\\d+)"),
+  tp: dprRx("\\b(TP-?\\s?\\d+)\\b"),
+  clampStart:[dprRx("dredg.*clamp position|clamp position.*dredg"), dprRx("(crane|deploy|overboard|leaves surface).*(recovery )?clamp|clamp.*(deploy(ed|ment)?\\b|overboard|leaves surface)")],
+  clampInstall:[dprRx("completed .*clamp installation|clamp installation completed?")],
+  clampRetorque:[dprRx("completed retorque|completed .*re-?torque")],
+  clampOther:[dprRx("resume recovery.*(to surface|onboard)|commence (FL-?\\s?\\d+ )?recovery\\b"), dprRx("clamp engaged|installed recovery clamp")],
+  loaEnd1:[dprRx("brought into (LOA|FOA)|into (LOA|FOA) platform"), dprRx("transfer .*(into|to) (the )?LOA|(1st|first) end .*(over|at|into) LOA")],
+  loaEnd2:[dprRx("(1st|first) end .*surface"), dprRx("commence RSO")],
+  tensSqueeze:[dprRx("locked into tensioner|tensioner closed .*squeeze|tensioner .*closed.*(squeeze|track)|track squeezed")],
+  tensHold:[dprRx("hold test completed|completed .*tensioner hold|tensioner hold.*(completed|released)|released tension off")],
+  tensOther:[dprRx("set zero (length|reading)"), dprRx("commence hauling in")],
+  reel1End:[dprRx("(1st|first) end .*(connected|secured).*reel|secured (1st|first) end .*reel|secured 1st end to reel|both ends on reel|(1st|first) end .*on (the )?reel|secure(d)? .*1st end")],
+  midStart:[dprRx("(all )?stop.*(mid[- ]?line|MLC)|(mid[- ]?line|MLC).*(at|@|reaching) (LOA|surface|TDP|the tensioner)|(mid[- ]?line|MLC)[^.]*(at|@) LOA"), dprRx("remov(e|ed|ing) .*anode|anode removal|removing anodes"), dprRx("mid[- ]?line|\\bMLC")],
+  midTransfer: dprRx("closing tensioner|tensioner closed|transferred back to tensioner|track squeezed|commence squeeze|squeeze pressure|crane disconnected|disconnected crane|disconnect(ed)? A&R|crane released"),
+  cont: dprRx("(continue|resume|start) .*recover|start recovering|recovery speed|continue FL"),
+  cutStop:[dprRx("(all )?stop.*(cut|DWS|2nd end)|stopped .*(cut|DWS)|for (the )?2nd (end )?cut|2nd end cut")],
+  cutDeploy:[dprRx("crane overboarding DWS|deploy(ing)? DWS|DWS (to|at) \\d+ ?m|roller box off .*DWS|DWS pre-deployment|dredging at cut position")],
+  cutEnd:[dprRx("cut complete|completed .*cut\\b|cut completed|completed 2nd cut"), dprRx("crane coming up with DWS|recovering DWS|DWS (to surface|recovered|on deck)|DWS (de|re)tracting|crane on surface.*DWS")],
+  secureEnd:[dprRx("completed? TP-?\\s?\\d+|complete secure of 2nd end|secured .*(for transit|onto reel|to reel|on reel)|reel .*(secured|in cradles)|2nd (end|tail) .*(secured|spooled)|secure(d)? .*(2nd|second) (end|tail)|2nd end secure")],
+  tensReading: dprRx("tensioner (reading|line meter|line out)\\s*(?:of )?(\\d{3,5}(?:\\.\\d+)?)\\s?m|(\\d{3,5}(?:\\.\\d+)?)\\s?m (recovered|line out)")
+};
+var DPR_STAGE_ORDER=["clamp_start","clamp_end","loa_end","tens_end","reel1_end","mid_start","mid_end","cut_start","cut_end","secure_end"];
+
+/* identity and timeline rows from the flat lines pdf.js produces (or from any text lines) */
+function dprIdentityFromLines(flat){
+  var r={reportDate:"", reportNo:"", vessel:""};
+  flat.forEach(function(l){ var md=l.match(/Report\s*Date[:\s]+(\d{1,2})\/(\d{1,2})\/(\d{4})/i); if(md && !r.reportDate) r.reportDate=md[3]+"-"+("0"+md[2]).slice(-2)+"-"+("0"+md[1]).slice(-2); var mn=l.match(/Report\s*(?:Number|No\.?)[:\s]+(\d+)/i); if(mn && !r.reportNo) r.reportNo=mn[1]; var mv=l.match(/^\s*Vessel\s+([A-Za-z][A-Za-z ]{2,40})$/); if(mv && !r.vessel) r.vessel=mv[1].trim(); });
+  return r;
+}
+function dprTimelineRows(flat){
+  var rows=[]; var inLog=false; var pendingLabel=[];
+  for(var i=0;i<flat.length;i++){
+    var s=String(flat[i]||"").replace(/\s+/g," ").trim(); if(!s) continue;
+    if(/ACTIVITIES.*DETAILED LOG|DETAILED LOG/i.test(s)){ inLog=true; continue; }
+    if(!inLog) continue;
+    if(/PERFORMANCE SUMMARY|CATEGORISED BY TRIPS|^D\)\s|^iv\)/i.test(s)) break;
+    if(/^(VE Constructor|Daily Progress Report|\d+ of \d+)$/i.test(s) || /^TASK\s+TIME\s+ACTIVITY$/i.test(s)) continue;
+    var m=s.match(/^(.*?)(?:^|\s)(\d{1,2}):(\d\d)(?:\s+|$)(.*)$/);
+    if(m && parseInt(m[2],10)<=23 && m[4].trim()){
+      var label=m[1].trim(); if(label) pendingLabel.push(label);
+      var lab=pendingLabel.join(" "); pendingLabel=[];
+      rows.push({ time:parseInt(m[2],10)*60+parseInt(m[3],10), clock:m[2]+":"+m[3], label:lab, text:m[4].trim(), line:i+1 });
+    } else if(rows.length && (s.length>45 || /^[a-z]/.test(s))){ rows[rows.length-1].text+=" "+s; }
+    else pendingLabel.push(s);
+  }
+  return rows;
+}
+function dprDayNum(d){ var m=String(d||"").match(/^(\d{4})-(\d\d)-(\d\d)$/); return m?Math.round(Date.UTC(+m[1],+m[2]-1,+m[3])/86400000):null; }
+
+/* derive reels from timelines [{date, reportNo, rows}] sorted by date */
+function dprDeriveReels(timelines, conv){
+  conv=Object.assign({}, DPR_CONV_DEFAULT, conv||{});
+  var out={ reels:[], trips:[], flowlines:[], readings:[], issues:[], coverage:{days:0, rows:0, blocks:0, gapDays:[]}, conventions:conv };
+  var tls=(timelines||[]).filter(function(t){ return t && t.date && Array.isArray(t.rows); }).slice().sort(function(a,b){ return a.date<b.date?-1:a.date>b.date?1:0; });
+  var rows=[]; tls.forEach(function(t){ var dn=dprDayNum(t.date); t.rows.forEach(function(r,i){ rows.push({ day:t.date, report:t.reportNo||"", abs:dn*1440+r.time, clock:r.clock, label:r.label||"", text:r.text||"", line:r.line||i+1 }); }); });
+  rows.sort(function(a,b){ return a.abs-b.abs; });
+  out.coverage.days=tls.length; out.coverage.rows=rows.length;
+  var days=tls.map(function(t){ return t.date; });
+  for(var g=1; g<days.length; g++){ var gap=dprDayNum(days[g])-dprDayNum(days[g-1]); if(gap>1){ for(var k=1;k<gap;k++){ var miss=new Date((dprDayNum(days[g-1])+k)*86400000).toISOString().slice(0,10); out.coverage.gapDays.push(miss); } } }
+  function firstOf(i0,i1,pats){ var best=null; pats.forEach(function(p){ for(var i=i0;i<Math.min(i1,rows.length);i++){ if(p.test(rows[i].text)){ if(best===null||i<best) best=i; break; } } }); return best; }
+  function unionFirst(i0,i1,pats){ for(var q=0;q<pats.length;q++){ for(var i=i0;i<Math.min(i1,rows.length);i++){ if(pats[q].test(rows[i].text)) return i; } } return null; }
+  var starts=[]; var n=rows.length;
+  for(var i=0;i<n;i++){ var m=DPR_PAT.commence.exec(rows[i].text); if(m) starts.push({i:i, reel:m[1].toUpperCase(), how:"commence"}); }
+  /* label-based fallback: a reel named in a label with no block open */
+  if(!starts.length){ var open=null; for(var i2=0;i2<n;i2++){ var mm=DPR_PAT.reelMention.exec(rows[i2].label) || DPR_PAT.reelMention.exec(rows[i2].text); if(mm && mm[1].toUpperCase()!==open){ open=mm[1].toUpperCase(); starts.push({i:i2, reel:open, how:"label"}); } } }
+  var blocks=[];
+  starts.forEach(function(st,k){ var end=n, cut=false;
+    for(var j=st.i+1;j<n;j++){ var c=DPR_PAT.complete.exec(rows[j].text); var gr=c?((c[1]||c[2]||"").toUpperCase()):"";
+      if(c && (!gr || gr===st.reel)){ end=j+1; break; }
+      if(k+1<starts.length && j>=starts[k+1].i){ end=starts[k+1].i; break; }
+      if(j+1<n && dprDayNum(rows[j+1].day)-dprDayNum(rows[j].day)>1){ end=j+1; cut=true; break; } }
+    blocks.push({i0:st.i, i1:end, reel:st.reel, cut:cut, how:st.how}); });
+  out.coverage.blocks=blocks.length;
+  var occ={};
+  blocks.forEach(function(b){
+    var i0=b.i0, i1=b.i1, reel=b.reel; occ[reel]=(occ[reel]||0)+1;
+    var head=rows[i0]; var fl=(DPR_PAT.flow.exec(head.text)||DPR_PAT.flow.exec(head.label)||[])[1]; var tr=null; for(var qt=i0;qt<i1;qt++){ var tt=rows[qt].text; if(/\breel\b/i.test(tt)){ var tm=/\btrip\s*#?\s*(\d+)/i.exec(tt); if(tm){ tr=tm[1]; break; } } } var tp=(DPR_PAT.tp.exec(head.text)||[])[1];
+    for(var q=i0;q<i1 && !fl;q++){ var f2=DPR_PAT.flow.exec(rows[q].label); if(f2) fl=f2[1]; }
+    var bounds={}; var cur=i0-1;
+    for(var si=0; si<DPR_STAGE_ORDER.length; si++){
+      var name=DPR_STAGE_ORDER[si];
+      if(name==="mid_end"){ var ms=bounds.mid_start; if(ms==null) continue;
+        var cutI=firstOf(ms+1,i1,DPR_PAT.cutStop.concat(DPR_PAT.cutDeploy)); if(cutI==null) cutI=i1;
+        var last=null; for(var j=ms+1;j<cutI;j++){ if(DPR_PAT.midTransfer.test(rows[j].text)) last=j; }
+        var idx=null;
+        if(last!=null){ if(conv.midlineEnd==="transfer" || DPR_PAT.cont.test(rows[last].text)) idx=last; else { for(var j2=last+1;j2<cutI;j2++){ if(DPR_PAT.cont.test(rows[j2].text) && rows[j2].abs-rows[last].abs<=45){ idx=j2; break; } } if(idx==null) idx=last; } }
+        else { for(var j3=ms+1;j3<cutI;j3++){ if(DPR_PAT.cont.test(rows[j3].text)){ idx=j3; break; } } }
+        if(idx!=null){ bounds.mid_end=idx; cur=idx; }
+        continue; }
+      var nextName=DPR_STAGE_ORDER[si+1]; if(nextName==="mid_end") nextName="cut_start";
+      var wend=i1; var nextPats=null;
+      if(nextName==="clamp_end") nextPats=DPR_PAT.clampInstall.concat(DPR_PAT.clampRetorque,DPR_PAT.clampOther); else if(nextName==="loa_end") nextPats=DPR_PAT.loaEnd1.concat(DPR_PAT.loaEnd2); else if(nextName==="tens_end") nextPats=DPR_PAT.tensSqueeze.concat(DPR_PAT.tensHold,DPR_PAT.tensOther); else if(nextName==="reel1_end") nextPats=DPR_PAT.reel1End; else if(nextName==="mid_start") nextPats=DPR_PAT.midStart; else if(nextName==="cut_start") nextPats=DPR_PAT.cutStop.concat(DPR_PAT.cutDeploy); else if(nextName==="cut_end") nextPats=DPR_PAT.cutEnd; else if(nextName==="secure_end") nextPats=DPR_PAT.secureEnd;
+      if(nextPats){ var a=firstOf(cur+2,i1,nextPats); if(a!=null) wend=(name==="clamp_end")?a:a+1; }
+      var idx2=null;
+      if(name==="clamp_start") idx2=unionFirst(cur+1,wend,DPR_PAT.clampStart);
+      else if(name==="clamp_end") idx2=unionFirst(cur+1,wend, conv.clampEnd==="retorque"?DPR_PAT.clampRetorque.concat(DPR_PAT.clampInstall,DPR_PAT.clampOther):DPR_PAT.clampInstall.concat(DPR_PAT.clampRetorque,DPR_PAT.clampOther));
+      else if(name==="loa_end"){ var p1=unionFirst(cur+1,wend,DPR_PAT.loaEnd1), p3=unionFirst(cur+1,wend,DPR_PAT.loaEnd2); idx2=(p1!=null && (p3==null || rows[p1].abs-rows[p3].abs<=40))?p1:(p3!=null?p3:p1); }
+      else if(name==="tens_end") idx2=unionFirst(cur+1,wend, conv.tensionerEnd==="hold"?DPR_PAT.tensHold.concat(DPR_PAT.tensSqueeze,DPR_PAT.tensOther):DPR_PAT.tensSqueeze.concat(DPR_PAT.tensHold,DPR_PAT.tensOther));
+      else if(name==="reel1_end") idx2=unionFirst(cur+1,wend,DPR_PAT.reel1End);
+      else if(name==="mid_start") idx2=unionFirst(cur+1,wend,DPR_PAT.midStart);
+      else if(name==="cut_start") idx2=unionFirst(cur+1,wend, conv.cutStart==="deploy"?DPR_PAT.cutDeploy.concat(DPR_PAT.cutStop):DPR_PAT.cutStop.concat(DPR_PAT.cutDeploy));
+      else if(name==="cut_end") idx2=unionFirst(cur+1,wend,DPR_PAT.cutEnd);
+      else if(name==="secure_end") idx2=unionFirst(cur+1,wend,DPR_PAT.secureEnd);
+      if(idx2==null) continue;
+      bounds[name]=idx2; cur=idx2;
+    }
+    /* assemble steps from consecutive boundaries */
+    var stageSpans=[["clamp","clamp_start","clamp_end"],["loa","clamp_end","loa_end"],["tensioner","loa_end","tens_end"],["reel1","tens_end","reel1_end"],["recovery","reel1_end","mid_start"],["midline","mid_start","mid_end"],["recovery","mid_end","cut_start"],["cut","cut_start","cut_end"],["secure","cut_end","secure_end"]];
+    var steps=[]; var missing=[];
+    stageSpans.forEach(function(sp){ var a=bounds[sp[1]], c=bounds[sp[2]]; if(a==null||c==null){ if(sp[0]!=="recovery" || (sp[1]==="reel1_end")) missing.push(sp[0]); return; } var mins=rows[c].abs-rows[a].abs; if(mins<0||mins>336*60) return; steps.push({ k:sp[0], name:rows[c].text.slice(0,120), start:rows[a].abs%1440, end:rows[c].abs%1440, min:mins, note:"DPR "+(rows[c].report||"")+" "+rows[c].day+" "+rows[c].clock+": "+rows[c].text.slice(0,160), date:rows[a].day, row:rows[c].line }); });
+    /* recovery when there is no midline at all */
+    if(bounds.reel1_end!=null && bounds.mid_start==null && bounds.cut_start!=null){ var mins2=rows[bounds.cut_start].abs-rows[bounds.reel1_end].abs; if(mins2>0) steps.push({ k:"recovery", name:rows[bounds.cut_start].text.slice(0,120), start:rows[bounds.reel1_end].abs%1440, end:rows[bounds.cut_start].abs%1440, min:mins2, note:"DPR "+rows[bounds.cut_start].report+" "+rows[bounds.cut_start].day+" "+rows[bounds.cut_start].clock+": "+rows[bounds.cut_start].text.slice(0,160), date:rows[bounds.reel1_end].day, row:rows[bounds.cut_start].line }); var mi=missing.indexOf("recovery"); if(mi>=0) missing.splice(mi,1); }
+    var cycleMin=(bounds.clamp_start!=null && bounds.secure_end!=null)?rows[bounds.secure_end].abs-rows[bounds.clamp_start].abs:null;
+    var tensLen=null; for(var q2=i0;q2<i1;q2++){ var tm2=DPR_PAT.tensReading.exec(rows[q2].text); if(tm2){ var v=parseFloat(tm2[2]||tm2[3]); if(isFinite(v)) tensLen=v; } }
+    var reports=[]; for(var q3=i0;q3<i1;q3++){ if(rows[q3].report && reports.indexOf(rows[q3].report)<0) reports.push(rows[q3].report); }
+    var rl={ cycleId:cycUid(), id:reel, occurrence:occ[reel], flowlineId:fl?fl.replace(/[-\s]+/g,"").toUpperCase():null, dateStart:head.day, trip:tr?parseInt(tr,10):null, hlvTp:null, steps:steps, override:{}, cycleMin:cycleMin, weightTe:null, lengthM:null, notes:["Built from contractor DPR"+(reports.length>1?"s ":" ")+reports.map(function(x){ return "DPR-"+x; }).join(", ")+"; conventions: clamp end "+conv.clampEnd+", tensioner end "+conv.tensionerEnd+", midline end "+conv.midlineEnd+", cut start "+conv.cutStart].concat(tp?["Task plan "+tp]:[]).concat(tensLen!=null?["Tensioner reading "+tensLen+" m (line out, not the recovered length)"]:[]).concat(b.cut?["DPR for the following day is missing or unreadable; the cycle is cut at the gap"]:[]), started:true, included:true, excludeReason:"", deleted:false, src:{sheet:"dpr", row:head.line, file:"DPR-"+(head.report||"?")+(reports.length>1?" to DPR-"+reports[reports.length-1]:"")}, status:"planned", boundaries:{} };
+    for(var bk in bounds){ rl.boundaries[bk]={ day:rows[bounds[bk]].day, clock:rows[bounds[bk]].clock, text:rows[bounds[bk]].text.slice(0,160), report:rows[bounds[bk]].report }; }
+    rl.status=cycStatusOf(rl);
+    if(missing.length) out.issues.push({cls:"warning", text:reel+" ("+head.day+"): stage boundary not found in the DPR for "+missing.join(", ")+"; the reel is held as "+rl.status+" until the times are entered or the DPR wording is added to the rules"});
+    if(b.cut) out.issues.push({cls:"warning", text:reel+" ("+head.day+"): the DPR for the next day is missing or unreadable, so the cycle stops at the last available line"});
+    if(!rl.flowlineId) out.issues.push({cls:"warning", text:reel+" ("+head.day+"): no flowline named in the DPR lines; set it in the register"});
+    out.reels.push(rl);
+  });
+  out.reels.forEach(function(r,i){ r.seq=i+1; });
+  out.coverage.gapDays.forEach(function(d){ out.issues.push({cls:"note", text:"No readable DPR for "+d+" (missing from the set or image-only); stages on that day cannot be derived"}); });
+  out.issues.unshift({cls:"note", text:out.coverage.days+" DPR day(s) read, "+out.coverage.rows+" timeline lines, "+out.coverage.blocks+" reel block(s) found"});
+  return out;
+}
+
+/* import DPR PDFs into the Recovery Cycles review */
+var __dprTimelines=null;
+function cycImportDprFiles(inp){
+  if(pelRO()){ inp.value=""; return; } var files=Array.prototype.slice.call(inp.files||[]); inp.value=""; if(!files.length) return;
+  if(typeof pdfjsLib==="undefined"){ alert("The PDF reader did not load. Check the connection and try again."); return; }
+  var tls=[], names=[], hashes=[], idx=0;
+  function next(){ if(idx>=files.length){ __dprTimelines={ tls:tls, names:names, hashes:hashes }; cycDeriveFromTimelines(DPR_CONV_DEFAULT); return; }
+    var f=files[idx++]; var rd=new FileReader();
+    rd.onload=function(){ var buf=rd.result; var finish=function(h){ dprPdfToLines(buf).then(function(pages){ var flat=[]; pages.forEach(function(ls){ ls.forEach(function(l){ flat.push(l); }); }); var id=dprIdentityFromLines(flat); var rowsT=dprTimelineRows(flat); tls.push({ date:id.reportDate, reportNo:id.reportNo, rows:rowsT, file:f.name, hash:h, lines:flat.length }); names.push(f.name); hashes.push(h); next(); }).catch(function(e){ tls.push({ date:null, reportNo:"", rows:[], file:f.name, hash:h, error:String(e&&e.message?e.message:e) }); names.push(f.name); next(); }); };
+      try{ dprHash(buf).then(finish); }catch(e){ finish(""); } };
+    rd.onerror=function(){ tls.push({ date:null, reportNo:"", rows:[], file:f.name, error:"could not open file" }); names.push(f.name); next(); };
+    rd.readAsArrayBuffer(f); }
+  next();
+}
+function cycDeriveFromTimelines(conv){
+  var T=__dprTimelines; if(!T) return;
+  var good=T.tls.filter(function(t){ return t.date && t.rows.length; }); var bad=T.tls.filter(function(t){ return !t.date || !t.rows.length; });
+  var derived=dprDeriveReels(good, conv);
+  bad.forEach(function(t){ derived.issues.push({cls:"warning", text:(t.file||"file")+": "+(t.error?t.error:(!t.date?"no report date found":"no timeline lines found; image-only or unexpected layout"))+"; not used"}); });
+  derived.reels.forEach(function(r){ r.src=r.src||{}; r.src.file=r.src.file||"DPR"; r.src.hash=(T.hashes||[]).filter(Boolean).slice(0,3).join(";"); });
+  derived.conv=conv;
+  var label=good.length?("DPR reports "+good.map(function(t){ return t.reportNo; }).filter(Boolean).sort().slice(0,1)[0]+" to "+good.map(function(t){ return t.reportNo; }).filter(Boolean).sort().slice(-1)[0]+" ("+good.length+" days)"):"DPR reports";
+  cycPreview(derived, label, { size:null, hash:(T.hashes||[]).filter(Boolean).join(";"), sheets:[], files:T.tls.map(function(t){ return { fname:t.file, hash:t.hash, size:null, reels:0, trips:0, readings:0 }; }) });
+}
+function cycDprConvHtml(conv){ var h='<div class="cyc-note ink"><b>DPR reading conventions</b> <span class="dim">(the stage boundaries follow the contractor\'s wording; two authors used different phrasings, so each convention is explicit and can be switched before applying)</span><div class="cyc-form" style="margin-top:6px">'; Object.keys(DPR_CONV_OPTIONS).forEach(function(k){ h+='<label>'+esc(k.replace(/([A-Z])/g," $1").toLowerCase())+'<select onchange="var c=Object.assign({},__cycPending.dprConv||DPR_CONV_DEFAULT); c[\''+k+'\']=this.value; cycDeriveFromTimelines(c);">'+DPR_CONV_OPTIONS[k].map(function(o){ return '<option value="'+o[0]+'"'+((conv[k]||DPR_CONV_DEFAULT[k])===o[0]?" selected":"")+' title="'+esc(o[1])+'">'+esc(o[1])+'</option>'; }).join("")+'</select></label>'; }); return h+'</div></div>'; }
 </script>
 </body>
 </html>
