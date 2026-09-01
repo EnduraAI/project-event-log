@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-08-31.7 - deploy check string: PEL-BUILD-2026-08-31.7 -->
+<!-- Endura Project Event Log - build 2026-09-01.1 - deploy check string: PEL-BUILD-2026-09-01.1 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -271,7 +271,7 @@
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-08-31.7</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-01.1</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -302,6 +302,7 @@
     </div>
 
     <div class="panel">
+      <div id="dprDayNote" class="noprint" style="display:none"></div>
       <h3>Sequential daily log</h3>
       <div class="tableScroll logScroll">
         <table class="logtable stickyhead">
@@ -562,7 +563,8 @@
         <pre id="dprRaw" style="font-size:11px;white-space:pre-wrap;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:10px;max-height:240px;overflow:auto;margin-top:8px"></pre>
       </details>
     </div>
-  </section>
+      <div id="dprLogPanel"></div>
+</section>
 </main>
 
 <script>
@@ -577,7 +579,7 @@
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-08-31.7";
+var APP_BUILD="2026-09-01.1";
 var PEL_ENV={env:"TEST",agent:true,schema:6};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
@@ -1984,7 +1986,7 @@ var SUPA_KEY = window.SUPA_KEY || "__SUPABASE_ANON_KEY__";
 var PROJK = "endura_pel_project";
 var sb=null, channel=null, saveTimer=null, applyingRemote=false, lastSavedJSON="", online=true;
 
-function payload(){ return JSON.stringify({app:"Endura Project Event Log",version:5,saved:new Date().toISOString(),days:data,wbs:WBSL,ctype:CTYPE,locks:LOCKS,lockpw:LOCKPW,cycles:(typeof CYC==="object"?CYC:undefined)},null,2); }
+function payload(){ return JSON.stringify({app:"Endura Project Event Log",version:5,saved:new Date().toISOString(),days:data,wbs:WBSL,ctype:CTYPE,locks:LOCKS,lockpw:LOCKPW,cycles:(typeof CYC==="object"?CYC:undefined),dpr:(typeof DPR==="object"?DPR:undefined)},null,2); }
 
 function curProject(){ try{ return localStorage.getItem(PROJK)||"MEFF-SAR"; }catch(e){ return "MEFF-SAR"; } }
 function setProject(v){ v=(v||"").trim().slice(0,60)||"MEFF-SAR"; try{ localStorage.setItem(PROJK,v); }catch(e){} location.reload(); }
@@ -2010,7 +2012,7 @@ function validateDoc(input){
   }
   var wrapped=!!(o.days && typeof o.days==="object" && !Array.isArray(o.days));
   if(wrapped){
-    var KNOWN={days:1,wbs:1,ctype:1,locks:1,lockpw:1,meta:1,app:1,version:1,schemaVersion:1,saved:1,cycles:1};
+    var KNOWN={days:1,wbs:1,ctype:1,locks:1,lockpw:1,meta:1,app:1,version:1,schemaVersion:1,saved:1,cycles:1,dpr:1};
     for(var kk in o){ if(!KNOWN[kk]) issues.push("unknown field "+String(kk).slice(0,24)+" ignored"); }
   } else {
     issues.push("legacy bare-days format normalised");
@@ -2100,6 +2102,7 @@ function adopt(txt, strict){
   if(o&&o.days){
     data=o.days; WBSL=Array.isArray(o.wbs)?o.wbs:WBSL;
     try{ if(typeof cycSanitise==="function") CYC=cycSanitise(o.cycles); }catch(__e){}
+    try{ if(typeof dprSanitise==="function") DPR=dprSanitise(o.dpr); }catch(__e){}
     if(o.ctype){ for(var __ck in CTYPE) delete CTYPE[__ck]; for(var __cd in CTYPE_DEFAULT) CTYPE[__cd]=CTYPE_DEFAULT[__cd]; for(var k in o.ctype){ if(o.ctype[k]==="DT"||o.ctype[k]==="NPT"||o.ctype[k]==="OTHER") CTYPE[k]=o.ctype[k]; } saveCtype(); }
     LOCKS=(o.locks&&typeof o.locks==="object")?o.locks:{};   /* Batch 3: restore lock set */
     LOCKPW=(typeof o.lockpw==="string")?o.lockpw:"";          /* restore shared password hash */
@@ -2124,7 +2127,7 @@ function writeLocalBackup(){
   window.__lbFail=false;
   try{
     var list=JSON.parse(localStorage.getItem(backupKey())||"[]");
-    var snap={ t:new Date().toISOString(), by:(curUser()||"?"), doc:{days:data,wbs:WBSL,ctype:CTYPE,locks:LOCKS,lockpw:LOCKPW,cycles:(typeof CYC==="object"?CYC:undefined)} };
+    var snap={ t:new Date().toISOString(), by:(curUser()||"?"), doc:{days:data,wbs:WBSL,ctype:CTYPE,locks:LOCKS,lockpw:LOCKPW,cycles:(typeof CYC==="object"?CYC:undefined),dpr:(typeof DPR==="object"?DPR:undefined)} };
     /* skip if identical to the most recent backup (avoid churn) */
     var sj=JSON.stringify(snap.doc);
     if(list.length && JSON.stringify(list[0].doc)===sj) return;
@@ -2180,7 +2183,7 @@ async function restoreBackup(i){ if(pelRO()) return;
 async function cloudSave(){
   if(window.__remoteBad) return false;
   if(!sb){ try{ localStorage.setItem("endura_pel_offline_"+curProject(),payload()); }catch(e){} return; }
-  var body={ doc:{days:data,wbs:WBSL,ctype:CTYPE,locks:LOCKS,lockpw:LOCKPW,cycles:(typeof CYC==="object"?CYC:undefined)}, updated_at:new Date().toISOString(), updated_by:curUser()||"?" };
+  var body={ doc:{days:data,wbs:WBSL,ctype:CTYPE,locks:LOCKS,lockpw:LOCKPW,cycles:(typeof CYC==="object"?CYC:undefined),dpr:(typeof DPR==="object"?DPR:undefined)}, updated_at:new Date().toISOString(), updated_by:curUser()||"?" };
   lastSavedJSON=JSON.stringify(body.doc);
   setSync("amber","saving\u2026");
   try{
@@ -2346,13 +2349,14 @@ function onDprBatch(inp){
   dprBatchResults=[];
   var i=0;
   function next(){
-    if(i>=files.length){ dprShowBatch(); dprSetStatus("Batch check complete: "+files.length+" DPRs.","#1e7d34"); return; }
+    if(i>=files.length){ dprShowBatch(); try{ dprRecordBatch(); }catch(__e){} dprSetStatus("Batch check complete: "+files.length+" DPRs, recorded in the DPR check log.","#1e7d34"); return; }
     var f=files[i++];
     var rd=new FileReader();
     rd.onload=function(){
-      dprParse(rd.result).then(function(parsed){
-        parsed.fileName=f.name; dprBatchResults.push(parsed); next();
-      }).catch(function(err){
+      var __buf=rd.result;
+      dprHash(__buf).then(function(__h){ return dprParse(__buf).then(function(parsed){
+        parsed.fileName=f.name; parsed.__hash=__h; dprBatchResults.push(parsed); next();
+      }); }).catch(function(err){
         dprBatchResults.push({fileName:f.name, error:String(err&&err.message?err.message:err)}); next();
       });
     };
@@ -2448,9 +2452,11 @@ function onDprFile(inp){
   dprSetStatus("Reading PDF\u2026");
   var rd=new FileReader();
   rd.onload=function(){
-    dprParse(rd.result).then(function(parsed){
+    var __sbuf=rd.result;
+    dprParse(__sbuf).then(function(parsed){
       dprData=parsed;
       dprShowResult(parsed);
+      try{ dprHash(__sbuf).then(function(h){ parsed.__hash=h; dprRecordSingle(parsed, file.name); }); }catch(__e){}
       var n=parsed.foundCount;
       if(n===0) dprSetStatus("Read the PDF, but couldn't find the downtime figures automatically \u2014 please enter them by hand below.","#c0392b");
       else if(n<2) dprSetStatus("Read the PDF, but only found some figures \u2014 please check and complete them below.","#b9822b");
@@ -3077,6 +3083,7 @@ function pelChart(spec){
   function collectContext(){
     var missing=[], ctx={ generatedAt:new Date().toISOString(), meta:{} };
     try{ if(typeof window.cycAgentSummary==="function"){ var __cs=window.cycAgentSummary(); if(__cs) ctx.cycles=__cs; } }catch(e){}
+    try{ if(typeof window.dprAgentSummary==="function"){ var __ds=window.dprAgentSummary(); if(__ds) ctx.dpr=__ds; } }catch(e){}
     ctx.project = tryCall("curProject"); if(ctx.project===undefined){ ctx.project=null; missing.push("project"); }
     ctx.user    = tryCall("curUser");    if(ctx.user===undefined) ctx.user=null;
     ctx.currentDay = tryCall("curKey") || null; if(!ctx.currentDay) missing.push("currentDay");
@@ -3623,7 +3630,7 @@ function cycV_progress(){
   var rd=(CYC.readings||[]).filter(function(x){ return !CYC_UI.flow || (CYC.reels||[]).some(function(r){ return r.cycleId===x.cycleId && r.flowlineId===CYC_UI.flow; }); });
   var trips=(CYC.trips||[]).filter(function(t){ return !CYC_UI.flow || t.flowlineId===CYC_UI.flow; });
   return '<p class="cyc-h">Physical recovery progress</p><p class="cyc-sub">Only complete, included reels with an accepted length count as recovered. In-progress reels are shown as provisional, planned reels as planned, excluded reels separately. Over-recovery is never clamped; it raises a reconciliation item.</p><div class="cyc-grid2">'+(prog||'<div class="dim">No flowline lengths yet.</div>')+'</div>'+
-    '<p class="cyc-h" style="margin-top:18px">NORM readings</p><p class="cyc-sub">Policy '+esc(pol.id)+': '+esc(pol.measurement)+', trigger '+esc(pol.operator)+' '+pol.value+' '+esc(pol.unit)+', effective '+esc(pol.effectiveFrom)+(pol.approvedBy?', approved by '+esc(pol.approvedBy):'')+'. The same rule is applied on screen, in every export and by Ask the Log.</p><div class="cyc-grid2"><div><table class="cyc-t"><thead><tr><th>Reel</th><th>Where</th><th class="n">Readings ('+esc(pol.unit)+')</th><th>Against policy</th></tr></thead><tbody>'+(rd.map(function(x){ var st=cycNormStatus(x.readings,pol); return '<tr'+(st.above?' style="background:#fdecea"':'')+'><td><b>'+esc(x.reel)+'</b></td><td>'+esc(x.location||"")+'</td><td class="n">'+esc(x.readings.join(" / "))+'</td><td class="'+(st.above?"bad":"good")+'">'+esc(st.label)+'</td></tr>'; }).join("")||'<tr><td colspan="4" class="dim">No readings imported.</td></tr>')+'</tbody></table></div><div><table class="cyc-t"><thead><tr><th>Trip date</th><th class="n">Trip</th><th class="n">HLV</th><th>Reel</th><th>Line</th><th class="n">Weight t</th><th class="n">Duration</th><th class="n">Length m</th></tr></thead><tbody>'+(trips.map(function(t){ return '<tr><td>'+esc(t.date||"")+'</td><td class="n">'+(t.trip!=null?t.trip:"")+'</td><td class="n">'+(t.hlvTp!=null?t.hlvTp:"")+'</td><td><b>'+esc(t.reel)+'</b></td><td>'+esc(t.flowlineId||"")+'</td><td class="n">'+(t.weightTe!=null?t.weightTe:"")+'</td><td class="n">'+cycH(t.durationMin)+'</td><td class="n">'+(t.lengthM!=null?cycFmtNum(t.lengthM):"")+'</td></tr>'; }).join("")||'<tr><td colspan="8" class="dim">No trips imported.</td></tr>')+'</tbody></table></div></div>';
+    '<p class="cyc-h" style="margin-top:18px">NORM readings</p><p class="cyc-sub">Policy '+esc(pol.id)+': '+esc(pol.measurement)+', trigger '+esc(pol.operator)+' '+pol.value+' '+esc(pol.unit)+', effective '+esc(pol.effectiveFrom)+(pol.approvedBy?', approved by '+esc(pol.approvedBy):'')+'. The same rule is applied on screen, in every export and by Ask the Log.</p><div class="cyc-grid2"><div><table class="cyc-t"><thead><tr><th>Reel</th><th>Where</th><th class="n">Readings ('+esc(pol.unit)+')</th><th>Against policy</th></tr></thead><tbody>'+(rd.map(function(x){ var st=cycNormStatus(x.readings,pol); return '<tr'+(st.above?' style="background:#fdecea"':'')+'><td><b>'+esc(x.reel)+'</b></td><td>'+esc(x.location||"")+'</td><td class="n">'+esc(x.readings.join(" / "))+'</td><td class="'+(st.above?"bad":"good")+'">'+esc(st.label)+'</td></tr>'; }).join("")||'<tr><td colspan="4" class="dim">No readings imported.</td></tr>')+'</tbody></table></div><div><table class="cyc-t"><thead><tr><th>Trip date</th><th class="n">Trip</th><th class="n">HLV</th><th>Reel</th><th>Line</th><th class="n">Weight t</th><th class="n">Duration</th><th class="n">Length m</th></tr></thead><tbody>'+(trips.map(function(t){ return '<tr><td>'+esc(t.date||"")+'</td><td class="n">'+(t.trip!=null?t.trip:"")+'</td><td class="n">'+(t.hlvTp!=null?t.hlvTp:"")+'</td><td><b>'+esc(t.reel)+'</b></td><td>'+esc(t.flowlineId||"")+'</td><td class="n">'+(t.weightTe!=null?t.weightTe:"")+'</td><td class="n">'+cycH(t.durationMin)+'</td><td class="n">'+(t.lengthM!=null?cycFmtNum(t.lengthM):"")+'</td></tr>'; }).join("")||'<tr><td colspan="8" class="dim">No trips imported.</td></tr>')+'</tbody></table></div></div>'+(cycClient()?'':'<div class="cyc-note noprint" style="margin-top:10px"><b>Add a swab reading.</b> <label style="font-size:12px">Reel <select id="nrReel">'+cycFlows().map(function(f){ return (CYC.reels||[]).filter(function(r){ return !r.deleted && r.flowlineId===f; }).map(function(r){ return '<option value="'+esc(r.id)+'">'+esc(r.id)+' ('+esc(f)+')</option>'; }).join(""); }).join("")+'</select></label> <label style="font-size:12px">Where <input id="nrLoc" placeholder="End 1 / End 2" style="width:120px;padding:3px 6px"></label> <label style="font-size:12px">Readings <input id="nrVals" placeholder="0.06 / 0.08" style="width:110px;padding:3px 6px"></label> <button class="btn" style="padding:3px 10px;font-size:12px" onclick="cycAddReadingForm()">Add</button></div>');
 }
 function cycV_quality(){
   var q=cycQuality(); var cls={blocking:"Blocking",conflict:"Conflict",warning:"Warning",note:"Note"};
@@ -3644,8 +3651,8 @@ function cycV_import(){
   var pol=CYC.settings.normPolicy, sp=CYC.settings.statsPolicy;
   var flowRows=(CYC.flowlines||[]).filter(function(f){ return (CYC.reels||[]).some(function(r){ return r.flowlineId===f.id && !r.deleted; }); }).map(function(f){ return '<tr><td><b>'+esc(f.id)+'</b> <span class="dim">'+esc(f.name!==f.id?f.name:"")+'</span></td><td class="n">'+(f.lengthM!=null?cycFmtNum(Math.round(f.lengthM))+" m":"")+'</td><td class="n">'+(f.nominalIn!=null?f.nominalIn+'"':"")+'</td><td><select onchange="cycSetFlowTemplate(\''+esc(f.id)+'\',this.value)" style="font-size:12px">'+(CYC.templates||[]).map(function(t){ return '<option value="'+esc(t.id)+'"'+(f.templateId===t.id?' selected':'')+'>'+esc(t.name)+'</option>'; }).join("")+'</select></td></tr>'; }).join("");
   var logRows=(CYC.importLog||[]).slice(-10).reverse().map(function(l){ return '<div class="dim" style="font-size:12px;margin-top:3px">'+esc((l.at||"").replace("T"," ").slice(0,16))+' · '+esc(l.action||(l.file+": "+l.added+" added, "+l.updated+" updated, "+(l.unchanged||0)+" unchanged"+(l.issues?", "+l.issues+" item(s) reviewed":"")))+(l.reviewer?' · '+esc(l.reviewer):'')+(l.hash?' · '+esc(String(l.hash).slice(0,12))+'…':'')+(l.decisions&&l.decisions.length?'<div style="margin-left:14px">'+l.decisions.map(function(d){ return '· '+esc(d); }).join("<br>")+'</div>':'')+'</div>'; }).join("");
-  return '<p class="cyc-h">Import</p><p class="cyc-sub">Choose one or several timing workbooks. Nothing changes until the preview is reviewed: blocking items must be cleared, conflicts need a decision, warnings need acknowledgement, and every change to an existing reel is listed before it is accepted. Identical re-imports change nothing.</p><div class="cyc-actions"><button class="btn" onclick="document.getElementById(\'cycFile\').click()">Choose workbook(s)</button><input id="cycFile" type="file" accept=".xlsx,.xlsm,.xls" multiple style="display:none" onchange="cycImportFile(this)"><button class="btn" onclick="cycToggleForm(true)">+ Add a reel by hand</button></div><div id="cycImportPreview" class="cyc-import" style="display:none"></div><div id="cycFormWrap" style="display:none"></div>'+
-    '<p class="cyc-h" style="margin-top:20px">Settings</p><div class="cyc-grid2"><div><b style="font-size:13px">Flowlines and templates</b><table class="cyc-t"><thead><tr><th>Flowline</th><th class="n">Control length</th><th class="n">Nominal</th><th>Activity template</th></tr></thead><tbody>'+(flowRows||'<tr><td colspan="4" class="dim">No flowlines yet.</td></tr>')+'</tbody></table><div class="dim" style="font-size:11.5px;margin-top:6px">Templates: '+(CYC.templates||[]).map(function(t){ return esc(t.name)+' ['+esc(t.status)+']'; }).join(" · ")+'. Draft templates carry the SURF stage set until a validated set exists for that activity.</div></div><div><b style="font-size:13px">NORM policy</b><div class="cyc-form"><label>Policy ID<input id="npId" value="'+esc(pol.id)+'"></label><label>Trigger value<input id="npVal" type="number" step="0.01" min="0" value="'+pol.value+'"></label><label>Unit<input id="npUnit" value="'+esc(pol.unit)+'"></label><label>Operator<select id="npOp">'+[">",">=","<","<="].map(function(o){ return '<option'+(pol.operator===o?' selected':'')+'>'+o+'</option>'; }).join("")+'</select></label><label>Effective from<input id="npFrom" type="date" value="'+esc(pol.effectiveFrom)+'"></label><label>Approved by<input id="npBy" value="'+esc(pol.approvedBy||"")+'"></label></div><div class="cyc-actions" style="margin-top:8px"><button class="btn" onclick="cycSavePolicy()">Save NORM policy</button><span class="dim" style="font-size:11.5px">Changing the policy re-evaluates the screen and every new export; earlier issued reports keep the policy they were issued under.</span></div><div style="margin-top:12px"><b style="font-size:13px">Statistics policy</b> <span class="dim" style="font-size:12px">minimum reels for a fitted curve '+sp.minFit+'; planning-grade from '+sp.minPlanning+'</span></div><div style="margin-top:12px"><b style="font-size:13px">Import log</b>'+(logRows||'<div class="dim" style="font-size:12px">Nothing imported yet.</div>')+'</div></div></div>';
+  return '<p class="cyc-h">Import</p><p class="cyc-sub">Choose one or several timing workbooks. Nothing changes until the preview is reviewed: blocking items must be cleared, conflicts need a decision, warnings need acknowledgement, and every change to an existing reel is listed before it is accepted. Identical re-imports change nothing.</p><div class="cyc-actions"><button class="btn" onclick="document.getElementById(\'cycFile\').click()">Choose workbook(s)</button><input id="cycFile" type="file" accept=".xlsx,.xlsm,.xls" multiple style="display:none" onchange="cycImportFile(this)"><button class="btn" onclick="cycToggleForm(true)">+ Add a reel by hand</button><button class="btn" onclick="cycImportFromLog()" title="Build reels from Daily Log lines written as: A2 · 1st end in tensioner">Build from Daily Log lines</button></div><div class="cyc-note ink" style="margin-top:8px"><b>Daily Log convention.</b> Log each stage on its own line at the time it starts, reel first: <i>A2 · Clamp deployment</i>, <i>A2 · 1st end at LOA</i>, <i>A2 · 1st end in tensioner</i>, <i>A2 · 1st end on reel</i>, <i>A2 · Recovery</i>, <i>A2 · Anode removal and midline</i>, <i>A2 · 2nd end cut</i>, <i>A2 · 2nd end secure on reel</i>, and close with <i>A2 · Offload 299.6 t 2192.5 m</i>. Name the flowline once on the first line (FL5). Each line ends the previous stage for that reel; Build from Daily Log lines turns them into reels through the same review as a workbook import.</div><div id="cycImportPreview" class="cyc-import" style="display:none"></div><div id="cycFormWrap" style="display:none"></div>'+
+    '<p class="cyc-h" style="margin-top:20px">Settings</p><div class="cyc-grid2"><div><b style="font-size:13px">Flowlines and templates</b><table class="cyc-t"><thead><tr><th>Flowline</th><th class="n">Control length</th><th class="n">Nominal</th><th>Activity template</th></tr></thead><tbody>'+(flowRows||'<tr><td colspan="4" class="dim">No flowlines yet.</td></tr>')+'</tbody></table><div class="dim" style="font-size:11.5px;margin-top:6px">Templates: '+(CYC.templates||[]).map(function(t){ return esc(t.name)+' ['+esc(t.status)+']'; }).join(" · ")+'. Draft templates carry the SURF stage set until a validated set exists for that activity.</div></div><div><b style="font-size:13px">NORM policy</b><div class="cyc-form"><label>Policy ID<input id="npId" value="'+esc(pol.id)+'"></label><label>Trigger value<input id="npVal" type="number" step="0.01" min="0" value="'+pol.value+'"></label><label>Unit<input id="npUnit" value="'+esc(pol.unit)+'"></label><label>Operator<select id="npOp">'+[">",">=","<","<="].map(function(o){ return '<option'+(pol.operator===o?' selected':'')+'>'+o+'</option>'; }).join("")+'</select></label><label>Effective from<input id="npFrom" type="date" value="'+esc(pol.effectiveFrom)+'"></label><label>Approved by<input id="npBy" value="'+esc(pol.approvedBy||"")+'"></label></div><div class="cyc-actions" style="margin-top:8px"><button class="btn" onclick="cycSavePolicy()">Save NORM policy</button><span class="dim" style="font-size:11.5px">Changing the policy re-evaluates the screen and every new export; earlier issued reports keep the policy they were issued under.</span></div><div style="margin-top:12px"><b style="font-size:13px">Statistics policy</b> <span class="dim" style="font-size:12px">minimum reels for a fitted curve '+sp.minFit+'; planning-grade from '+sp.minPlanning+'</span></div><div style="margin-top:12px"><b style="font-size:13px">Import log</b>'+(logRows||'<div class="dim" style="font-size:12px">Nothing imported yet.</div>')+'</div></div></div>'+provHtml();
 }
 
 function cycRenderShell(){
@@ -3849,5 +3856,113 @@ function cycAgentSummary(){
 </script>
 
 
+<script>
+/* ===== 31.8: build freshness, DPR check log and reconciliation, Daily Log convention for cycles, provenance, manual NORM ===== */
+
+/* build freshness: the page checks what is deployed and offers a refresh instead of serving stale conclusions */
+function pelFreshBanner(newer){
+  var el=document.getElementById("pelFresh");
+  if(!el){ el=document.createElement("div"); el.id="pelFresh"; el.className="noprint"; el.style.cssText="position:fixed;top:0;left:0;right:0;z-index:9999;background:#1A1A1A;color:#fff;padding:8px 14px;font-size:13px;display:flex;gap:12px;align-items:center;justify-content:center;font-family:inherit"; document.body.appendChild(el); }
+  el.innerHTML='A newer build ('+esc(newer)+') is deployed; this page is running '+esc(APP_BUILD)+'. <button class="btn" style="padding:3px 10px" onclick="location.reload()">Refresh now</button>';
+}
+function pelFreshCheck(){
+  try{
+    if(location.protocol==="file:") return Promise.resolve(false);
+    var url=location.pathname+(location.pathname.indexOf("?")<0?"?":"&")+"fresh="+Date.now();
+    return fetch(url,{cache:"no-store"}).then(function(r){ return r.ok?r.text():""; }).then(function(t){ var m=String(t||"").match(/APP_BUILD="([^"]+)"/); if(m && m[1]!==APP_BUILD){ pelFreshBanner(m[1]); return true; } return false; }).catch(function(){ return false; });
+  }catch(e){ return Promise.resolve(false); }
+}
+setTimeout(function(){ pelFreshCheck(); }, 20000);
+setInterval(function(){ pelFreshCheck(); }, 5*60*1000);
+document.addEventListener("visibilitychange", function(){ if(!document.hidden) pelFreshCheck(); });
+
+/* DPR check log: every automatic check is kept in the shared record with its file fingerprint */
+var DPR={version:1, checks:[]};
+function dprFresh(){ return {version:1, checks:[]}; }
+function dprHash(buf){ try{ if(window.crypto && crypto.subtle && crypto.subtle.digest && buf){ return crypto.subtle.digest("SHA-256", buf).then(function(h){ return Array.prototype.map.call(new Uint8Array(h), function(b){ return ("0"+b.toString(16)).slice(-2); }).join(""); }).catch(function(){ return ""; }); } }catch(e){} return Promise.resolve(""); }
+var DPR_VERDICTS={match:1,close:1,differ:1,incomplete:1,noday:1,error:1};
+function dprSanitise(d){
+  var f=dprFresh(); if(!d||typeof d!=="object"||Array.isArray(d)) return f;
+  function hrs(v){ var n=cycNumStrict(v,0,24); return n; }
+  function str(v,n){ return (typeof v==="string"||typeof v==="number")?String(v).slice(0,n):""; }
+  if(Array.isArray(d.checks)) f.checks=d.checks.filter(function(c){ return c&&typeof c==="object"&&!Array.isArray(c); }).slice(-2000).map(function(c){ return {
+    id:/^[a-z0-9]{1,24}$/.test(String(c.id||""))?String(c.id):cycUid(), at:str(c.at,30), by:str(c.by,40), file:str(c.file,200), hash:/^[a-f0-9]{0,64}$/.test(String(c.hash||""))?String(c.hash||""):"", reportNo:str(c.reportNo,20), reportDate:str(c.reportDate,20), key:cycDate(c.key)||"",
+    dpr:{ weather:hrs(c.dpr&&c.dpr.weather), mech:hrs(c.dpr&&c.dpr.mech), vessel:hrs(c.dpr&&c.dpr.vessel), rov:hrs(c.dpr&&c.dpr.rov) }, app:{ dt:hrs(c.app&&c.app.dt) }, sum:hrs(c.sum), anc:hrs(c.anc), maxDiff:cycNumStrict(c.maxDiff,0,48),
+    verdict:DPR_VERDICTS[c.verdict]?c.verdict:"error", detail:str(c.detail,200), reviewed:!!c.reviewed, reviewedBy:str(c.reviewedBy,40), reviewedAt:str(c.reviewedAt,30), note:str(c.note,200) }; });
+  return f;
+}
+function dprRecord(parsed, r, fileName, hash){
+  if(!parsed||!r) return null;
+  var c={ id:cycUid(), at:new Date().toISOString(), by:curUser()||"", file:String(fileName||parsed.fileName||""), hash:String(hash||parsed.__hash||""), reportNo:String(parsed.reportNo||""), reportDate:String(parsed.reportDate||""), key:r.key||"",
+    dpr:{ weather:parsed.weatherDT==null?null:parsed.weatherDT, mech:parsed.mechDT==null?null:parsed.mechDT, vessel:parsed.vesselDT==null?null:parsed.vesselDT, rov:parsed.rovDT==null?null:parsed.rovDT }, app:{ dt:r.appDT==null?null:r.appDT }, sum:r.sum==null?null:r.sum, anc:r.anc==null?null:r.anc, maxDiff:r.maxDiff==null?null:r.maxDiff, verdict:DPR_VERDICTS[r.verdict]?r.verdict:"error", detail:String(r.detail||""), reviewed:false, reviewedBy:"", reviewedAt:"", note:"" };
+  var i=-1; if(c.key) i=DPR.checks.findIndex(function(x){ return x.key===c.key && x.file===c.file; });
+  if(i>=0){ var old=DPR.checks[i]; if(old.verdict===c.verdict){ c.reviewed=old.reviewed; c.reviewedBy=old.reviewedBy; c.reviewedAt=old.reviewedAt; c.note=old.note; } DPR.checks[i]=c; } else DPR.checks.push(c);
+  DPR=dprSanitise(DPR); try{ save(); }catch(e){} return c;
+}
+function dprRecordBatch(){ (dprBatchResults||[]).forEach(function(p){ try{ dprRecord(p, dprBatchRowResult(p), p.fileName, p.__hash); }catch(e){} }); renderDprLog(); }
+function dprRecordSingle(parsed, fileName){ try{ if(parsed && parsed.foundCount>0) { dprRecord(parsed, dprBatchRowResult(parsed), fileName, parsed.__hash); renderDprLog(); } }catch(e){} }
+function dprMarkReviewed(id, note){ if(pelRO()) return; var c=DPR.checks.filter(function(x){ return x.id===id; })[0]; if(!c) return; c.reviewed=true; c.reviewedBy=curUser()||""; c.reviewedAt=new Date().toISOString(); c.note=String(note==null?"":note).slice(0,200); save(); renderDprLog(); try{ dprDayNote(); }catch(e){} }
+function dprReopen(id){ if(pelRO()) return; var c=DPR.checks.filter(function(x){ return x.id===id; })[0]; if(!c) return; c.reviewed=false; c.reviewedBy=""; c.reviewedAt=""; save(); renderDprLog(); }
+function dprOpenDay(key){ if(!key||!data[key]) return; var sel=document.getElementById("daySelect"); if(sel){ sel.value=key; } showTab("log"); renderLog(); }
+function dprVerdictText(c){ return c.verdict==="match"?"numerically matches":c.verdict==="close"?"close ("+(c.maxDiff!=null?"\u00b1"+c.maxDiff.toFixed(2)+" h":"within 0.5 h")+")":c.verdict==="differ"?"differs"+(c.maxDiff!=null?" by "+c.maxDiff.toFixed(2)+" h":""):c.verdict==="incomplete"?"incomplete, DPR value(s) missing":c.verdict==="noday"?"no logged day":"read error"; }
+function dprUnreconciled(){ return (DPR.checks||[]).filter(function(c){ return !c.reviewed && c.verdict!=="match"; }); }
+function renderDprLog(){
+  var host=document.getElementById("dprLogPanel"); if(!host) return;
+  var checks=(DPR.checks||[]).slice().sort(function(a,b){ return (b.key||b.reportDate||"").localeCompare(a.key||a.reportDate||"") || (b.at||"").localeCompare(a.at||""); });
+  var open=dprUnreconciled().sort(function(a,b){ return (a.key||"").localeCompare(b.key||""); });
+  var fmt=function(v){ return v==null?"\u2014":Number(v).toFixed(2); };
+  var rec=open.length?open.map(function(c){ var dprTot=(c.sum!=null||c.anc!=null)?Math.max(c.sum||0,c.anc||0):null; var delta=(dprTot!=null&&c.app.dt!=null)?(dprTot-c.app.dt):null;
+    return '<tr><td>'+(c.key&&data[c.key]?'<a href="#" onclick="dprOpenDay(\''+esc(c.key)+'\');return false;"><b>'+esc(fmtDay(c.key))+'</b></a>':'<span class="sub">'+esc(c.reportDate||"?")+'</span>')+'</td><td>'+esc(c.file||("DPR "+c.reportNo))+'</td><td class="num">'+fmt(c.dpr.weather)+' / '+fmt(c.dpr.mech)+'</td><td class="num">'+fmt(c.dpr.vessel)+' / '+fmt(c.dpr.rov)+'</td><td class="num">'+fmt(c.app.dt)+'</td><td class="num" style="color:'+(delta!=null&&Math.abs(delta)>0.01?"#c0392b":"#1A1A1A")+'">'+(delta==null?"\u2014":(delta>0?"+":"")+delta.toFixed(2)+" h")+'</td><td>'+esc(dprVerdictText(c))+(c.detail&&c.verdict!=="differ"?' <span class="sub">'+esc(c.detail)+'</span>':'')+'</td><td class="noprint"><input placeholder="note (optional)" style="width:150px;font-size:12px;padding:3px 5px" id="dprNote_'+esc(c.id)+'"> <button class="btn" style="padding:3px 8px;font-size:12px" onclick="dprMarkReviewed(\''+esc(c.id)+'\',document.getElementById(\'dprNote_'+esc(c.id)+'\').value)">Mark reviewed</button></td></tr>'; }).join("") : '<tr><td colspan="8" class="sub">Nothing to reconcile. Every recorded DPR check either matches the log or has been reviewed.</td></tr>';
+  var log=checks.length?checks.map(function(c){ return '<tr'+(c.reviewed?' style="color:#8C8C8C"':'')+'><td>'+esc((c.at||"").replace("T"," ").slice(0,16))+'</td><td>'+(c.key?esc(fmtDay(c.key)):'<span class="sub">'+esc(c.reportDate||"?")+'</span>')+'</td><td>'+esc(c.file||"")+(c.reportNo?' <span class="sub">DPR '+esc(c.reportNo)+'</span>':'')+(c.hash?' <span class="sub" title="'+esc(c.hash)+'">'+esc(c.hash.slice(0,10))+'\u2026</span>':'')+'</td><td class="num">'+fmt(c.dpr.weather)+' / '+fmt(c.dpr.mech)+' / '+fmt(c.dpr.vessel)+' / '+fmt(c.dpr.rov)+'</td><td class="num">'+fmt(c.app.dt)+'</td><td>'+esc(dprVerdictText(c))+'</td><td>'+(c.reviewed?'reviewed by '+esc(c.reviewedBy||"?")+' '+esc((c.reviewedAt||"").slice(0,10))+(c.note?' \u00b7 '+esc(c.note):'')+' <button class="ghost noprint" style="font-size:11px" onclick="dprReopen(\''+esc(c.id)+'\')">reopen</button>':(c.verdict==="match"?'\u2014':'<span style="color:#b9822b">open</span>'))+'</td><td>'+esc(c.by||"")+'</td></tr>'; }).join("") : '<tr><td colspan="8" class="sub">No DPR checks recorded yet. Run a single or batch check above; every automatic result is kept here for everyone.</td></tr>';
+  host.innerHTML='<div class="panel"><h3>Downtime reconciliation <span class="sub" style="font-weight:400">'+open.length+' open</span></h3><p class="footnote" style="margin-top:0">Days where the contractor DPR and this log disagree on downtime. DPR columns are weather / mechanical and vessel / ROV hours; the log column is this record\'s downtime. A difference usually means an event was logged as text but never tagged: open the day, flag the line, set the category and end time, then mark the row reviewed.</p><table><thead><tr><th>Day</th><th>DPR</th><th class="num">Weather / mech (h)</th><th class="num">Vessel / ROV (h)</th><th class="num">Log DT (h)</th><th class="num">DPR minus log</th><th>Result</th><th class="noprint">Action</th></tr></thead><tbody>'+rec+'</tbody></table></div>'+
+    '<div class="panel"><h3>DPR check log <span class="sub" style="font-weight:400">'+checks.length+' check(s), shared record</span></h3><p class="footnote" style="margin-top:0">Every automatic DPR check with the file name and fingerprint it came from, who ran it and when. <button class="btn noprint" style="padding:3px 10px;font-size:12px" onclick="dprExportLog()">Export CSV</button></p><table><thead><tr><th>Recorded</th><th>Day</th><th>File</th><th class="num">DPR W / M / V / R (h)</th><th class="num">Log DT (h)</th><th>Result</th><th>Review</th><th>By</th></tr></thead><tbody>'+log+'</tbody></table></div>';
+}
+function dprExportLog(){ var rows=[["Recorded","Day","Report date","File","Fingerprint","Report no","DPR weather h","DPR mechanical h","DPR vessel h","DPR ROV h","Log DT h","Verdict","Max difference h","Reviewed","Reviewed by","Reviewed at","Note","Run by"]]; (DPR.checks||[]).forEach(function(c){ rows.push([c.at,c.key,c.reportDate,c.file,c.hash,c.reportNo,c.dpr.weather,c.dpr.mech,c.dpr.vessel,c.dpr.rov,c.app.dt,c.verdict,c.maxDiff,c.reviewed?"yes":"no",c.reviewedBy,c.reviewedAt,c.note,c.by]); }); var csv="DPR CHECK LOG\n"+rows.map(function(r){ return r.map(function(v){ return cycQ(v==null?"":v); }).join(","); }).join("\n")+"\n"; try{ csv+="\n"+exportMetaLine(); }catch(e){} dl(csv, "Project Event Log - DPR check log - "+curProject()+" - "+new Date().toISOString().slice(0,10)+".csv", "text/csv"); }
+function dprDayNote(){
+  var el=document.getElementById("dprDayNote"); if(!el) return; var k=(typeof curKey==="function")?curKey():null; var cs=(DPR.checks||[]).filter(function(c){ return c.key===k; });
+  if(!k||!cs.length){ el.style.display="none"; el.innerHTML=""; return; }
+  var c=cs.sort(function(a,b){ return (b.at||"").localeCompare(a.at||""); })[0]; var dprTot=(c.sum!=null||c.anc!=null)?Math.max(c.sum||0,c.anc||0):null; var delta=(dprTot!=null&&c.app.dt!=null)?(dprTot-c.app.dt):null;
+  el.style.display=""; el.innerHTML='<div class="insight" style="margin:6px 0 10px;background:'+(c.verdict==="match"||c.reviewed?"#eef5ef":"#fdf3e3")+';border-left:3px solid '+(c.verdict==="match"||c.reviewed?"#4c9a6a":"#b9822b")+'"><b>Contractor DPR for this day:</b> weather '+(c.dpr.weather==null?"\u2014":c.dpr.weather.toFixed(2))+' h, mechanical '+(c.dpr.mech==null?"\u2014":c.dpr.mech.toFixed(2))+' h, vessel '+(c.dpr.vessel==null?"\u2014":c.dpr.vessel.toFixed(2))+' h, ROV '+(c.dpr.rov==null?"\u2014":c.dpr.rov.toFixed(2))+' h; this log shows '+(c.app.dt==null?"\u2014":c.app.dt.toFixed(2))+' h downtime, '+esc(dprVerdictText(c))+(delta!=null&&Math.abs(delta)>0.01?' ('+(delta>0?"+":"")+delta.toFixed(2)+' h)':'')+'. '+(c.reviewed?'Reviewed by '+esc(c.reviewedBy||"?")+(c.note?': '+esc(c.note):'')+'.':(c.verdict==="match"?'':'Not yet reconciled: flag the untagged lines below into events, then mark it reviewed in DPR Check.'))+'</div>';
+}
+function dprAgentSummary(){ var cs=(DPR.checks||[]); if(!cs.length) return null; return { checks:cs.slice(-90).map(function(c){ return { day:c.key, report_date:c.reportDate, file:c.file, dpr_weather_h:c.dpr.weather, dpr_mechanical_h:c.dpr.mech, dpr_vessel_h:c.dpr.vessel, dpr_rov_h:c.dpr.rov, log_dt_h:c.app.dt, verdict:c.verdict, max_difference_h:c.maxDiff, reviewed:c.reviewed, note:c.note }; }), unreconciled:dprUnreconciled().length, wording:"a DPR result is a numerical comparison of hours; never say the records agree, say they numerically match or differ" }; }
+
+/* Recovery Cycles from Daily Log lines: 'A2 · 1st end in tensioner' at the time it happened; each line starts a stage, the next line for that reel ends it, offload closes the cycle */
+var CYC_LINE_RE=/^\s*([A-Z]{1,2}\d{1,2})\s*(?:[\u00b7\u2022:\-\u2013\u2014|]\s*|\s+)(.+)$/;
+function cycDayNum(k){ var m=String(k||"").match(/^(\d{4})-(\d\d)-(\d\d)$/); return m?Math.round(Date.UTC(+m[1],+m[2]-1,+m[3])/86400000):null; }
+function cycFromLog(){
+  var out={reels:[], trips:[], flowlines:[], readings:[], issues:[], fromLog:true}; var evts=[], skipped=0, daysWith=0;
+  var keys=(typeof allDayKeys==="function"?allDayKeys():Object.keys(data||{})).slice().sort();
+  keys.forEach(function(k){ var d=data[k]; if(!d||!Array.isArray(d.log)) return; var hit=false; d.log.forEach(function(r,i){ var t=toMin(r[0]); var txt=String(r[1]||""); var m=txt.match(CYC_LINE_RE); if(!m) return; var rest=m[2]; var isOff=/\boffload|\bcycle complete|\bend of cycle|\bcycle end/i.test(rest); var stage=isOff?"offload":cycStepKey(rest); if(stage==="other"||stage==null){ if(/end|reel|recover|clamp|tension|cut|secure|midline|anode|loa/i.test(rest)) skipped++; return; } if(t==null){ out.issues.push({cls:"warning", text:k+" row "+(i+1)+": reel line has no valid time and was skipped"}); return; } hit=true;
+    var flow=(rest.match(/\b(FL\s?\d+|UMB\s?\d+)\b/i)||[])[1]; var wt=(rest.match(/(\d+(?:\.\d+)?)\s*(?:te|t|tonnes?)\b/i)||[])[1]; var ln=(rest.match(/(\d+(?:\.\d+)?)\s*m\b/i)||[])[1];
+    evts.push({ reel:m[1].toUpperCase(), day:k, t:t, abs:cycDayNum(k)*1440+t, text:txt, stage:stage, row:i+1, flow:flow?flow.replace(/\s+/g,"").toUpperCase():null, wt:wt?parseFloat(wt):null, ln:ln?parseFloat(ln):null }); }); if(hit) daysWith++; });
+  evts.sort(function(a,b){ return a.abs-b.abs; });
+  var byReel={}; evts.forEach(function(e){ (byReel[e.reel]=byReel[e.reel]||[]).push(e); });
+  Object.keys(byReel).sort().forEach(function(reel){ var list=byReel[reel]; var cur=null, occ=0;
+    function newReel(e){ occ++; return { cycleId:cycUid(), id:reel, occurrence:occ, flowlineId:e.flow||null, dateStart:e.day, steps:[], override:{}, cycleMin:null, weightTe:null, lengthM:null, notes:["Built from Daily Log lines"], status:"planned", included:true, excludeReason:"", deleted:false, src:{sheet:"daily log", row:e.row, file:"Daily Log "+e.day}, first:e, open:null }; }
+    function closeOpen(c, endEvt){ if(!c.open) return; var s=c.open; var mins=endEvt.abs-s.evt.abs; if(mins<0||mins>336*60){ out.issues.push({cls:"warning", text:reel+" "+s.evt.day+" row "+s.evt.row+": stage duration "+mins+" min is not credible and was skipped"}); c.open=null; return; } c.steps.push({ k:s.stage, name:s.evt.text.replace(CYC_LINE_RE,"$2").slice(0,120), start:s.evt.t, end:endEvt.t, min:mins, note:"Daily Log "+s.evt.day+" row "+s.evt.row, date:s.evt.day, row:s.evt.row }); c.open=null; }
+    list.forEach(function(e){ if(!cur) cur=newReel(e); if(e.flow) cur.flowlineId=e.flow; if(e.wt!=null) cur.weightTe=e.wt; if(e.ln!=null) cur.lengthM=e.ln;
+      if(e.stage==="offload"){ closeOpen(cur,e); cur.cycleMin=e.abs-cur.first.abs; if(cur.cycleMin<=0||cur.cycleMin>336*60){ out.issues.push({cls:"warning", text:reel+": cycle total from "+cur.first.day+" to "+e.day+" is not credible; left blank"}); cur.cycleMin=null; } delete cur.first; delete cur.open; out.reels.push(cur); cur=null; return; }
+      closeOpen(cur,e); cur.open={stage:e.stage, evt:e}; });
+    if(cur){ if(cur.open){ cur.started=true; cur.notes.push("Stage in progress: "+cycStepName(cur.open.stage)+" since "+min2t(cur.open.evt.t)+" on "+cur.open.evt.day); } delete cur.first; delete cur.open; out.reels.push(cur); } });
+  out.reels.forEach(function(rl){ if(!rl.flowlineId){ var known=(CYC.reels||[]).filter(function(x){ return !x.deleted && x.id===rl.id && x.flowlineId; })[0]; if(known) rl.flowlineId=known.flowlineId; else out.issues.push({cls:"warning", text:rl.id+": no flowline stated in its log lines (add FL5 or UMB3 to the first line) and none known from the register"}); } rl.status=cycStatusOf(rl); });
+  out.reels.forEach(function(rl,i){ rl.seq=i+1; });
+  out.issues.unshift({cls:"note", text:evts.length+" reel stage line(s) recognised across "+daysWith+" day(s); "+out.reels.length+" reel cycle(s) built"+(skipped?"; "+skipped+" reel-like line(s) did not name a known stage and were ignored":"")});
+  return out;
+}
+function cycImportFromLog(){ if(pelRO()) return; var p=cycFromLog(); if(!p.reels.length){ alert("No reel stage lines found in the Daily Log. Lines must read like 'A2 \u00b7 1st end in tensioner' at the time the stage started, and 'A2 \u00b7 offload' when the reel is offloaded."); return; } cycPreview(p, "Daily Log"); }
+
+/* provenance: every file and every manual entry that has ever changed the record */
+function provRows(){ var rows=[]; (CYC.importLog||[]).forEach(function(l){ rows.push({ kind:l.action?"Register action":"Cycles import", at:l.at||"", file:l.file||(l.action||""), hash:l.hash||"", who:l.reviewer||"", detail:l.action?"":(l.added+" added, "+l.updated+" updated, "+(l.unchanged||0)+" unchanged"+(l.issues?", "+l.issues+" reviewed":"")) }); }); (DPR.checks||[]).forEach(function(c){ rows.push({ kind:"DPR check", at:c.at||"", file:c.file||("DPR "+c.reportNo), hash:c.hash||"", who:c.by||"", detail:(c.key?fmtDay(c.key)+": ":"")+dprVerdictText(c)+(c.reviewed?" (reviewed)":"") }); }); (CYC.reels||[]).filter(function(r){ return r.src&&/manual entry|Daily Log/.test(String(r.src.file||"")); }).forEach(function(r){ rows.push({ kind:"Reel entered", at:r.acceptedAt||"", file:r.src.file, hash:"", who:"", detail:r.id+" "+(r.flowlineId||"")+" "+(r.dateStart||"") }); }); return rows.sort(function(a,b){ return (b.at||"").localeCompare(a.at||""); }); }
+function provHtml(){ var rows=provRows(); return '<p class="cyc-h" style="margin-top:20px">Files and provenance</p><p class="cyc-sub">Every workbook import, DPR check, manual reel and register action, with file fingerprints where a file was involved. <button class="noprint" style="font-size:11px;padding:2px 8px" onclick="provExportCSV()">Export CSV</button></p><table class="cyc-t"><thead><tr><th>When</th><th>Kind</th><th>File or action</th><th>Fingerprint</th><th>Who</th><th>Detail</th></tr></thead><tbody>'+(rows.length?rows.map(function(r){ return '<tr><td>'+esc((r.at||"").replace("T"," ").slice(0,16))+'</td><td>'+esc(r.kind)+'</td><td>'+esc(r.file)+'</td><td><span title="'+esc(r.hash)+'">'+esc(r.hash?r.hash.slice(0,12)+"\u2026":"")+'</span></td><td>'+esc(r.who)+'</td><td>'+esc(r.detail)+'</td></tr>'; }).join(""):'<tr><td colspan="6" class="dim">Nothing recorded yet.</td></tr>')+'</tbody></table>'; }
+function provExportCSV(){ var rows=[["When","Kind","File or action","Fingerprint","Who","Detail"]].concat(provRows().map(function(r){ return [r.at,r.kind,r.file,r.hash,r.who,r.detail]; })); dl("FILES AND PROVENANCE\n"+rows.map(function(r){ return r.map(cycQ).join(","); }).join("\n")+"\n", "Project Event Log - Provenance - "+curProject()+" - "+new Date().toISOString().slice(0,10)+".csv", "text/csv"); }
+
+/* manual NORM reading */
+function cycAddReading(o){ if(pelRO()) return false; o=o||{}; var reel=String(o.reel||"").toUpperCase(); var rl=(CYC.reels||[]).filter(function(x){ return !x.deleted && x.id===reel; }).sort(function(a,b){ return (b.campaignSeq||0)-(a.campaignSeq||0); })[0]; if(!rl){ alert("Choose a reel that is in the register."); return false; } var vals=(Array.isArray(o.values)?o.values:String(o.values||"").split(/[\/,;\s]+/)).map(function(v){ return cycNumStrict(v,0,1000); }).filter(function(v){ return v!=null; }); if(!vals.length){ alert("Enter one or more readings as numbers, for example 0.06 / 0.08"); return false; } var rd=cycSanitise({readings:[{ readingId:cycUid(), cycleId:rl.cycleId, reel:reel, occurrence:rl.occurrence, location:String(o.location||"manual").slice(0,60), readings:vals, src:{sheet:"manual entry", row:0} }]}).readings[0]; if(!rd) return false; CYC.readings.push(rd); cycBump(); save(); renderCyc(); return true; }
+function cycAddReadingForm(){ var reel=document.getElementById("nrReel").value, loc=document.getElementById("nrLoc").value, vals=document.getElementById("nrVals").value; if(cycAddReading({reel:reel, location:loc, values:vals})){ } }
+
+/* hooks into the existing views */
+var __renderLog318=renderLog; renderLog=function(){ var r=__renderLog318.apply(this,arguments); try{ dprDayNote(); }catch(e){} return r; };
+var __showTab318=showTab; showTab=function(t){ var r=__showTab318.apply(this,arguments); try{ if(t==="dpr") renderDprLog(); }catch(e){} return r; };
+</script>
 </body>
 </html>
