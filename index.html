@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-09-02.3 - deploy check string: PEL-BUILD-2026-09-02.3 -->
+<!-- Endura Project Event Log - build 2026-09-02.4 - deploy check string: PEL-BUILD-2026-09-02.4 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -271,7 +271,7 @@
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-02.3</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-02.4</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -579,7 +579,7 @@
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-09-02.3";
+var APP_BUILD="2026-09-02.4";
 var PEL_ENV={env:"TEST",agent:true,schema:6};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
@@ -3754,10 +3754,11 @@ function cycPreviewMany(results){
 }
 /* match incoming reels against the register; ambiguity is a blocking conflict, never a fallback */
 function cycMatchIncoming(parsed){
-  var changes=[]; var blocking=[];
-  parsed.reels.forEach(function(r){ var same=function(x){ return !x.deleted && x.id===r.id && (!r.flowlineId||!x.flowlineId||x.flowlineId===r.flowlineId); }; var cands=(CYC.reels||[]).filter(function(x){ return same(x) && ((r.dateStart&&x.dateStart)?x.dateStart===r.dateStart:x.occurrence===r.occurrence); });
+  var changes=[]; var blocking=[]; var used={};
+  parsed.reels.forEach(function(r){ var same=function(x){ return !x.deleted && !used[x.cycleId] && x.id===r.id && (!r.flowlineId||!x.flowlineId||x.flowlineId===r.flowlineId); }; var cands=(CYC.reels||[]).filter(function(x){ return same(x) && ((r.dateStart&&x.dateStart)?x.dateStart===r.dateStart:x.occurrence===r.occurrence); });
     if(!cands.length && r.dateStart){ var near=(CYC.reels||[]).filter(function(x){ return same(x) && x.dateStart && Math.abs(cycDayNum(x.dateStart)-cycDayNum(r.dateStart))<=2; }); if(near.length===1) cands=near; else if(near.length>1) cands=near; }
-    if(cands.length>1){ blocking.push({cls:"blocking", text:r.id+(r.dateStart?" ("+r.dateStart+")":"")+" matches "+cands.length+" existing reels; identity is ambiguous, so this reel is not applied"}); r.__skip=true; return; }
+    if(cands.length>1){ blocking.push({cls:"warning", text:r.id+(r.dateStart?" ("+r.dateStart+")":"")+" matches "+cands.length+" existing reels ("+cands.map(function(x){ return x.dateStart||("#"+x.occurrence); }).join(", ")+"); identity is ambiguous, so this reel is set aside and not applied; the rest of the batch can proceed"}); r.__skip=true; return; }
+    if(cands.length===1) used[cands[0].cycleId]=true;
     if(!cands.length){ changes.push({incoming:r, current:null, kind:"new", fields:[]}); return; }
     var x=cands[0]; var fields=[]; var cmp=function(name,a,b,fmt){ if(a==null && b!=null) return; var sa=JSON.stringify(a==null?null:a), sb=JSON.stringify(b==null?null:b); if(sa!==sb) fields.push({name:name, current:b, incoming:a, currentText:fmt?fmt(b):String(b==null?"–":b), incomingText:fmt?fmt(a):String(a==null?"–":a)}); };
     cmp("Start date", r.dateStart, x.dateStart); cmp("Flowline", r.flowlineId, x.flowlineId); cmp("Trip", r.trip, x.trip); cmp("HLV", r.hlvTp, x.hlvTp); cmp("Cycle total", r.cycleMin, x.cycleMin, cycH); cmp("Length m", r.lengthM, x.lengthM); cmp("Weight t", r.weightTe, x.weightTe);
