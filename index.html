@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-09-02.1 - deploy check string: PEL-BUILD-2026-09-02.1 -->
+<!-- Endura Project Event Log - build 2026-09-02.2 - deploy check string: PEL-BUILD-2026-09-02.2 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -271,7 +271,7 @@
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-02.1</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-02.2</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -579,7 +579,7 @@
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-09-02.1";
+var APP_BUILD="2026-09-02.2";
 var PEL_ENV={env:"TEST",agent:true,schema:6};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
@@ -2369,6 +2369,7 @@ function onDprBatch(inp){
 function dprBatchRowResult(parsed){
   var key=dprDateToKey(parsed.reportDate);
   if(parsed.error) return {key:"", appDT:null, sum:null, anc:null, verdict:"error", detail:parsed.error};
+  if(!parsed.reportDate && !parsed.foundCount) return {key:"", appDT:null, sum:null, anc:null, verdict:"error", detail:"Report unreadable: no date or figures found (image-only PDF?)"};
   if(!key || !data[key]) return {key:key, appDT:null, sum:r2((parsed.weatherDT||0)+(parsed.mechDT||0)), anc:r2((parsed.vesselDT||0)+(parsed.rovDT||0)), verdict:"noday", detail:"No logged day for "+(parsed.reportDate||"?")};
   var st=dayStats(key); var appDT=r2(st.dt);
   if([parsed.weatherDT,parsed.mechDT,parsed.vesselDT,parsed.rovDT].some(function(v){return v==null;})){
@@ -2574,8 +2575,8 @@ function dprParse(arrayBuffer){
 
 /* convert dd/mm/yyyy from the DPR to the app's yyyy-mm-dd key */
 function dprDateToKey(d){
-  var m=String(d||"").match(/(\d{2})\/(\d{2})\/(\d{4})/);
-  return m? (m[3]+"-"+m[2]+"-"+m[1]) : "";
+  var m=String(d||"").match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  return m? (m[3]+"-"+("0"+m[2]).slice(-2)+"-"+("0"+m[1]).slice(-2)) : "";
 }
 
 function dprShowResult(r){
@@ -3893,13 +3894,14 @@ function dprSanitise(d){
     id:/^[a-z0-9]{1,24}$/.test(String(c.id||""))?String(c.id):cycUid(), at:str(c.at,30), by:str(c.by,40), file:str(c.file,200), hash:/^[a-f0-9]{0,64}$/.test(String(c.hash||""))?String(c.hash||""):"", reportNo:str(c.reportNo,20), reportDate:str(c.reportDate,20), key:cycDate(c.key)||"",
     dpr:{ weather:hrs(c.dpr&&c.dpr.weather), mech:hrs(c.dpr&&c.dpr.mech), vessel:hrs(c.dpr&&c.dpr.vessel), rov:hrs(c.dpr&&c.dpr.rov) }, app:{ dt:hrs(c.app&&c.app.dt) }, sum:hrs(c.sum), anc:hrs(c.anc), maxDiff:cycNumStrict(c.maxDiff,0,48),
     verdict:DPR_VERDICTS[c.verdict]?c.verdict:"error", detail:str(c.detail,200), reviewed:!!c.reviewed, reviewedBy:str(c.reviewedBy,40), reviewedAt:str(c.reviewedAt,30), note:str(c.note,200) }; });
+  var seen={}; var out=[]; f.checks.slice().sort(function(a,b){ return (a.at||"").localeCompare(b.at||""); }).forEach(function(c){ var k=(c.key||"")+"|"+c.file+"|"+(c.key?"":(c.hash||c.reportNo||"")); var j=seen[k]; if(j!=null){ if(out[j].reviewed && !c.reviewed){ c.reviewed=out[j].reviewed; c.reviewedBy=out[j].reviewedBy; c.reviewedAt=out[j].reviewedAt; c.note=out[j].note; } out[j]=c; } else { seen[k]=out.length; out.push(c); } }); f.checks=out;
   return f;
 }
 function dprRecord(parsed, r, fileName, hash){
   if(!parsed||!r) return null;
   var c={ id:cycUid(), at:new Date().toISOString(), by:curUser()||"", file:String(fileName||parsed.fileName||""), hash:String(hash||parsed.__hash||""), reportNo:String(parsed.reportNo||""), reportDate:String(parsed.reportDate||""), key:r.key||"",
     dpr:{ weather:parsed.weatherDT==null?null:parsed.weatherDT, mech:parsed.mechDT==null?null:parsed.mechDT, vessel:parsed.vesselDT==null?null:parsed.vesselDT, rov:parsed.rovDT==null?null:parsed.rovDT }, app:{ dt:r.appDT==null?null:r.appDT }, sum:r.sum==null?null:r.sum, anc:r.anc==null?null:r.anc, maxDiff:r.maxDiff==null?null:r.maxDiff, verdict:DPR_VERDICTS[r.verdict]?r.verdict:"error", detail:String(r.detail||""), reviewed:false, reviewedBy:"", reviewedAt:"", note:"" };
-  var i=-1; if(c.key) i=DPR.checks.findIndex(function(x){ return x.key===c.key && x.file===c.file; });
+  var i=-1; if(c.key) i=DPR.checks.findIndex(function(x){ return x.key===c.key && x.file===c.file; }); else i=DPR.checks.findIndex(function(x){ return !x.key && x.file===c.file && (!c.hash || !x.hash || x.hash===c.hash); });
   if(i>=0){ var old=DPR.checks[i]; if(old.verdict===c.verdict){ c.reviewed=old.reviewed; c.reviewedBy=old.reviewedBy; c.reviewedAt=old.reviewedAt; c.note=old.note; } DPR.checks[i]=c; } else DPR.checks.push(c);
   DPR=dprSanitise(DPR); try{ save(); }catch(e){} return c;
 }
@@ -3908,8 +3910,10 @@ function dprRecordSingle(parsed, fileName){ try{ if(parsed && parsed.foundCount>
 function dprMarkReviewed(id, note){ if(pelRO()) return; var c=DPR.checks.filter(function(x){ return x.id===id; })[0]; if(!c) return; c.reviewed=true; c.reviewedBy=curUser()||""; c.reviewedAt=new Date().toISOString(); c.note=String(note==null?"":note).slice(0,200); save(); renderDprLog(); try{ dprDayNote(); }catch(e){} }
 function dprReopen(id){ if(pelRO()) return; var c=DPR.checks.filter(function(x){ return x.id===id; })[0]; if(!c) return; c.reviewed=false; c.reviewedBy=""; c.reviewedAt=""; save(); renderDprLog(); }
 function dprOpenDay(key){ if(!key||!data[key]) return; var sel=document.getElementById("daySelect"); if(sel){ sel.value=key; } showTab("log"); renderLog(); }
-function dprVerdictText(c){ return c.verdict==="match"?"numerically matches":c.verdict==="close"?"close ("+(c.maxDiff!=null?"\u00b1"+c.maxDiff.toFixed(2)+" h":"within 0.5 h")+")":c.verdict==="differ"?"differs"+(c.maxDiff!=null?" by "+c.maxDiff.toFixed(2)+" h":""):c.verdict==="incomplete"?"incomplete, DPR value(s) missing":c.verdict==="noday"?"no logged day":"read error"; }
-function dprUnreconciled(){ return (DPR.checks||[]).filter(function(c){ return !c.reviewed && c.verdict!=="match"; }); }
+function dprVerdictText(c){ return c.verdict==="match"?"numerically matches":c.verdict==="close"?"close ("+(c.maxDiff!=null?"\u00b1"+c.maxDiff.toFixed(2)+" h":"within 0.5 h")+")":c.verdict==="differ"?"differs"+(c.maxDiff!=null?" by "+c.maxDiff.toFixed(2)+" h":""):c.verdict==="incomplete"?"incomplete, DPR value(s) missing":c.verdict==="noday"?"no logged day":(c.detail&&/unreadable/i.test(c.detail)?"unreadable report":"read error"); }
+function dprUnreconciled(){ return (DPR.checks||[]).filter(function(c){ return !c.reviewed && c.verdict!=="match" && c.verdict!=="noday" && c.verdict!=="error"; }); }
+function dprNoDay(){ return (DPR.checks||[]).filter(function(c){ return c.verdict==="noday"; }).sort(function(a,b){ return (a.key||a.reportDate||"").localeCompare(b.key||b.reportDate||""); }); }
+function dprUnreadable(){ return (DPR.checks||[]).filter(function(c){ return c.verdict==="error"; }); }
 function renderDprLog(){
   var host=document.getElementById("dprLogPanel"); if(!host) return;
   var checks=(DPR.checks||[]).slice().sort(function(a,b){ return (b.key||b.reportDate||"").localeCompare(a.key||a.reportDate||"") || (b.at||"").localeCompare(a.at||""); });
@@ -3918,7 +3922,9 @@ function renderDprLog(){
   var rec=open.length?open.map(function(c){ var dprTot=(c.sum!=null||c.anc!=null)?Math.max(c.sum||0,c.anc||0):null; var delta=(dprTot!=null&&c.app.dt!=null)?(dprTot-c.app.dt):null;
     return '<tr><td>'+(c.key&&data[c.key]?'<a href="#" onclick="dprOpenDay(\''+esc(c.key)+'\');return false;"><b>'+esc(fmtDay(c.key))+'</b></a>':'<span class="sub">'+esc(c.reportDate||"?")+'</span>')+'</td><td>'+esc(c.file||("DPR "+c.reportNo))+'</td><td class="num">'+fmt(c.dpr.weather)+' / '+fmt(c.dpr.mech)+'</td><td class="num">'+fmt(c.dpr.vessel)+' / '+fmt(c.dpr.rov)+'</td><td class="num">'+fmt(c.app.dt)+'</td><td class="num" style="color:'+(delta!=null&&Math.abs(delta)>0.01?"#c0392b":"#1A1A1A")+'">'+(delta==null?"\u2014":(delta>0?"+":"")+delta.toFixed(2)+" h")+'</td><td>'+esc(dprVerdictText(c))+(c.detail&&c.verdict!=="differ"?' <span class="sub">'+esc(c.detail)+'</span>':'')+'</td><td class="noprint"><input placeholder="note (optional)" style="width:150px;font-size:12px;padding:3px 5px" id="dprNote_'+esc(c.id)+'"> <button class="btn" style="padding:3px 8px;font-size:12px" onclick="dprMarkReviewed(\''+esc(c.id)+'\',document.getElementById(\'dprNote_'+esc(c.id)+'\').value)">Mark reviewed</button></td></tr>'; }).join("") : '<tr><td colspan="8" class="sub">Nothing to reconcile. Every recorded DPR check either matches the log or has been reviewed.</td></tr>';
   var log=checks.length?checks.map(function(c){ return '<tr'+(c.reviewed?' style="color:#8C8C8C"':'')+'><td>'+esc((c.at||"").replace("T"," ").slice(0,16))+'</td><td>'+(c.key?esc(fmtDay(c.key)):'<span class="sub">'+esc(c.reportDate||"?")+'</span>')+'</td><td>'+esc(c.file||"")+(c.reportNo?' <span class="sub">DPR '+esc(c.reportNo)+'</span>':'')+(c.hash?' <span class="sub" title="'+esc(c.hash)+'">'+esc(c.hash.slice(0,10))+'\u2026</span>':'')+'</td><td class="num">'+fmt(c.dpr.weather)+' / '+fmt(c.dpr.mech)+' / '+fmt(c.dpr.vessel)+' / '+fmt(c.dpr.rov)+'</td><td class="num">'+fmt(c.app.dt)+'</td><td>'+esc(dprVerdictText(c))+'</td><td>'+(c.reviewed?'reviewed by '+esc(c.reviewedBy||"?")+' '+esc((c.reviewedAt||"").slice(0,10))+(c.note?' \u00b7 '+esc(c.note):'')+' <button class="ghost noprint" style="font-size:11px" onclick="dprReopen(\''+esc(c.id)+'\')">reopen</button>':(c.verdict==="match"?'\u2014':'<span style="color:#b9822b">open</span>'))+'</td><td>'+esc(c.by||"")+'</td></tr>'; }).join("") : '<tr><td colspan="8" class="sub">No DPR checks recorded yet. Run a single or batch check above; every automatic result is kept here for everyone.</td></tr>';
-  host.innerHTML='<div class="panel"><h3>Downtime reconciliation <span class="sub" style="font-weight:400">'+open.length+' open</span></h3><p class="footnote" style="margin-top:0">Days where the contractor DPR and this log disagree on downtime. DPR columns are weather / mechanical and vessel / ROV hours; the log column is this record\'s downtime. A difference usually means an event was logged as text but never tagged: open the day, flag the line, set the category and end time, then mark the row reviewed.</p><table><thead><tr><th>Day</th><th>DPR</th><th class="num">Weather / mech (h)</th><th class="num">Vessel / ROV (h)</th><th class="num">Log DT (h)</th><th class="num">DPR minus log</th><th>Result</th><th class="noprint">Action</th></tr></thead><tbody>'+rec+'</tbody></table></div>'+
+  var nd=dprNoDay(), ur=dprUnreadable(); var ndTot=nd.reduce(function(a,c){ return a+Math.max(c.sum||0,c.anc||0); },0);
+  var extra=(nd.length?'<div class="insight" style="margin-top:10px;background:#fdf3e3;border-left:3px solid #b9822b"><b>DPR days with no logged day ('+nd.length+'):</b> '+nd.map(function(c){ return esc(c.key?fmtDay(c.key):c.reportDate)+(Math.max(c.sum||0,c.anc||0)>0?' ('+Math.max(c.sum||0,c.anc||0).toFixed(2)+' h DPR downtime)':''); }).join(', ')+'. These days exist in the contractor record but not in this log'+(ndTot>0?', including '+ndTot.toFixed(2)+' h of contractor-reported downtime with nothing to compare against':'')+'. Create the days and log them, or confirm they belong to another project.</div>':'')+(ur.length?'<div class="insight" style="margin-top:8px;background:#fdecea;border-left:3px solid #c0392b"><b>Unreadable reports ('+ur.length+'):</b> '+ur.map(function(c){ return esc(c.file); }).join(', ')+'. No date or figures could be read (image-only PDF?); obtain a text version or OCR it.</div>':'');
+  host.innerHTML='<div class="panel"><h3>Downtime reconciliation <span class="sub" style="font-weight:400">'+open.length+' open</span></h3><p class="footnote" style="margin-top:0">Days where the contractor DPR and this log disagree on downtime. DPR columns are weather / mechanical and vessel / ROV hours; the log column is this record\'s downtime. A difference usually means an event was logged as text but never tagged: open the day, flag the line, set the category and end time, then mark the row reviewed.</p><table><thead><tr><th>Day</th><th>DPR</th><th class="num">Weather / mech (h)</th><th class="num">Vessel / ROV (h)</th><th class="num">Log DT (h)</th><th class="num">DPR minus log</th><th>Result</th><th class="noprint">Action</th></tr></thead><tbody>'+rec+'</tbody></table>'+extra+'</div>'+
     '<div class="panel"><h3>DPR check log <span class="sub" style="font-weight:400">'+checks.length+' check(s), shared record</span></h3><p class="footnote" style="margin-top:0">Every automatic DPR check with the file name and fingerprint it came from, who ran it and when. <button class="btn noprint" style="padding:3px 10px;font-size:12px" onclick="dprExportLog()">Export CSV</button></p><table><thead><tr><th>Recorded</th><th>Day</th><th>File</th><th class="num">DPR W / M / V / R (h)</th><th class="num">Log DT (h)</th><th>Result</th><th>Review</th><th>By</th></tr></thead><tbody>'+log+'</tbody></table></div>';
 }
 function dprExportLog(){ var rows=[["Recorded","Day","Report date","File","Fingerprint","Report no","DPR weather h","DPR mechanical h","DPR vessel h","DPR ROV h","Log DT h","Verdict","Max difference h","Reviewed","Reviewed by","Reviewed at","Note","Run by"]]; (DPR.checks||[]).forEach(function(c){ rows.push([c.at,c.key,c.reportDate,c.file,c.hash,c.reportNo,c.dpr.weather,c.dpr.mech,c.dpr.vessel,c.dpr.rov,c.app.dt,c.verdict,c.maxDiff,c.reviewed?"yes":"no",c.reviewedBy,c.reviewedAt,c.note,c.by]); }); var csv="DPR CHECK LOG\n"+rows.map(function(r){ return r.map(function(v){ return cycQ(v==null?"":v); }).join(","); }).join("\n")+"\n"; try{ csv+="\n"+exportMetaLine(); }catch(e){} dl(csv, "Project Event Log - DPR check log - "+curProject()+" - "+new Date().toISOString().slice(0,10)+".csv", "text/csv"); }
