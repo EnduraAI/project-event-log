@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-09-02.12 - deploy check string: PEL-BUILD-2026-09-02.12 -->
+<!-- Endura Project Event Log - build 2026-09-02.13 - deploy check string: PEL-BUILD-2026-09-02.13 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -8,8 +8,14 @@
 <meta name="theme-color" content="#E87722">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231A1A1A'/%3E%3Cpath d='M18 14h28v7H26v8h17v7H26v7h20v7H18z' fill='%23E87722'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+/* libraries: same-origin lib/ first (works through a satellite dropout once uploaded), CDN as fallback */
+window.PEL_LIB_SOURCE={}; window.PEL_LIB_READY={};
+(function(){ function load(name, local, cdn, onDone){ var s=document.createElement("script"); s.src=local; s.onload=function(){ window.PEL_LIB_SOURCE[name]="local"; window.PEL_LIB_READY[name]=true; if(onDone) onDone(); }; s.onerror=function(){ var c=document.createElement("script"); c.src=cdn; c.onload=function(){ window.PEL_LIB_SOURCE[name]="cdn"; window.PEL_LIB_READY[name]=true; if(onDone) onDone(); }; c.onerror=function(){ window.PEL_LIB_SOURCE[name]="unavailable"; }; document.head.appendChild(c); }; document.head.appendChild(s); }
+  load("xlsx","lib/xlsx.full.min.js","https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js");
+  load("pdfjs","lib/pdf.min.js","https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js", function(){ try{ if(window.pdfjsLib && pdfjsLib.GlobalWorkerOptions){ pdfjsLib.GlobalWorkerOptions.workerSrc=(window.PEL_LIB_SOURCE.pdfjs==="local")?"lib/pdf.worker.min.js":"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; } }catch(e){} });
+})();
+</script>
 <style>
   :root{
     --bg:#FAF7F1; --panel:#ffffff; --panel2:#f2eee4; --line:#e3ddcf; --field:#fbfaf7;
@@ -241,6 +247,7 @@
 </header>
 
 <nav>
+  <button id="tabToday" onclick="showTab('today')">Today</button>
   <button id="tabLog" class="active" onclick="showTab('log')">Daily Log</button>
   <button id="tabDash" onclick="showTab('dash')">Campaign Dashboard</button>
   <button id="tabWbs" onclick="showTab('wbs')">Schedule / WBS</button>
@@ -249,6 +256,49 @@
 </nav>
 
 <main>
+  <section id="view-today" style="display:none">
+    <style>
+      #view-today .td-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+      #view-today .td-card{background:#fff;border:1px solid #e6e1d6;border-radius:8px;padding:14px 16px}
+      #view-today .td-card h3{margin:0 0 6px;font-size:14px;letter-spacing:.02em}
+      #view-today .td-big{font-size:26px;font-weight:700;color:#1A1A1A;line-height:1.1}
+      #view-today .td-sub{font-size:12px;color:#5c5c5c;margin-top:4px;line-height:1.45}
+      #view-today .td-drop{border:2px dashed #E87722;border-radius:10px;padding:18px;text-align:center;background:#fff8f2;cursor:pointer;font-size:14px}
+      #view-today .td-drop.over{background:#ffe9d6}
+      #view-today .td-digest{font-size:13.5px;line-height:1.55;color:#1A1A1A}
+      #view-today .td-digest b{color:#1A1A1A}
+      #view-today .td-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+      #view-today .td-chip{border:1px solid #d9d2c5;border-radius:16px;padding:8px 12px;font-size:13px;background:#fff;cursor:pointer;user-select:none}
+      #view-today .td-chip.on{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
+      #view-today .td-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+      #view-today input, #view-today select{font-size:15px;padding:8px 10px;border:1px solid #d9d2c5;border-radius:6px}
+      #view-today .td-act{font-size:13px;padding:6px 0;border-bottom:1px solid #eee7da}
+      #view-today .td-ok{color:#2f7d4a} #view-today .td-warn{color:#b9822b} #view-today .td-bad{color:#c0392b}
+      @media (max-width:640px){ nav button{padding:8px 10px;font-size:13px} #view-today .td-grid{grid-template-columns:1fr} #view-today .td-big{font-size:22px} #view-today .btn{padding:10px 14px;font-size:14px} }
+    </style>
+    <div class="panel" style="padding:16px 18px">
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;justify-content:space-between">
+        <div style="flex:1;min-width:260px"><div style="font-size:18px;font-weight:700" id="tdTitle">Today</div><div class="td-sub" id="tdIntro">Drop today's contractor report and everything updates: the hours check, the reel stages, progress and the learning curve. The app asks a question only when it genuinely needs one.</div></div>
+        <div class="cyc-actions noprint"><button class="btn" onclick="pelWeeklyReport()">Weekly client report</button><button class="ghost" onclick="showTab('log')">Open the Daily Log</button></div>
+      </div>
+      <div class="td-grid" style="margin-top:14px">
+        <div class="td-card" style="grid-column:1/-1"><h3>Today's contractor report</h3>
+          <div class="td-drop noprint" id="tdDrop" onclick="document.getElementById('tdFile').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="event.preventDefault();this.classList.remove('over');pelTodayDrop(event.dataTransfer.files)">Drop the DPR PDF here, or click to choose (one report, or several for catch-up)</div>
+          <input id="tdFile" type="file" accept=".pdf,application/pdf" multiple style="display:none" onchange="pelTodayDrop(this.files);this.value=''">
+          <div id="tdDigest" class="td-digest" style="margin-top:10px"></div>
+        </div>
+        <div class="td-card"><h3>Active reel</h3><div id="tdActive"></div></div>
+        <div class="td-card"><h3>Campaign progress</h3><div id="tdProgress"></div></div>
+        <div class="td-card"><h3>Contractor report versus this log</h3><div id="tdHours"></div></div>
+        <div class="td-card"><h3>Open actions</h3><div id="tdActions"></div></div>
+        <div class="td-card noprint" style="grid-column:1/-1"><h3>Quick log</h3><div class="td-sub">Tap a reel and a stage at the moment it starts; the app writes the line, the event and the reel stage for you.</div>
+          <div class="td-row"><input id="qlTime" style="width:96px" placeholder="HH:MM"><select id="qlReel"></select><input id="qlReelFree" placeholder="or new reel, e.g. D1" style="width:130px"><input id="qlFlow" placeholder="flowline, e.g. FL5" style="width:120px"></div>
+          <div class="td-chips" id="qlStages"></div>
+          <div class="td-row"><input id="qlNote" placeholder="anything else worth noting (optional)" style="flex:1;min-width:200px"><button class="btn" onclick="pelQuickLogForm()">Add to today's log</button><span id="qlMsg" class="td-sub"></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
   <section id="view-log">
     <div class="row noprint">
       <label class="sub">Day:</label>
@@ -271,7 +321,7 @@
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-02.12</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-02.13</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -579,7 +629,7 @@
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-09-02.12";
+var APP_BUILD="2026-09-02.13";
 var PEL_ENV={env:"TEST",agent:true,schema:6};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
@@ -2476,7 +2526,7 @@ function onDprFile(inp){
 
 /* PDF -> array of pages, each an array of reconstructed text lines */
 function dprPdfToLines(arrayBuffer){
-  try{ if(!pdfjsLib.GlobalWorkerOptions.workerSrc) pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; }catch(e){}
+  try{ if(!pdfjsLib.GlobalWorkerOptions.workerSrc) pdfjsLib.GlobalWorkerOptions.workerSrc=(window.PEL_LIB_SOURCE&&window.PEL_LIB_SOURCE.pdfjs==="local")?"lib/pdf.worker.min.js":"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; }catch(e){}
   return pdfjsLib.getDocument({data:arrayBuffer}).promise.then(function(pdf){
     var jobs=[];
     for(var i=1;i<=pdf.numPages;i++) jobs.push(pdf.getPage(i));
@@ -3968,8 +4018,8 @@ setInterval(function(){ pelFreshCheck(); }, 5*60*1000);
 document.addEventListener("visibilitychange", function(){ if(!document.hidden) pelFreshCheck(); });
 
 /* DPR check log: every automatic check is kept in the shared record with its file fingerprint */
-var DPR={version:1, checks:[]};
-function dprFresh(){ return {version:1, checks:[]}; }
+function dprFresh(){ return {version:1, checks:[], timelines:[], daily:[]}; }
+var DPR=dprFresh();
 function dprHash(buf){ try{ if(window.crypto && crypto.subtle && crypto.subtle.digest && buf){ return crypto.subtle.digest("SHA-256", buf).then(function(h){ return Array.prototype.map.call(new Uint8Array(h), function(b){ return ("0"+b.toString(16)).slice(-2); }).join(""); }).catch(function(){ return ""; }); } }catch(e){} return Promise.resolve(""); }
 var DPR_VERDICTS={match:1,close:1,differ:1,incomplete:1,noday:1,error:1};
 function dprSanitise(d){
@@ -3980,6 +4030,8 @@ function dprSanitise(d){
     id:/^[a-z0-9]{1,24}$/.test(String(c.id||""))?String(c.id):cycUid(), at:str(c.at,30), by:str(c.by,40), file:str(c.file,200), hash:/^[a-f0-9]{0,64}$/.test(String(c.hash||""))?String(c.hash||""):"", reportNo:str(c.reportNo,20), reportDate:str(c.reportDate,20), key:cycDate(c.key)||"",
     dpr:{ weather:hrs(c.dpr&&c.dpr.weather), mech:hrs(c.dpr&&c.dpr.mech), vessel:hrs(c.dpr&&c.dpr.vessel), rov:hrs(c.dpr&&c.dpr.rov) }, app:{ dt:hrs(c.app&&c.app.dt) }, sum:hrs(c.sum), anc:hrs(c.anc), maxDiff:cycNumStrict(c.maxDiff,0,48),
     verdict:DPR_VERDICTS[c.verdict]?c.verdict:"error", detail:str(c.detail,200), reviewed:!!c.reviewed, reviewedBy:str(c.reviewedBy,40), reviewedAt:str(c.reviewedAt,30), note:str(c.note,200) }; });
+  if(Array.isArray(d.timelines)) f.timelines=d.timelines.filter(function(t){ return t&&typeof t==="object"&&cycDate(t.date); }).slice(-14).map(function(t){ return { date:cycDate(t.date), reportNo:str(t.reportNo,12), hash:/^[a-f0-9]{0,64}$/.test(String(t.hash||""))?String(t.hash||""):"", file:str(t.file,200), rows:(Array.isArray(t.rows)?t.rows:[]).filter(function(r){ return r&&typeof r==="object"; }).slice(0,600).map(function(r){ return { t:cycNumStrict(r.t,0,1439), c:str(r.c,8), l:str(r.l,50), x:str(r.x,220), p:cycNumStrict(r.p,0,500), n:cycNumStrict(r.n,0,100000) }; }).filter(function(r){ return r.t!=null; }) }; });
+  if(Array.isArray(d.daily)) f.daily=d.daily.filter(function(x){ return x&&typeof x==="object"&&cycDate(x.date); }).slice(-60).map(function(x){ return { date:cycDate(x.date), reportNo:str(x.reportNo,12), file:str(x.file,200), at:str(x.at,30), completed:(Array.isArray(x.completed)?x.completed:[]).slice(0,10).map(function(c){ return {id:str(c.id,12), flow:str(c.flow,12), cycleMin:cycNumStrict(c.cycleMin,0,40320), dateStart:cycDate(c.dateStart)||""}; }), inProgress:(Array.isArray(x.inProgress)?x.inProgress:[]).slice(0,10).map(function(c){ return {id:str(c.id,12), flow:str(c.flow,12), stage:str(c.stage,16), since:str(c.since,24), found:cycNumStrict(c.found,0,20)||0}; }), held:(Array.isArray(x.held)?x.held:[]).slice(0,10).map(function(v){ return str(v,60); }), notes:(Array.isArray(x.notes)?x.notes:[]).slice(0,6).map(function(v){ return str(v,240); }), next:(Array.isArray(x.next)?x.next:[]).slice(0,8).map(function(v){ return str(v,200); }), progress:(Array.isArray(x.progress)?x.progress:[]).slice(0,8).map(function(v){ return str(v,200); }), applied:(x.applied&&typeof x.applied==="object")?{conflicts:cycNumStrict(x.applied.conflicts,0,999)||0, filled:cycNumStrict(x.applied.filled,0,999)||0, dates:cycNumStrict(x.applied.dates,0,999)||0, kept:cycNumStrict(x.applied.kept,0,999)||0}:null, hours:(x.hours&&typeof x.hours==="object")?{verdict:DPR_VERDICTS[x.hours.verdict]?x.hours.verdict:"error", dprDT:cycNumStrict(x.hours.dprDT,0,48)||0, logDT:cycNumStrict(x.hours.logDT,0,48)}:null }; });
   var seen={}; var out=[]; f.checks.slice().sort(function(a,b){ return (a.at||"").localeCompare(b.at||""); }).forEach(function(c){ var k=(c.key||"")+"|"+c.file+"|"+(c.key?"":(c.hash||c.reportNo||"")); var j=seen[k]; if(j!=null){ if(out[j].reviewed && !c.reviewed){ c.reviewed=out[j].reviewed; c.reviewedBy=out[j].reviewedBy; c.reviewedAt=out[j].reviewedAt; c.note=out[j].note; } out[j]=c; } else { seen[k]=out.length; out.push(c); } }); f.checks=out;
   return f;
 }
@@ -4250,6 +4302,110 @@ function cycDeriveFromTimelines(conv){
   cycPreview(derived, label, { size:null, hash:(T.hashes||[]).filter(Boolean).join(";"), sheets:[], files:T.tls.map(function(t){ return { fname:t.file, hash:t.hash, size:null, reels:0, trips:0, readings:0 }; }) });
 }
 function cycDprConvHtml(conv){ var h='<div class="cyc-note ink"><b>DPR reading conventions</b> <span class="dim">(the stage boundaries follow the contractor\'s wording; two authors used different phrasings, so each convention is explicit and can be switched before applying)</span><div class="cyc-form" style="margin-top:6px">'; Object.keys(DPR_CONV_OPTIONS).forEach(function(k){ h+='<label>'+esc(k.replace(/([A-Z])/g," $1").toLowerCase())+'<select onchange="var c=Object.assign({},__cycPending.dprConv||DPR_CONV_DEFAULT); c[\''+k+'\']=this.value; cycDeriveFromTimelines(c);">'+DPR_CONV_OPTIONS[k].map(function(o){ return '<option value="'+o[0]+'"'+((conv[k]||DPR_CONV_DEFAULT[k])===o[0]?" selected":"")+' title="'+esc(o[1])+'">'+esc(o[1])+'</option>'; }).join("")+'</select></label>'; }); return h+'</div></div>'; }
+</script>
+<script>
+/* ===== Today: the daily instrument ===== */
+var TD_STAGES=CYC_STEPS.map(function(s){ return {k:s.k, n:s.n}; }).concat([{k:"offload", n:"Offload (reel complete)"}]);
+function tdKeyToday(){ return (typeof todayKey==="function")?todayKey():new Date().toISOString().slice(0,10); }
+function tdFmt(d){ try{ return fmtDay(d); }catch(e){ return d; } }
+function tdEnsureDay(key){ if(!data[key]){ var tpl=Object.keys(data).length?data[Object.keys(data).sort().pop()]:null; data[key]={ end:"24:00", log:[], ev:[] }; if(tpl){ for(var k in tpl){ if(["log","ev","end"].indexOf(k)<0 && typeof tpl[k]!=="object") data[key][k]=tpl[k]; } } try{ fillDaySelect(); }catch(e){} } return data[key]; }
+
+/* rolling window of contractor timelines so that reels spanning reports complete on the day they finish */
+function tdWindowRows(){ var T=(DPR.timelines||[]).slice().sort(function(a,b){ return a.date<b.date?-1:a.date>b.date?1:0; }); return T.map(function(t){ return { date:t.date, reportNo:t.reportNo||"", hash:t.hash||"", file:t.file||"", rows:(t.rows||[]).map(function(r,i){ return { time:r.t, clock:r.c, label:r.l||"", text:r.x||"", page:r.p||null, line:r.n||i+1 }; }) }; }); }
+function tdStoreTimeline(t){ DPR.timelines=(DPR.timelines||[]).filter(function(x){ return x.date!==t.date; }); DPR.timelines.push({ date:t.date, reportNo:t.reportNo||"", hash:t.hash||"", file:t.file||"", rows:(t.rows||[]).slice(0,600).map(function(r){ return { t:r.time, c:r.clock, l:String(r.label||"").slice(0,50), x:String(r.text||"").slice(0,220), p:r.page||null, n:r.line||null }; }) }); DPR.timelines.sort(function(a,b){ return a.date<b.date?-1:a.date>b.date?1:0; }); if(DPR.timelines.length>14) DPR.timelines=DPR.timelines.slice(-14); }
+function tdSections(flat){ var prog=[], next=[]; var mode=""; for(var i=0;i<flat.length;i++){ var s=String(flat[i]||"").replace(/\s+/g," ").trim(); if(!s) continue; if(/PROGRESS FOR THE PERIOD/i.test(s)){ mode="prog"; continue; } if(/EXPECTED ACTIVIT/i.test(s)){ mode="next"; continue; } if(/DETAILED LOG/i.test(s)){ break; } if(/^(VE Constructor|Daily Progress Report|\d+ of \d+)$/i.test(s)) continue; if(mode==="prog" && prog.length<12) prog.push(s.slice(0,200)); if(mode==="next" && next.length<12) next.push(s.slice(0,200)); } return { progress:prog, next:next }; }
+
+/* the daily pipeline: one parsed report in, everything updated, a digest out */
+function pelTodayIngestParsed(rep){
+  /* rep: { date, reportNo, hash, file, rows, hours:{weatherDT,mechDT,vesselDT,rovDT,foundCount,reportDate,reportNo,fileName}, sections:{progress,next} } */
+  var out={ date:rep.date, reportNo:rep.reportNo, file:rep.file, ok:false, questions:[], held:[], completed:[], inProgress:[], applied:null, hours:null, notes:[] };
+  if(!rep.date){ out.notes.push("The report date could not be read"+(rep.rawDate?" ("+rep.rawDate+")":"")+"; "+(rep.file||"this report")+" was not used"+((rep.rows||[]).length?"":" (no text could be read from it; an image-only PDF needs a text version)")+"."); DPR.daily=(DPR.daily||[]); DPR.daily.push({ date:tdKeyToday(), reportNo:"", file:rep.file||"", at:new Date().toISOString(), completed:[], inProgress:[], held:[], notes:out.notes.slice(0,6), next:[], progress:[], applied:null, hours:null }); if(DPR.daily.length>60) DPR.daily=DPR.daily.slice(-60); try{ save(); }catch(e){} return out; }
+  tdStoreTimeline(rep);
+  if(rep.hours && rep.hours.foundCount>0){ try{ var r=dprBatchRowResult(rep.hours); out.hours=dprRecord(rep.hours, r, rep.file, rep.hash); }catch(e){ out.notes.push("Hours check could not be recorded: "+(e&&e.message?e.message:e)); } }
+  else out.notes.push("No downtime figures were found in this report, so the hours check was not run.");
+  var derived=dprDeriveReels(tdWindowRows(), DPR_CONV_DEFAULT); derived.conv=DPR_CONV_DEFAULT;
+  var touched=derived.reels.filter(function(x){ return (x.steps||[]).some(function(s){ return s.date===rep.date; }) || x.dateStart===rep.date || Object.keys(x.boundaries||{}).some(function(k){ return x.boundaries[k].day===rep.date; }); });
+  cycPreview(derived, "DPR-"+(rep.reportNo||"?")+" ("+rep.date+")", { hash:rep.hash, files:[{fname:rep.file, hash:rep.hash}] });
+  var P=__cycPending; var a=cycRecommend(P); if(!cycReviewerOk(P.reviewer)) P.reviewer=cycReviewerOk(curUser())?curUser():"Daily DPR";
+  P.changes.forEach(function(c){ if(c.kind==="new" && c.decision==="hold") out.held.push(c.incoming); });
+  P.issues.forEach(function(i){ if(i.cls==="blocking") out.questions.push(i.text); });
+  P.impactHash=cycDecisionHash(P); var ok=cycApplyImport({}); out.applied=a; out.ok=!!ok; if(!ok) out.notes.push("The reel update was not applied; open Recovery Cycles, Import and settings to see why.");
+  touched.forEach(function(x){ var reg=(CYC.reels||[]).filter(function(r){ return !r.deleted && r.id===x.id && r.dateStart===x.dateStart; })[0]||x; var last=null, evs=[]; Object.keys(x.boundaries||{}).forEach(function(k){ var b=x.boundaries[k]; if(b.day===rep.date){ evs.push({k:k, clock:b.clock, text:b.text}); } }); evs.sort(function(p,q){ return p.clock.localeCompare(q.clock); });
+    if(x.boundaries && x.boundaries.secure_end && x.boundaries.secure_end.day===rep.date) out.completed.push({ id:x.id, flow:x.flowlineId, cycleMin:x.cycleMin, dateStart:x.dateStart, events:evs, status:reg.status });
+    else if(x.status!=="complete"){ var keys=Object.keys(x.boundaries||{}); var lastK=keys.length?keys[keys.length-1]:null; out.inProgress.push({ id:x.id, flow:x.flowlineId, dateStart:x.dateStart, stage:lastK, since:lastK?x.boundaries[lastK].day+" "+x.boundaries[lastK].clock:"", events:evs, found:keys.length }); }
+    else out.completed.push({ id:x.id, flow:x.flowlineId, cycleMin:x.cycleMin, dateStart:x.dateStart, events:evs, status:x.status }); });
+  out.sections=rep.sections||{progress:[],next:[]};
+  DPR.daily=(DPR.daily||[]).filter(function(d){ return d.date!==rep.date; }); DPR.daily.push({ date:rep.date, reportNo:rep.reportNo||"", file:rep.file||"", at:new Date().toISOString(), completed:out.completed.map(function(c){ return {id:c.id, flow:c.flow, cycleMin:c.cycleMin, dateStart:c.dateStart}; }), inProgress:out.inProgress.map(function(c){ return {id:c.id, flow:c.flow, stage:c.stage, since:c.since, found:c.found}; }), held:out.held.map(function(h){ return h.id+" ("+h.dateStart+")"; }), notes:out.notes.slice(0,6), next:(out.sections.next||[]).slice(0,8), progress:(out.sections.progress||[]).slice(0,8), applied:a, hours:out.hours?{verdict:out.hours.verdict, dprDT:Math.max(out.hours.sum||0,out.hours.anc||0), logDT:out.hours.app.dt}:null }); DPR.daily.sort(function(p,q){ return p.date.localeCompare(q.date); }); if(DPR.daily.length>60) DPR.daily=DPR.daily.slice(-60);
+  try{ save(); }catch(e){} return out;
+}
+function pelTodayDrop(files){
+  var list=Array.prototype.slice.call(files||[]); if(!list.length) return; if(pelRO()){ alert("The record is read-only at the moment."); return; }
+  if(typeof pdfjsLib==="undefined"){ alert("The PDF reader did not load. Check the connection and try again."); return; }
+  var el=document.getElementById("tdDigest"); var idx=0, results=[];
+  function next(){ if(idx>=list.length){ results.sort(function(a,b){ return (a.date||"").localeCompare(b.date||""); }); var outs=results.map(function(r){ return pelTodayIngestParsed(r); }); renderToday(); return; }
+    var f=list[idx++]; if(el) el.innerHTML='<b>Reading '+esc(f.name)+' ('+idx+' of '+list.length+')…</b>';
+    var rd=new FileReader(); rd.onload=function(){ var buf=rd.result; var bufA=buf.slice(0), bufB=buf.slice(0); dprHash(buf).then(function(h){ return dprParse(bufA).then(function(hours){ return dprPdfToLines(bufB).then(function(pages){ var flat=[], pageOf=[]; pages.forEach(function(ls,pi){ ls.forEach(function(l){ flat.push(l); pageOf.push(pi+1); }); }); var id=dprIdentityFromLines(flat); results.push({ date:id.reportDate, rawDate:id.rawDate, reportNo:id.reportNo, hash:h, file:f.name, rows:dprTimelineRows(flat, pageOf), hours:Object.assign({}, hours, {fileName:f.name, __hash:h}), sections:tdSections(flat) }); next(); }); }); }).catch(function(e){ results.push({ date:null, file:f.name, rows:[], notes:[String(e&&e.message?e.message:e)] }); next(); }); }; rd.readAsArrayBuffer(f); }
+  next();
+}
+/* digest and cards */
+function tdDigestHtml(d){
+  if(!d) return '<div class="td-sub">No contractor report has been dropped yet. The latest reports read: '+esc((DPR.timelines||[]).slice(-3).map(function(t){ return "DPR-"+t.reportNo+" "+t.date; }).join(", ")||"none")+'.</div>';
+  var h='<div><b>DPR-'+esc(d.reportNo||"?")+' · '+esc(tdFmt(d.date))+'</b> · read '+esc((d.at||"").replace("T"," ").slice(0,16))+'</div>';
+  if(d.hours){ h+='<div style="margin-top:4px">Downtime in the report '+d.hours.dprDT.toFixed(2)+' h; this log '+(d.hours.logDT==null?"no logged day":d.hours.logDT.toFixed(2)+" h")+'; '+esc(d.hours.verdict==="match"?"numerically matches":d.hours.verdict==="noday"?"no logged day to compare, log it":d.hours.verdict==="close"?"close":d.hours.verdict==="differ"?"differs, reconcile in DPR Check":d.hours.verdict)+'.</div>'; }
+  if(d.completed&&d.completed.length) h+='<div style="margin-top:4px"><b>Completed:</b> '+d.completed.map(function(c){ var n=cycNorms((CYC.reels||[]).filter(function(r){ return !r.deleted && r.flowlineId===c.flow; }),"mean").cycle; return esc(c.id)+' on '+esc(c.flow||"?")+(c.cycleMin!=null?', cycle '+cycH(c.cycleMin)+(n&&n.n>1?' against a mean of '+cycH(n.mean):''):''); }).join("; ")+'.</div>';
+  if(d.inProgress&&d.inProgress.length) h+='<div style="margin-top:4px"><b>In progress:</b> '+d.inProgress.map(function(c){ return esc(c.id)+' on '+esc(c.flow||"?")+(c.stage?', '+esc(cycStepName(tdStageKeyFromBoundary(c.stage)))+' since '+esc(c.since):'')+' ('+c.found+' of 10 boundaries seen)'; }).join("; ")+'.</div>';
+  if(d.applied) h+='<div style="margin-top:4px" class="td-sub">Register: '+d.applied.filled+' reel(s) filled, '+d.applied.dates+' date or cycle correction(s), '+d.applied.kept+' kept as recorded, '+d.applied.conflicts+' pairing(s) resolved by the recommended policy.</div>';
+  if(d.held&&d.held.length) h+='<div style="margin-top:4px" class="td-sub">Waiting for the next report: '+esc(d.held.join(", "))+'.</div>';
+  if(d.next&&d.next.length) h+='<div style="margin-top:6px"><b>Contractor\'s plan for the next 24 hours:</b> '+esc(d.next.join(" · "))+'</div>';
+  if(d.notes&&d.notes.length) h+='<div style="margin-top:4px" class="td-warn">'+d.notes.map(esc).join(" ")+'</div>';
+  return h;
+}
+function tdStageKeyFromBoundary(b){ return ({clamp_start:"clamp",clamp_end:"loa",loa_end:"tensioner",tens_end:"reel1",reel1_end:"recovery",mid_start:"midline",mid_end:"recovery",cut_start:"cut",cut_end:"secure",secure_end:"secure"})[b]||"clamp"; }
+function renderToday(){
+  if(!document.getElementById("view-today")) return;
+  var latest=(DPR.daily||[]).slice().sort(function(a,b){ return a.date.localeCompare(b.date); }).pop();
+  document.getElementById("tdTitle").textContent="Today · "+tdFmt(tdKeyToday())+" · "+curProject();
+  document.getElementById("tdDigest").innerHTML=tdDigestHtml(latest);
+  /* active reel: latest in-progress from the last digest, else the most recent register reel */
+  var act=''; if(latest && latest.inProgress && latest.inProgress.length){ var c=latest.inProgress[latest.inProgress.length-1]; var fl=(CYC.reels||[]).filter(function(r){ return !r.deleted && r.flowlineId===c.flow && r.status==="complete"; }); var n=cycNorms(fl,"mean"); var k=tdStageKeyFromBoundary(c.stage); var norm=n[k]?n[k].mean:null; act='<div class="td-big">'+esc(c.id)+' <span style="font-size:14px;font-weight:400;color:#5c5c5c">'+esc(c.flow||"")+'</span></div><div class="td-sub">Stage: <b>'+esc(cycStepName(k))+'</b> since '+esc(c.since)+(norm?' · norm for this stage on '+esc(c.flow)+' '+cycH(norm):'')+'</div><div class="td-sub">'+c.found+' of 10 stage boundaries seen so far</div>'; }
+  else { var last=(CYC.reels||[]).filter(function(r){ return !r.deleted; }).sort(function(a,b){ return (b.campaignSeq||0)-(a.campaignSeq||0); })[0]; act=last?'<div class="td-big">'+esc(cycReelLabel(last))+'</div><div class="td-sub">Last reel in the register: '+esc(last.status)+(last.cycleMin!=null?', cycle '+cycH(last.cycleMin):'')+' · '+esc(last.dateStart||"")+'</div><div class="td-sub">No reel in progress in the latest report.</div>':'<div class="td-sub">No reels yet. Drop a report or use the quick log.</div>'; }
+  document.getElementById("tdActive").innerHTML=act;
+  var pr=cycFlows().map(function(f){ var p=cycProgress(f); if(p.control==null && !p.accepted) return ''; return '<div class="td-act"><b>'+esc(f)+'</b> '+cycFmtNum(p.accepted)+(p.control!=null?' of '+cycFmtNum(p.control):'')+' m'+(p.pct!=null?' · <b>'+p.pct+'%</b>':'')+(p.reelsLeft?' · about '+p.reelsLeft+' reel(s) to go':'')+'</div>'; }).join("");
+  document.getElementById("tdProgress").innerHTML=pr||'<div class="td-sub">No flowline lengths yet.</div>';
+  var open=dprUnreconciled(), nd=dprNoDay(); var lastChecks=(DPR.checks||[]).slice().sort(function(a,b){ return (b.key||b.reportDate||"").localeCompare(a.key||a.reportDate||""); }).slice(0,3);
+  document.getElementById("tdHours").innerHTML=(lastChecks.length?lastChecks.map(function(c){ return '<div class="td-act">'+esc(c.key?tdFmt(c.key):c.reportDate)+' · report '+(Math.max(c.sum||0,c.anc||0)).toFixed(2)+' h, log '+(c.app.dt==null?"–":c.app.dt.toFixed(2)+" h")+' · <span class="'+(c.verdict==="match"?"td-ok":c.verdict==="noday"?"td-warn":"td-bad")+'">'+esc(dprVerdictText(c))+'</span></div>'; }).join(""):'<div class="td-sub">No checks yet; drop a report.</div>')+(open.length?'<div class="td-sub td-warn">'+open.length+' day(s) to reconcile in DPR Check</div>':'')+(nd.length?'<div class="td-sub td-warn">'+nd.length+' report day(s) with no logged day</div>':'');
+  var acts=[]; var q=cycQuality(); q.items.filter(function(i){ return i.cls==="blocking"||i.cls==="warning"; }).slice(0,4).forEach(function(i){ acts.push(i.text); }); if(latest&&latest.held&&latest.held.length) acts.push("Waiting for the next report: "+latest.held.join(", ")); if(!data[tdKeyToday()]) acts.push("No log for today yet: use the quick log below or open the Daily Log"); if(open.length) acts.push(open.length+" DPR difference(s) to reconcile");
+  document.getElementById("tdActions").innerHTML=acts.length?acts.map(function(a){ return '<div class="td-act">'+esc(a)+'</div>'; }).join(""):'<div class="td-sub td-ok">Nothing open.</div>';
+  /* quick log controls */
+  var tEl=document.getElementById("qlTime"); if(tEl && !tEl.value){ var now=new Date(); tEl.value=("0"+now.getHours()).slice(-2)+":"+("0"+now.getMinutes()).slice(-2); }
+  var sel=document.getElementById("qlReel"); if(sel){ var reels=(CYC.reels||[]).filter(function(r){ return !r.deleted; }).sort(function(a,b){ return (b.campaignSeq||0)-(a.campaignSeq||0); }).slice(0,12); sel.innerHTML='<option value="">reel…</option>'+reels.map(function(r){ return '<option value="'+esc(r.id)+'" data-flow="'+esc(r.flowlineId||"")+'">'+esc(cycReelLabel(r))+' · '+esc(r.flowlineId||"")+'</option>'; }).join(""); }
+  var st=document.getElementById("qlStages"); if(st && !st.innerHTML){ st.innerHTML=TD_STAGES.map(function(s){ return '<span class="td-chip" data-k="'+s.k+'" onclick="[].forEach.call(document.querySelectorAll(\'#qlStages .td-chip\'),function(x){ x.classList.remove(\'on\'); }); this.classList.add(\'on\');">'+esc(s.n)+'</span>'; }).join(""); }
+}
+function pelQuickLog(o){
+  if(pelRO()) return false; o=o||{}; var key=o.day||tdKeyToday(); var t=String(o.time||"").trim(); if(toMin(t)==null) return false; var reel=String(o.reel||"").toUpperCase().trim(); if(!cycIdOk(reel)) return false; var stage=TD_STAGES.filter(function(s){ return s.k===o.stage; })[0]; if(!stage) return false;
+  var flow=String(o.flow||"").toUpperCase().replace(/\s+/g,""); var text=reel+" · "+(flow&&cycFlowIdOk(flow)?flow+" · ":"")+stage.n+(o.note?" · "+String(o.note).slice(0,120):"");
+  var d=tdEnsureDay(key); d.log=d.log||[]; d.log.push([t, text, "", curUser()||""]); try{ save(); }catch(e){} try{ if(document.getElementById("daySelect")){ document.getElementById("daySelect").value=key; renderLog(); } }catch(e){} return text;
+}
+function pelQuickLogForm(){ var t=document.getElementById("qlTime").value; var sel=document.getElementById("qlReel"); var reel=document.getElementById("qlReelFree").value||sel.value; var flow=document.getElementById("qlFlow").value||(sel.selectedOptions[0]&&sel.selectedOptions[0].getAttribute("data-flow"))||""; var chip=document.querySelector("#qlStages .td-chip.on"); var msg=document.getElementById("qlMsg"); if(!chip){ msg.textContent="Tap a stage."; return; } var res=pelQuickLog({time:t, reel:reel, stage:chip.getAttribute("data-k"), flow:flow, note:document.getElementById("qlNote").value}); if(!res){ msg.textContent="Check the time (HH:MM) and the reel name."; return; } msg.textContent="Logged: "+res; document.getElementById("qlNote").value=""; renderToday(); }
+/* weekly client report */
+function pelWeeklyReport(){
+  var end=tdKeyToday(); var start=new Date(Date.parse(end)-6*86400000).toISOString().slice(0,10);
+  var days=(DPR.daily||[]).filter(function(d){ return d.date>=start && d.date<=end; }); var checks=(DPR.checks||[]).filter(function(c){ return c.key>=start && c.key<=end; });
+  var completed=(CYC.reels||[]).filter(function(r){ return !r.deleted && r.status==="complete" && ((r.acceptedAt||"").slice(0,10)>=start || (r.dateStart>=start && r.dateStart<=end)); });
+  var prevClient=CYC.settings.clientView; CYC.settings.clientView=true; var sel=cycSel(); var css=(document.getElementById("view-cyc").querySelector("style")||{}).innerHTML||"";
+  var body='<div style="border:1px solid #e6e1d6;border-radius:6px;padding:12px 14px;font-size:12px;color:#4a4a4a;margin-bottom:14px"><div style="font-size:18px;font-weight:700;color:#1A1A1A">Weekly report · '+esc(curProject())+' · '+esc(tdFmt(start))+' to '+esc(tdFmt(end))+'</div><div>Generated '+esc(new Date().toISOString().replace("T"," ").slice(0,16))+' UTC · build '+esc(APP_BUILD)+' · register revision '+(CYC.revision||0)+' · every figure traces to a report line, a sheet row or a log line.</div></div>';
+  body+='<div class="panel cyc-sec"><p class="cyc-h">Day by day</p>'+(days.length?days.map(function(d){ return '<div style="margin-bottom:8px">'+tdDigestHtml(d)+'</div>'; }).join(""):'<div class="dim">No contractor reports were dropped this week.</div>')+'</div>';
+  body+='<div class="panel cyc-sec"><p class="cyc-h">Reels completed this week</p>'+(completed.length?'<table class="cyc-t"><thead><tr><th>Reel</th><th>Line</th><th>Start</th><th class="n">Cycle</th><th class="n">Length</th><th>Source</th></tr></thead><tbody>'+completed.map(function(r){ return '<tr><td><b>'+esc(cycReelLabel(r))+'</b></td><td>'+esc(r.flowlineId||"")+'</td><td>'+esc(r.dateStart||"")+'</td><td class="n">'+cycH(r.cycleMin)+'</td><td class="n">'+(r.lengthM!=null?cycFmtNum(Math.round(r.lengthM))+" m":"")+'</td><td>'+esc(cycSourceOf(r).label)+'</td></tr>'; }).join("")+'</tbody></table>':'<div class="dim">None.</div>')+'</div>';
+  body+='<div class="panel cyc-sec"><p class="cyc-h">Learning curve</p>'+cycSourceSummary(sel)+cycV_interp(sel)+'<div class="cyc-grid2">'+cycV_curves(sel,236)+'</div></div><div class="panel cyc-sec">'+cycV_norms(sel)+'</div><div class="panel cyc-sec">'+cycV_progress()+'</div>';
+  body+='<div class="panel cyc-sec"><p class="cyc-h">Contractor reports against this log</p>'+(checks.length?'<table class="cyc-t"><thead><tr><th>Day</th><th>Report</th><th class="n">Report DT (h)</th><th class="n">Log DT (h)</th><th>Result</th></tr></thead><tbody>'+checks.map(function(c){ return '<tr><td>'+esc(tdFmt(c.key))+'</td><td>'+esc(c.file)+'</td><td class="n">'+(Math.max(c.sum||0,c.anc||0)).toFixed(2)+'</td><td class="n">'+(c.app.dt==null?"–":c.app.dt.toFixed(2))+'</td><td>'+esc(dprVerdictText(c))+(c.reviewed?' (reviewed)':'')+'</td></tr>'; }).join("")+'</tbody></table>':'<div class="dim">No checks this week.</div>')+'</div>';
+  body+='<div class="panel cyc-sec">'+cycV_quality()+'</div>';
+  CYC.settings.clientView=prevClient;
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc("Project Event Log - Weekly report - "+curProject()+" - "+end)+'</title><style>body{font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#1A1A1A;background:#fff;margin:24px;max-width:1200px}.panel{border:1px solid #e6e1d6;border-radius:6px;margin:14px 0;background:#fff}.noprint{display:none !important}'+css.replace(/#view-cyc\s*/g,"")+'</style></head><body>'+body+'</body></html>';
+  dl(html, "Project Event Log - Weekly report - "+curProject()+" - "+end+".html", "text/html"); renderCyc();
+}
+/* wiring */
+var __showTabToday=showTab; showTab=function(t){ var r=__showTabToday.apply(this,arguments); try{ var v=document.getElementById("view-today"); if(v) v.style.display=(t==="today")?"":"none"; var b=document.getElementById("tabToday"); if(b) b.classList.toggle("active", t==="today"); if(t==="today") renderToday(); }catch(e){} return r; };
+setTimeout(function(){ try{ if(!window.__pelBootTab) showTab("today"); }catch(e){} }, 0);
 </script>
 </body>
 </html>
