@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-09-02.4 - deploy check string: PEL-BUILD-2026-09-02.4 -->
+<!-- Endura Project Event Log - build 2026-09-02.5 - deploy check string: PEL-BUILD-2026-09-02.5 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -271,7 +271,7 @@
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-02.4</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-02.5</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -579,7 +579,7 @@
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-09-02.4";
+var APP_BUILD="2026-09-02.5";
 var PEL_ENV={env:"TEST",agent:true,schema:6};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
@@ -3779,7 +3779,7 @@ function cycRenderPreview(){
   var newN=P.changes.filter(function(c){ return c.kind==="new"; }).length, chN=P.changes.filter(function(c){ return c.kind==="changed"; }).length, sameN=P.changes.filter(function(c){ return c.kind==="unchanged"; }).length;
   var h='<b>'+(parsed.reels.length?'Found '+parsed.reels.length+' reel'+(parsed.reels.length>1?"s":"")+' in '+esc(P.fname)+':':'Nothing to import from '+esc(P.fname)+'.')+'</b> '+(parsed.reels.length?comp+' complete'+(prog?', '+prog+' in progress':'')+(plan?', '+plan+' planned':'')+'. Against the register: <b>'+newN+' new</b>, <b>'+chN+' changed</b>, '+sameN+' unchanged. Also read '+parsed.trips.length+' trip row(s), '+parsed.flowlines.length+' flowline'+(parsed.flowlines.length!==1?"s":"")+' and '+parsed.readings.length+' NORM reading set(s).':'No reel blocks were found. The timing sheet needs a header row containing Start, finished and Total, with the reel name in the column to the left of Start above its stages.');
   if(P.files.length>1 && !P.dprConv) h+='<div class="dim" style="font-size:12px;margin-top:4px">'+P.files.map(function(f){ return esc(f.fname)+': '+f.reels+' reel(s), '+f.trips+' trip row(s), '+f.readings+' NORM set(s)'+(f.hash?' · '+esc(String(f.hash).slice(0,12))+'…':''); }).join("<br>")+'</div>';
-  if(P.dprConv){ h+=cycDprConvHtml(P.dprConv); h+='<table class="cyc-t" style="margin-top:8px"><thead><tr><th>Reel</th><th>Start</th><th>Line</th><th class="n">Trip</th><th class="n">Stages found</th><th class="n">Cycle</th><th>Source</th><th>Notes</th></tr></thead><tbody>'+parsed.reels.map(function(r){ var d=cycDerive(r,"mean"); var found=CYC_STEPS.filter(function(st){ return d.stepMin[st.k]!=null; }).length; return '<tr><td><b>'+esc(r.id)+'</b></td><td>'+esc(r.dateStart||"")+'</td><td>'+esc(r.flowlineId||"?")+'</td><td class="n">'+(r.trip!=null?r.trip:"")+'</td><td class="n">'+found+' of '+CYC_STEPS.length+'</td><td class="n">'+(r.cycleMin!=null?cycH(r.cycleMin):"–")+'</td><td>'+esc((r.src&&r.src.file)||"")+'</td><td class="dim" style="font-size:11.5px">'+esc((d.missing.length?"missing: "+d.missing.join(", "):"complete"))+'</td></tr>'; }).join("")+'</tbody></table>'; }
+  if(P.dprConv){ h+=cycDprConvHtml(P.dprConv); h+='<table class="cyc-t" style="margin-top:8px"><thead><tr><th>Reel</th><th>Start</th><th>Line</th><th class="n">Trip</th><th class="n">Stages found</th><th class="n">Cycle</th><th>Source</th><th>Notes</th></tr></thead><tbody>'+parsed.reels.map(function(r){ var d=cycDerive(r,"mean"); var found=CYC_STEPS.filter(function(st){ return d.stepMin[st.k]!=null; }).length; return '<tr><td><b>'+esc(r.id)+'</b></td><td>'+esc(r.dateStart||"")+'</td><td>'+esc(r.flowlineId||"?")+'</td><td class="n">'+(r.dprTrip!=null?r.dprTrip:(r.trip!=null?r.trip:""))+'</td><td class="n">'+found+' of '+CYC_STEPS.length+'</td><td class="n">'+(r.cycleMin!=null?cycH(r.cycleMin):"–")+'</td><td>'+esc((r.src&&r.src.file)||"")+'</td><td class="dim" style="font-size:11.5px">'+esc((d.missing.length?"missing: "+d.missing.join(", "):"complete"))+'</td></tr>'; }).join("")+'</tbody></table>'; }
   var ci=0; h+='<div style="margin-top:8px"><b>Review ('+P.issues.length+' item'+(P.issues.length!==1?"s":"")+'; '+counts.blocking+' blocking, '+counts.conflict+' conflict, '+counts.warning+' warning, '+counts.note+' note):</b>'+(P.issues.length?'<div style="max-height:220px;overflow:auto;margin-top:4px">'+P.issues.map(function(i,idx){ var row='<div class="cyc-issue '+esc(i.cls)+'"><b>'+esc(i.cls.charAt(0).toUpperCase()+i.cls.slice(1))+'.</b> '+esc(i.text); if(i.cls==="conflict" && i.options){ row+='<div style="margin-top:4px">'+i.options.map(function(o,oi){ return '<label style="margin-right:12px;font-size:12px"><input type="radio" name="cycConf'+idx+'" '+(P.conflictChoice[idx]===oi?"checked":"")+' onchange="__cycPending.conflictChoice['+idx+']='+oi+'"> '+esc(o.label)+'</label>'; }).join("")+'</div>'; } return row+'</div>'; }).join("")+'</div>':'<div class="dim" style="font-size:12px">Every stage total agrees with its start and finish times and no cross-sheet conflicts were found.</div>')+'</div>';
   if(chN) h+='<div style="margin-top:8px"><b>Changes to existing reels</b> <span class="dim" style="font-size:12px">(default: keep the current value where one exists; accept where the register is empty)</span><table class="cyc-t"><thead><tr><th>Reel</th><th>Field</th><th class="n">Current</th><th class="n">Incoming</th><th>Decision</th></tr></thead><tbody>'+P.changes.filter(function(c){ return c.kind==="changed"; }).map(function(c,i){ var idx=P.changes.indexOf(c); return c.fields.map(function(f,fi){ return '<tr><td>'+(fi===0?'<b>'+esc(cycReelLabel(c.current))+'</b>':'')+'</td><td>'+esc(f.name)+'</td><td class="n">'+esc(f.currentText)+'</td><td class="n">'+esc(f.incomingText)+'</td><td>'+(fi===0?'<select style="font-size:12px" onchange="__cycPending.changes['+idx+'].decision=this.value"><option value="keep"'+(c.decision==="keep"?" selected":"")+'>keep current</option><option value="accept"'+(c.decision==="accept"?" selected":"")+'>accept incoming</option></select>':'')+'</td></tr>'; }).join(""); }).join("")+'</tbody></table></div>';
   var undecided=P.issues.filter(function(i,idx){ return i.cls==="conflict" && i.options && P.conflictChoice[idx]==null; }).length;
@@ -4004,6 +4004,7 @@ var DPR_PAT={
   reel1End:[dprRx("(1st|first) end .*(connected|secured).*reel|secured (1st|first) end .*reel|secured 1st end to reel|both ends on reel|(1st|first) end .*on (the )?reel|secure(d)? .*1st end")],
   midStart:[dprRx("(all )?stop.*(mid[- ]?line|MLC)|(mid[- ]?line|MLC).*(at|@|reaching) (LOA|surface|TDP|the tensioner)|(mid[- ]?line|MLC)[^.]*(at|@) LOA"), dprRx("remov(e|ed|ing) .*anode|anode removal|removing anodes"), dprRx("mid[- ]?line|\\bMLC")],
   midTransfer: dprRx("closing tensioner|tensioner closed|transferred back to tensioner|track squeezed|commence squeeze|squeeze pressure|crane disconnected|disconnected crane|disconnect(ed)? A&R|crane released"),
+  midRelated: dprRx("mid[- ]?line|\\bMLC|anode|A&R|rigging|crane (hook|connect|lift|take)|onto deck|on deck"),
   cont: dprRx("(continue|resume|start) .*recover|start recovering|recovery speed|continue FL"),
   cutStop:[dprRx("(all )?stop.*(cut|DWS|2nd end)|stopped .*(cut|DWS)|for (the )?2nd (end )?cut|2nd end cut")],
   cutDeploy:[dprRx("crane overboarding DWS|deploy(ing)? DWS|DWS (to|at) \\d+ ?m|roller box off .*DWS|DWS pre-deployment|dredging at cut position")],
@@ -4073,11 +4074,13 @@ function dprDeriveReels(timelines, conv){
       var name=DPR_STAGE_ORDER[si];
       if(name==="mid_end"){ var ms=bounds.mid_start; if(ms==null) continue;
         var cutI=firstOf(ms+1,i1,DPR_PAT.cutStop.concat(DPR_PAT.cutDeploy)); if(cutI==null) cutI=i1;
-        var last=null; for(var j=ms+1;j<cutI;j++){ if(DPR_PAT.midTransfer.test(rows[j].text)) last=j; }
-        var idx=null;
-        if(last!=null){ if(conv.midlineEnd==="transfer" || DPR_PAT.cont.test(rows[last].text)) idx=last; else { for(var j2=last+1;j2<cutI;j2++){ if(DPR_PAT.cont.test(rows[j2].text) && rows[j2].abs-rows[last].abs<=45){ idx=j2; break; } } if(idx==null) idx=last; } }
-        else { for(var j3=ms+1;j3<cutI;j3++){ if(DPR_PAT.cont.test(rows[j3].text)){ idx=j3; break; } } }
-        if(idx!=null){ bounds.mid_end=idx; cur=idx; }
+        /* segments: each midline starts at a strong midline line and ends at the first continue-recovery line after the last midline-related mention before the next strong start */
+        var strongStarts=[ms]; for(var q=ms+1;q<cutI;q++){ if(DPR_PAT.midStart[0].test(rows[q].text) && rows[q].abs-rows[strongStarts[strongStarts.length-1]].abs>90) strongStarts.push(q); }
+        var segs=[];
+        for(var si2=0; si2<strongStarts.length; si2++){ var a0=strongStarts[si2], aEnd=(si2+1<strongStarts.length)?strongStarts[si2+1]:cutI; var lastMid=a0; for(var q2=a0+1;q2<aEnd;q2++){ if(DPR_PAT.midRelated.test(rows[q2].text) || DPR_PAT.midTransfer.test(rows[q2].text)) lastMid=q2; }
+          var e=null; if(conv.midlineEnd==="transfer" && lastMid>a0 && DPR_PAT.midTransfer.test(rows[lastMid].text)) e=lastMid; else { if(DPR_PAT.cont.test(rows[lastMid].text) && lastMid>a0) e=lastMid; else { for(var q3=lastMid+1;q3<aEnd;q3++){ if(DPR_PAT.cont.test(rows[q3].text)){ e=q3; break; } } } if(e==null && lastMid>a0) e=lastMid; }
+          if(e!=null) segs.push([a0,e]); }
+        if(segs.length){ bounds.mid_end=segs[segs.length-1][1]; bounds.midSegs=segs; cur=bounds.mid_end; }
         continue; }
       var nextName=DPR_STAGE_ORDER[si+1]; if(nextName==="mid_end") nextName="cut_start";
       var wend=i1; var nextPats=null;
@@ -4097,16 +4100,20 @@ function dprDeriveReels(timelines, conv){
       bounds[name]=idx2; cur=idx2;
     }
     /* assemble steps from consecutive boundaries */
-    var stageSpans=[["clamp","clamp_start","clamp_end"],["loa","clamp_end","loa_end"],["tensioner","loa_end","tens_end"],["reel1","tens_end","reel1_end"],["recovery","reel1_end","mid_start"],["midline","mid_start","mid_end"],["recovery","mid_end","cut_start"],["cut","cut_start","cut_end"],["secure","cut_end","secure_end"]];
+    var stageSpans=[["clamp","clamp_start","clamp_end"],["loa","clamp_end","loa_end"],["tensioner","loa_end","tens_end"],["reel1","tens_end","reel1_end"]];
+    var segs=bounds.midSegs||(bounds.mid_start!=null&&bounds.mid_end!=null?[[bounds.mid_start,bounds.mid_end]]:[]);
+    var chain=[]; var prev=bounds.reel1_end; segs.forEach(function(sg){ chain.push(["recovery",prev,sg[0]]); chain.push(["midline",sg[0],sg[1]]); prev=sg[1]; }); if(prev!=null && bounds.cut_start!=null) chain.push(["recovery",prev,bounds.cut_start]);
+    chain.forEach(function(x){ stageSpans.push([x[0],x[1],x[2]]); }); stageSpans.push(["cut","cut_start","cut_end"]); stageSpans.push(["secure","cut_end","secure_end"]);
     var steps=[]; var missing=[];
-    stageSpans.forEach(function(sp){ var a=bounds[sp[1]], c=bounds[sp[2]]; if(a==null||c==null){ if(sp[0]!=="recovery" || (sp[1]==="reel1_end")) missing.push(sp[0]); return; } var mins=rows[c].abs-rows[a].abs; if(mins<0||mins>336*60) return; steps.push({ k:sp[0], name:rows[c].text.slice(0,120), start:rows[a].abs%1440, end:rows[c].abs%1440, min:mins, note:"DPR "+(rows[c].report||"")+" "+rows[c].day+" "+rows[c].clock+": "+rows[c].text.slice(0,160), date:rows[a].day, row:rows[c].line }); });
+    stageSpans.forEach(function(sp){ var a=(typeof sp[1]==="number")?sp[1]:bounds[sp[1]], c=(typeof sp[2]==="number")?sp[2]:bounds[sp[2]]; if(a==null||c==null){ if(sp[0]!=="recovery" || sp[1]==="reel1_end") missing.push(sp[0]); return; } var mins=rows[c].abs-rows[a].abs; if(mins<0||mins>336*60) return; steps.push({ k:sp[0], name:rows[c].text.slice(0,120), start:rows[a].abs%1440, end:rows[c].abs%1440, min:mins, note:"DPR "+(rows[c].report||"")+" "+rows[c].day+" "+rows[c].clock+": "+rows[c].text.slice(0,160), date:rows[a].day, row:rows[c].line }); });
+    if(!segs.length && bounds.reel1_end!=null && bounds.cut_start==null) missing.push("recovery");
     /* recovery when there is no midline at all */
-    if(bounds.reel1_end!=null && bounds.mid_start==null && bounds.cut_start!=null){ var mins2=rows[bounds.cut_start].abs-rows[bounds.reel1_end].abs; if(mins2>0) steps.push({ k:"recovery", name:rows[bounds.cut_start].text.slice(0,120), start:rows[bounds.reel1_end].abs%1440, end:rows[bounds.cut_start].abs%1440, min:mins2, note:"DPR "+rows[bounds.cut_start].report+" "+rows[bounds.cut_start].day+" "+rows[bounds.cut_start].clock+": "+rows[bounds.cut_start].text.slice(0,160), date:rows[bounds.reel1_end].day, row:rows[bounds.cut_start].line }); var mi=missing.indexOf("recovery"); if(mi>=0) missing.splice(mi,1); }
+    if(false && bounds.reel1_end!=null && bounds.mid_start==null && bounds.cut_start!=null){ var mins2=rows[bounds.cut_start].abs-rows[bounds.reel1_end].abs; if(mins2>0) steps.push({ k:"recovery", name:rows[bounds.cut_start].text.slice(0,120), start:rows[bounds.reel1_end].abs%1440, end:rows[bounds.cut_start].abs%1440, min:mins2, note:"DPR "+rows[bounds.cut_start].report+" "+rows[bounds.cut_start].day+" "+rows[bounds.cut_start].clock+": "+rows[bounds.cut_start].text.slice(0,160), date:rows[bounds.reel1_end].day, row:rows[bounds.cut_start].line }); var mi=missing.indexOf("recovery"); if(mi>=0) missing.splice(mi,1); }
     var cycleMin=(bounds.clamp_start!=null && bounds.secure_end!=null)?rows[bounds.secure_end].abs-rows[bounds.clamp_start].abs:null;
     var tensLen=null; for(var q2=i0;q2<i1;q2++){ var tm2=DPR_PAT.tensReading.exec(rows[q2].text); if(tm2){ var v=parseFloat(tm2[2]||tm2[3]); if(isFinite(v)) tensLen=v; } }
     var reports=[]; for(var q3=i0;q3<i1;q3++){ if(rows[q3].report && reports.indexOf(rows[q3].report)<0) reports.push(rows[q3].report); }
-    var rl={ cycleId:cycUid(), id:reel, occurrence:occ[reel], flowlineId:fl?fl.replace(/[-\s]+/g,"").toUpperCase():null, dateStart:head.day, trip:tr?parseInt(tr,10):null, hlvTp:null, steps:steps, override:{}, cycleMin:cycleMin, weightTe:null, lengthM:null, notes:["Built from contractor DPR"+(reports.length>1?"s ":" ")+reports.map(function(x){ return "DPR-"+x; }).join(", ")+"; conventions: clamp end "+conv.clampEnd+", tensioner end "+conv.tensionerEnd+", midline end "+conv.midlineEnd+", cut start "+conv.cutStart].concat(tp?["Task plan "+tp]:[]).concat(tensLen!=null?["Tensioner reading "+tensLen+" m (line out, not the recovered length)"]:[]).concat(b.cut?["DPR for the following day is missing or unreadable; the cycle is cut at the gap"]:[]), started:true, included:true, excludeReason:"", deleted:false, src:{sheet:"dpr", row:head.line, file:"DPR-"+(head.report||"?")+(reports.length>1?" to DPR-"+reports[reports.length-1]:"")}, status:"planned", boundaries:{} };
-    for(var bk in bounds){ rl.boundaries[bk]={ day:rows[bounds[bk]].day, clock:rows[bounds[bk]].clock, text:rows[bounds[bk]].text.slice(0,160), report:rows[bounds[bk]].report }; }
+    var rl={ cycleId:cycUid(), id:reel, occurrence:occ[reel], flowlineId:fl?fl.replace(/[-\s]+/g,"").toUpperCase():null, dateStart:head.day, trip:null, dprTrip:tr?parseInt(tr,10):null, hlvTp:null, steps:steps, override:{}, cycleMin:cycleMin, weightTe:null, lengthM:null, notes:["Built from contractor DPR"+(reports.length>1?"s ":" ")+reports.map(function(x){ return "DPR-"+x; }).join(", ")+"; conventions: clamp end "+conv.clampEnd+", tensioner end "+conv.tensionerEnd+", midline end "+conv.midlineEnd+", cut start "+conv.cutStart].concat(tp?["Task plan "+tp]:[]).concat(tr?["SURF trip "+tr+" in the DPR (contractor numbering)"]:[]).concat(tensLen!=null?["Tensioner reading "+tensLen+" m (line out, not the recovered length)"]:[]).concat(b.cut?["DPR for the following day is missing or unreadable; the cycle is cut at the gap"]:[]), started:true, included:true, excludeReason:"", deleted:false, src:{sheet:"dpr", row:head.line, file:"DPR-"+(head.report||"?")+(reports.length>1?" to DPR-"+reports[reports.length-1]:"")}, status:"planned", boundaries:{} };
+    for(var bk in bounds){ if(typeof bounds[bk]!=="number") continue; rl.boundaries[bk]={ day:rows[bounds[bk]].day, clock:rows[bounds[bk]].clock, text:rows[bounds[bk]].text.slice(0,160), report:rows[bounds[bk]].report }; }
     rl.status=cycStatusOf(rl);
     if(missing.length) out.issues.push({cls:"warning", text:reel+" ("+head.day+"): stage boundary not found in the DPR for "+missing.join(", ")+"; the reel is held as "+rl.status+" until the times are entered or the DPR wording is added to the rules"});
     if(b.cut) out.issues.push({cls:"warning", text:reel+" ("+head.day+"): the DPR for the next day is missing or unreadable, so the cycle stops at the last available line"});
