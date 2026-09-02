@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-09-02.2 - deploy check string: PEL-BUILD-2026-09-02.2 -->
+<!-- Endura Project Event Log - build 2026-09-02.3 - deploy check string: PEL-BUILD-2026-09-02.3 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -271,7 +271,7 @@
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-02.2</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-02.3</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -579,7 +579,7 @@
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-09-02.2";
+var APP_BUILD="2026-09-02.3";
 var PEL_ENV={env:"TEST",agent:true,schema:6};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
@@ -3942,7 +3942,7 @@ function cycDayNum(k){ var m=String(k||"").match(/^(\d{4})-(\d\d)-(\d\d)$/); ret
 function cycFromLog(){
   var out={reels:[], trips:[], flowlines:[], readings:[], issues:[], fromLog:true}; var evts=[], skipped=0, daysWith=0;
   var keys=(typeof allDayKeys==="function"?allDayKeys():Object.keys(data||{})).slice().sort();
-  keys.forEach(function(k){ var d=data[k]; if(!d||!Array.isArray(d.log)) return; var hit=false; d.log.forEach(function(r,i){ var t=toMin(r[0]); var txt=String(r[1]||""); var m=txt.match(CYC_LINE_RE); if(!m) return; var rest=m[2]; var isOff=/\boffload|\bcycle complete|\bend of cycle|\bcycle end/i.test(rest); var stage=isOff?"offload":cycStepKey(rest); if(stage==="other"||stage==null){ if(/end|reel|recover|clamp|tension|cut|secure|midline|anode|loa/i.test(rest)) skipped++; return; } if(t==null){ out.issues.push({cls:"warning", text:k+" row "+(i+1)+": reel line has no valid time and was skipped"}); return; } hit=true;
+  keys.forEach(function(k){ var d=data[k]; if(!d||!Array.isArray(d.log)) return; var hit=false; d.log.forEach(function(r,i){ var t=toMin(r[0]); var txt=String(r[1]||""); var m=txt.match(CYC_LINE_RE); if(!m) return; if(/^(FL|UMB|TP|DP|KP|MLC|ROV|DWS)\d*$/i.test(m[1])) return; var rest=m[2]; var isOff=/\boffload|\bcycle complete|\bend of cycle|\bcycle end/i.test(rest); var stage=isOff?"offload":cycStepKey(rest); if(stage==="other"||stage==null){ if(/end|reel|recover|clamp|tension|cut|secure|midline|anode|loa/i.test(rest)) skipped++; return; } if(t==null){ out.issues.push({cls:"warning", text:k+" row "+(i+1)+": reel line has no valid time and was skipped"}); return; } hit=true;
     var flow=(rest.match(/\b(FL\s?\d+|UMB\s?\d+)\b/i)||[])[1]; var wt=(rest.match(/(\d+(?:\.\d+)?)\s*(?:te|t|tonnes?)\b/i)||[])[1]; var ln=(rest.match(/(\d+(?:\.\d+)?)\s*m\b/i)||[])[1];
     evts.push({ reel:m[1].toUpperCase(), day:k, t:t, abs:cycDayNum(k)*1440+t, text:txt, stage:stage, row:i+1, flow:flow?flow.replace(/\s+/g,"").toUpperCase():null, wt:wt?parseFloat(wt):null, ln:ln?parseFloat(ln):null }); }); if(hit) daysWith++; });
   evts.sort(function(a,b){ return a.abs-b.abs; });
