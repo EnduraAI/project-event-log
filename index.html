@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-09-03.4 - deploy check string: PEL-BUILD-2026-09-03.4 -->
+<!-- Endura Project Event Log - build 2026-09-07.1 - deploy check string: PEL-BUILD-2026-09-07.1 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -321,7 +321,7 @@ window.PEL_LIB_SOURCE={}; window.PEL_LIB_READY={};
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-03.4</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-07.1</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -629,7 +629,7 @@ window.PEL_LIB_SOURCE={}; window.PEL_LIB_READY={};
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-09-03.4";
+var APP_BUILD="2026-09-07.1";
 var PEL_ENV={env:"TEST",agent:true,schema:6};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
@@ -4174,7 +4174,7 @@ var DPR_PAT={
   flow: dprRx("\\b(FL-?\\s?\\d+|UMB-?\\s?\\d+)\\b"),
   trip: dprRx("\\btrip\\s*#?\\s*(\\d+)"),
   tp: dprRx("\\b(TP-?\\s?\\d+)\\b"),
-  clampStart:[dprRx("dredg.*clamp position|clamp position.*dredg"), dprRx("(crane|deploy|overboard|leaves surface).*(recovery )?clamp|clamp.*(deploy(ed|ment)?\\b|overboard|leaves surface)")],
+  clampStart:[dprRx("^(?!.*(pre-?deployment|checks|previously|survey)).*(dredg.*clamp position|clamp position.*dredg)"), dprRx("^(?!.*(pre-?deployment|checks|previously|survey)).*((crane|deploy|overboard|leaves surface).*(recovery )?clamp|clamp.*(deploy(ed|ment)?\\b|overboard|leaves surface))")],
   clampInstall:[dprRx("completed .*clamp installation|clamp installation completed?")],
   clampRetorque:[dprRx("completed retorque|completed .*re-?torque")],
   clampOther:[dprRx("resume recovery.*(to surface|onboard)|commence (FL-?\\s?\\d+ )?recovery\\b"), dprRx("clamp engaged|installed recovery clamp")],
@@ -4273,7 +4273,7 @@ function dprDeriveReels(timelines, conv){
       if(nextName==="clamp_end") nextPats=DPR_PAT.clampInstall.concat(DPR_PAT.clampRetorque,DPR_PAT.clampOther); else if(nextName==="loa_end") nextPats=DPR_PAT.loaEnd1.concat(DPR_PAT.loaEnd2); else if(nextName==="tens_end") nextPats=DPR_PAT.tensSqueeze.concat(DPR_PAT.tensHold,DPR_PAT.tensOther); else if(nextName==="reel1_end") nextPats=DPR_PAT.reel1End; else if(nextName==="mid_start") nextPats=DPR_PAT.midStart; else if(nextName==="cut_start") nextPats=DPR_PAT.cutStop.concat(DPR_PAT.cutDeploy); else if(nextName==="cut_end") nextPats=DPR_PAT.cutEnd; else if(nextName==="secure_end") nextPats=DPR_PAT.secureEnd;
       if(nextPats){ var a=firstOf(cur+2,i1,nextPats); if(a!=null) wend=(name==="clamp_end")?a:a+1; }
       var idx2=null;
-      if(name==="clamp_start") idx2=unionFirst(cur+1,wend,DPR_PAT.clampStart);
+      if(name==="clamp_start"){ var cs=DPR_PAT.clampStart.map(function(pt){ return firstOf(cur+1,wend,[pt]); }).filter(function(v){ return v!=null; }); idx2=cs.length?Math.min.apply(null,cs):null; }
       else if(name==="clamp_end") idx2=unionFirst(cur+1,wend, conv.clampEnd==="retorque"?DPR_PAT.clampRetorque.concat(DPR_PAT.clampInstall,DPR_PAT.clampOther):DPR_PAT.clampInstall.concat(DPR_PAT.clampRetorque,DPR_PAT.clampOther));
       else if(name==="loa_end"){ var p1=unionFirst(cur+1,wend,DPR_PAT.loaEnd1), p3=unionFirst(cur+1,wend,DPR_PAT.loaEnd2); idx2=(p1!=null && (p3==null || rows[p1].abs-rows[p3].abs<=40))?p1:(p3!=null?p3:p1); }
       else if(name==="tens_end") idx2=unionFirst(cur+1,wend, conv.tensionerEnd==="hold"?DPR_PAT.tensHold.concat(DPR_PAT.tensSqueeze,DPR_PAT.tensOther):DPR_PAT.tensSqueeze.concat(DPR_PAT.tensHold,DPR_PAT.tensOther));
