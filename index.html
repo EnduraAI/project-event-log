@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-09-07.1 - deploy check string: PEL-BUILD-2026-09-07.1 -->
+<!-- Endura Project Event Log - build 2026-09-21.1 - deploy check string: PEL-BUILD-2026-09-21.1 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -268,13 +268,14 @@ window.PEL_LIB_SOURCE={}; window.PEL_LIB_READY={};
       #view-today .td-digest{font-size:13.5px;line-height:1.55;color:#1A1A1A}
       #view-today .td-digest b{color:#1A1A1A}
       #view-today .td-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-      #view-today .td-chip{border:1px solid #d9d2c5;border-radius:16px;padding:8px 12px;font-size:13px;background:#fff;cursor:pointer;user-select:none}
+      #view-today .td-chip{border:1px solid #d9d2c5;border-radius:16px;padding:8px 12px;font:inherit;font-size:13px;line-height:1.2;color:#1A1A1A;background:#fff;cursor:pointer;user-select:none;min-height:36px}
+      #view-today .td-chip:focus-visible{outline:2px solid #E87722;outline-offset:2px}
       #view-today .td-chip.on{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
       #view-today .td-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
       #view-today input, #view-today select{font-size:15px;padding:8px 10px;border:1px solid #d9d2c5;border-radius:6px}
       #view-today .td-act{font-size:13px;padding:6px 0;border-bottom:1px solid #eee7da}
       #view-today .td-ok{color:#2f7d4a} #view-today .td-warn{color:#b9822b} #view-today .td-bad{color:#c0392b}
-      @media (max-width:640px){ nav button{padding:8px 10px;font-size:13px} #view-today .td-grid{grid-template-columns:1fr} #view-today .td-big{font-size:22px} #view-today .btn{padding:10px 14px;font-size:14px} }
+      @media (max-width:640px){ nav{flex-wrap:wrap;gap:2px;padding:6px 8px 0} nav button{padding:8px 10px;font-size:13px;min-height:36px} main{padding:12px 12px 60px} header{padding:10px 12px} #view-today .td-grid{grid-template-columns:1fr} #view-today .td-big{font-size:22px} #view-today .btn{padding:10px 14px;font-size:14px;min-height:36px} #view-today .td-row input,#view-today .td-row select{max-width:100%} .logtable{min-width:520px} #view-log .logScroll,#view-log .tableScroll{overflow-x:auto;max-width:100%} .logtable textarea{min-width:160px} button.btn{min-height:36px} .cyc-empty p,#cycBody{overflow-wrap:anywhere} }
     </style>
     <div class="panel" style="padding:16px 18px">
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;justify-content:space-between">
@@ -291,10 +292,10 @@ window.PEL_LIB_SOURCE={}; window.PEL_LIB_READY={};
         <div class="td-card"><h3>Campaign progress</h3><div id="tdProgress"></div></div>
         <div class="td-card"><h3>Contractor report versus this log</h3><div id="tdHours"></div></div>
         <div class="td-card"><h3>Open actions</h3><div id="tdActions"></div></div>
-        <div class="td-card noprint" style="grid-column:1/-1"><h3>Quick log</h3><div class="td-sub">Tap a reel and a stage at the moment it starts; the app writes the line in the convention, in time order, and when you log the offload it builds the reel from the day\'s lines.</div>
+        <div class="td-card noprint" style="grid-column:1/-1"><h3>Quick log</h3><div class="td-sub">Tap a reel and a stage at the moment it starts; the app writes the line in the convention, in time order, and when you log the offload it builds the reel from the day's lines.</div>
           <div class="td-row"><input id="qlTime" style="width:96px" placeholder="HH:MM"><select id="qlReel"></select><input id="qlReelFree" placeholder="or new reel, e.g. D1" style="width:130px"><input id="qlFlow" placeholder="flowline, e.g. FL5" style="width:120px"></div>
           <div class="td-chips" id="qlStages"></div>
-          <div class="td-row"><input id="qlNote" placeholder="anything else worth noting (optional)" style="flex:1;min-width:200px"><button class="btn" onclick="pelQuickLogForm()">Add to today's log</button><span id="qlMsg" class="td-sub"></span></div>
+          <div class="td-row"><input id="qlNote" placeholder="anything else worth noting (optional, up to 120 characters)" maxlength="120" style="flex:1;min-width:200px"><button class="btn" onclick="pelQuickLogForm()">Add to today's log</button><span id="qlMsg" class="td-sub"></span></div>
         </div>
       </div>
     </div>
@@ -302,14 +303,15 @@ window.PEL_LIB_SOURCE={}; window.PEL_LIB_READY={};
   <section id="view-log">
     <div class="row noprint">
       <label class="sub">Day:</label>
-      <select id="daySelect" onchange="renderLog()"></select>
+      <select id="daySelect" onchange="window.__pelDayChosen=true;renderLog()"></select>
+      <button class="btn" onclick="pelGoToday()" title="Open today's log">Today</button>
       <button class="btn" onclick="newDay()">+ New Day</button>
-      <button class="btn danger" onclick="deleteDay()">Delete Day</button>
       <label class="sub" style="margin-left:10px">Day ends:</label>
       <input id="dayEnd" style="width:80px" onchange="setEnd(this.value)">
-      <span id="lockStatus" class="lockstatus"></span>
+      <span id="lockStatus" class="lockstatus"></span><span id="lockHint" class="sub" style="display:none;color:#c0392b;font-weight:600"></span>
       <button class="btn" id="lockBtn" onclick="toggleLock()"></button>
       <div class="spacer"></div>
+      <button class="btn danger" id="delDayBtn" onclick="deleteDay()" title="Delete this whole day from the shared record">Delete Day</button>
       <button class="btn primary" onclick="toggleImport(true)">Import / Paste raw</button>
       <button class="btn" onclick="exportCSV()">Export CSV</button>
       <button class="btn" onclick="printDayRecord()" title="Print this day's log and events as a formatted daily record">Print / PDF</button>
@@ -321,12 +323,13 @@ window.PEL_LIB_SOURCE={}; window.PEL_LIB_READY={};
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-07.1</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">build 2026-09-21.1</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
       <button class="btn" onclick="openChangePassword()" title="Set or change the project unlock password">🔑 Password</button>
       <button class="btn" onclick="openBackups()" title="View and restore local backups of this project's data">💾 Backups</button>
+      <button class="btn" id="heldBtn" style="display:none" onclick="openHeldCopies()" title="Changes saved on this device while offline that were not uploaded">Held offline copies</button>
       <span id="backupNote" class="sub" style="font-size:11px"></span>
       <button class="btn" onclick="exportJSON()">Export data (.json)</button>
       <button class="btn" onclick="document.getElementById('jsonImport').click()">Import data (.json)</button>
@@ -550,6 +553,7 @@ window.PEL_LIB_SOURCE={}; window.PEL_LIB_READY={};
       #view-cyc button[disabled]{opacity:.45;cursor:not-allowed}
       #view-cyc svg text{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
       @media print{ #view-cyc .noprint{display:none !important} #view-cyc .cyc-reel-b{display:block !important} #view-cyc .panel{break-inside:avoid} }
+      @media (max-width:640px){ #view-cyc .cyc-grid2{grid-template-columns:1fr} #view-cyc .cyc-grid2>*{min-width:0} #view-cyc svg{max-width:100% !important;height:auto} #view-cyc .cyc-sec{padding:12px 12px;overflow-x:auto} #view-cyc .panel{overflow-x:auto} #view-cyc table.cyc-t{font-size:12px} #view-cyc .cyc-import,#view-cyc .cyc-note{overflow-wrap:anywhere} #view-dpr .panel,#view-dash .panel,#view-wbs .panel{overflow-x:auto} #view-dpr table{min-width:360px} }
     </style>
     <div class="panel cyc-sec" id="cycTop">
       <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;justify-content:space-between">
@@ -629,7 +633,7 @@ window.PEL_LIB_SOURCE={}; window.PEL_LIB_READY={};
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-09-07.1";
+var APP_BUILD="2026-09-21.1";
 var PEL_ENV={env:"TEST",agent:true,schema:6};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
@@ -831,6 +835,14 @@ function toMin(t){ if(!t) return null; var m=String(t).trim().match(/^(\d{1,2}):
 function r2(n){ return Math.round(n*100)/100; }
 function hm(n){ if(n==null||isNaN(n)) return "0m"; var neg=n<0; var t=Math.round(Math.abs(n)*60); var h=Math.floor(t/60), m=t%60; var out=(h>0?h+"h":"")+(h>0&&m>0?" ":"")+((m>0||h===0)?m+"m":""); return (neg?"-":"")+out; }
 function fmtDay(k){ var a=k.split("-"); return a[2]+"/"+a[1]+"/"+a[0]; }
+function nowClock(){ var d=new Date(); return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }
+/* local date and time with the zone, for report stamps: 21/09/2026 10:09 (UTC+10:00) */
+function pelStamp(d){ if(arguments.length===0) d=new Date(); else if(!d) return ""; else d=new Date(d); if(isNaN(d.getTime())) return ""; var off=-d.getTimezoneOffset(); var sg=off>=0?"+":"-"; off=Math.abs(off); return ("0"+d.getDate()).slice(-2)+"/"+("0"+(d.getMonth()+1)).slice(-2)+"/"+d.getFullYear()+" "+("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)+" (UTC"+sg+("0"+Math.floor(off/60)).slice(-2)+":"+("0"+(off%60)).slice(-2)+")"; }
+/* position for a new log line: after the last line whose time is at or before it (blank times follow the line above) */
+function pelLogInsertAt(L, tm){ if(tm==null) return L.length; var at=0, lastT=null; for(var i=0;i<L.length;i++){ var lt=toMin(L[i][0]); if(lt!=null) lastT=lt; if(lastT!=null && lastT<=tm) at=i+1; } return at; }
+function pelFocusLogRow(i, col){ try{ var tb=document.getElementById("logBody"); var tr=tb&&tb.children[i]; if(!tr) return; var el=tr.children[col||1].querySelector("textarea,input"); if(el){ el.focus(); if(el.select && col===0) el.select(); } }catch(e){} }
+/* a static report carries no screen controls */
+function pelStripUi(html){ try{ var t=document.createElement("div"); t.innerHTML=html; Array.prototype.slice.call(t.querySelectorAll(".noprint,button,input,select,textarea")).forEach(function(n){ if(n.parentNode) n.parentNode.removeChild(n); }); return t.innerHTML; }catch(e){ return html; } }
 function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;"); }
 function min2t(m){ var h=Math.floor(m/60),mm=Math.round(m%60); return String(h).padStart(2,"0")+":"+String(mm).padStart(2,"0"); }
 
@@ -897,8 +909,11 @@ function showTab(t){
 function fillDaySelect(){
   var sel=document.getElementById("daySelect"); var keys=Object.keys(data).sort(); var cur=sel.value;
   sel.innerHTML=keys.map(function(k){return '<option value="'+esc(k)+'">'+esc(fmtDay(k))+'</option>';}).join("");
+  /* the first time a real record is on screen, open today (or the latest day); after that the chosen day stays */
+  if(!window.__pelDayInit && keys.length>1){ window.__pelDayInit=true; sel.value=(keys.indexOf(todayKey())>=0)?todayKey():keys[keys.length-1]; return; }
   sel.value=(keys.indexOf(cur)>=0)?cur:keys[keys.length-1];
 }
+function pelGoToday(){ var k=todayKey(); if(data[k]){ window.__pelDayChosen=true; document.getElementById("daySelect").value=k; renderLog(); } else { newDay(k); } }
 function curKey(){ return document.getElementById("daySelect").value; }
 
 
@@ -936,6 +951,7 @@ function renderLog(){
   renderLockUI(key);
   var logSec=document.getElementById("view-log");
   if(logSec){ if(isLocked(key)) logSec.classList.add("locked-readonly"); else logSec.classList.remove("locked-readonly"); }
+  var __lockedNow=isLocked(key); var __dd=document.getElementById("delDayBtn"); if(__dd) __dd.style.display=__lockedNow?"none":"";
   var tb=document.getElementById("logBody"); tb.innerHTML="";
   var effA=effWbs(day.log);
   var flagged=flaggedSet(day);
@@ -986,7 +1002,10 @@ function renderLog(){
     eb.appendChild(tr);
   });
   renderBreakdown(key);
+  /* a locked day is read-only for the keyboard as well as the mouse */
+  try{ var __ro=isLocked(key); ["logBody","evBody"].forEach(function(id){ var host=document.getElementById(id); if(!host) return; Array.prototype.forEach.call(host.querySelectorAll("input,textarea"),function(f){ f.readOnly=__ro; }); Array.prototype.forEach.call(host.querySelectorAll("select,button"),function(f){ f.disabled=__ro; }); }); var __de=document.getElementById("dayEnd"); if(__de) __de.readOnly=__ro; }catch(e){}
 }
+document.addEventListener("focusin", function(ev){ try{ var t=ev.target; if(!t || !/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return; if(!t.closest("#logBody") && !t.closest("#evBody") && t.id!=="dayEnd") return; if(!isLocked(curKey())) return; var h=document.getElementById("lockHint"); if(!h) return; h.textContent="This day is locked. Use Unlock to edit it."; h.style.display=""; clearTimeout(window.__lockHintT); window.__lockHintT=setTimeout(function(){ h.style.display="none"; }, 3500); }catch(e){} });
 
 function renderBreakdown(key){
   var st=dayStats(key);
@@ -1013,7 +1032,7 @@ function renderBreakdown(key){
     var d=document.createElement("div"); d.className="evspan";
     d.style.left=(x.s/st.endMin*100)+"%"; d.style.width=Math.max(0.4,(x.e-x.s)/st.endMin*100)+"%";
     d.style.top=(3+x.lane*19)+"px"; d.style.background=CCOL[x.cat]||"#999";
-    d.title=x.cat+" · "+min2t(x.s)+"–"+(x.open?"ongoing":min2t(x.e))+" · "+r2(x.hrs)+"h\n"+x.d;
+    d.title=x.cat+" · "+min2t(x.s)+"–"+(x.open?"ongoing":min2t(x.e))+" · "+hm(x.hrs)+"\n"+x.d;
     lw.appendChild(d);
   });
   var __em=toMin(data[key].end)||1440;
@@ -1025,15 +1044,16 @@ function renderBreakdown(key){
 
 function updL(i,f,v){ if(guardLocked()) return;
   if(f===0 && v!=="" && toMin(v)==null){ alert("Invalid time "+String(v).slice(0,8)+" \u2014 the previous value is kept."); renderLog(); return; }
-  var r=data[curKey()].log[i]; r[f]=v; r[3]=curUser()||r[3]||"";
+  var L=data[curKey()].log; var r=L[i]; r[f]=v; r[3]=curUser()||r[3]||"";
   if(r[4]&&(f===0||f===1)){ (data[curKey()].ev||[]).forEach(function(e){ if(e[6]===r[4]){ if(f===0){ e[1]=v; } else { e[3]=String(v).slice(0,100); } } }); }
-  save(); renderLog(); }
+  var focusAt=null; if(f===0){ var tm=toMin(v); if(tm!=null){ L.splice(i,1); var at=pelLogInsertAt(L,tm); L.splice(at,0,r); focusAt=at; } }
+  save(); renderLog(); if(focusAt!=null) pelFocusLogRow(focusAt,1); }
 function delL(i){ if(guardLocked()) return; var r=data[curKey()].log[i];
   if(r&&r[4]){ var evs=(data[curKey()].ev||[]); var hit=evs.some(function(e){ return e[6]===r[4]; });
     if(hit){ if(!confirm("This log line is linked to an event. OK deletes the line AND its linked event; Cancel keeps both.")) return;
       data[curKey()].ev=evs.filter(function(e){ return e[6]!==r[4]; }); } }
   data[curKey()].log.splice(i,1); save(); renderLog(); }
-function addL(){ if(guardLocked()) return; var L=data[curKey()].log; L.push([L.length?L[L.length-1][0]:"00:00","","",curUser()]); save(); renderLog(); }
+function addL(){ if(guardLocked()) return; var key=curKey(); var L=data[key].log; var t=(key===todayKey())?nowClock():(L.length?L[L.length-1][0]:"00:00"); var at=pelLogInsertAt(L, toMin(t)); L.splice(at,0,[t,"","",curUser()]); save(); renderLog(); pelFocusLogRow(at,1); }
 function updE(i,f,v){ if(guardLocked()) return;
   if((f===1||f===2) && v!=="" && toMin(v)==null){ alert("Invalid time "+String(v).slice(0,8)+" \u2014 the previous value is kept."); renderLog(); return; }
   var e=data[curKey()].ev[i];
@@ -1048,7 +1068,7 @@ function updE(i,f,v){ if(guardLocked()) return;
 function delE(i){ if(guardLocked()) return; var e=data[curKey()].ev[i];
   if(e&&e[6]){ (data[curKey()].log||[]).forEach(function(r){ if(r[4]===e[6]) r[4]=""; }); }
   data[curKey()].ev.splice(i,1); save(); renderLog(); }
-function updEType(i,v){ if(guardLocked()) return; var e=data[curKey()].ev[i]; if(v==="DT"||v==="NPT"||v==="OTHER") e[5]=v; else e[5]=undefined; e[4]=curUser()||e[4]||""; save(); renderLog(); }
+function updEType(i,v){ if(guardLocked()) return; var e=data[curKey()].ev[i]; if(v==="DT"||v==="NPT"||v==="OTHER") e[5]=v; else e[5]=""; e[4]=curUser()||e[4]||""; save(); renderLog(); }
 function addE(){ if(guardLocked()) return; data[curKey()].ev.push(["Other","","","",curUser()]); save(); renderLog(); }
 function setEnd(v){ if(guardLocked()) return;
   var m=toMin(v);
@@ -1069,8 +1089,8 @@ function setEnd(v){ if(guardLocked()) return;
     }
   }
   __d.end=v; save(); renderLog(); }
-function newDay(){ if(pelRO()) return; var d=prompt("New day (YYYY-MM-DD):", todayKey()); if(!d) return; d=d.trim(); if(!validDayKey(d)){ alert("That is not a real calendar date. Use YYYY-MM-DD."); return; } if(!data[d]) data[d]={end:"24:00",log:[["00:00",""]],ev:[]}; save(); fillDaySelect(); document.getElementById("daySelect").value=d; renderLog(); }
-function deleteDay(){ var key=curKey(); if(guardLocked(key)) return; if(Object.keys(data).length<=1){ alert("Keep at least one day."); return; } if(confirm("Delete "+fmtDay(key)+"?")){ delete data[key]; save(); renderLog(); } }
+function newDay(preset){ if(pelRO()) return; pelAsk({title:"New day", body:'<p class="lm-note">Enter the day as YYYY-MM-DD. Today is '+esc(todayKey())+'.</p>', input:{label:"Day", placeholder:"YYYY-MM-DD", value:(typeof preset==="string"?preset:todayKey()), max:10}, buttons:[["Cancel","cancel"],["Create","ok","primary"]]}).then(function(a){ if(!a || a.value!=="ok") return; var d=String(a.text||"").trim(); if(!validDayKey(d)){ alert("That is not a real calendar date. Use YYYY-MM-DD."); return; } if(!data[d]) data[d]={end:"24:00",log:[["00:00",""]],ev:[]}; save(); fillDaySelect(); window.__pelDayChosen=true; document.getElementById("daySelect").value=d; renderLog(); }); }
+function deleteDay(){ var key=curKey(); if(guardLocked(key)) return; if(Object.keys(data).length<=1){ alert("Keep at least one day."); return; } var d=data[key]||{}; pelAsk({title:"Delete "+fmtDay(key)+"?", body:'<p class="lm-note">This removes the whole day from the shared record for everyone: '+((d.log||[]).length)+' log line(s) and '+((d.ev||[]).length)+' event(s). A local backup is kept on this device.</p>', buttons:[["Keep the day","keep"],["Delete the day","delete","danger"]]}).then(function(a){ if(a!=="delete") return; delete data[key]; save(); renderLog(); }); }
 
 var KW=[["Maintenance",/maintenan|preventat|greas|lubric|servic/i],["ROV - Asset 2",/rov ?2/i],["ROV - Asset 1",/rov ?1|\btms\b|\bt4\b|umbilical|tether/i],["Weather",/weather|\bwow\b|swell|wave|wind|storm|cyclone/i],["Crane",/crane|lift(ing)?|deck ops/i],["Vessel",/vessel|\bdp\b|engine|thruster|beacon|gangway|bridge/i],["Tooling",/tool|grinder|ring ?saw|cutter|blade|hose|fit ?up|hot ?stab|dredge|jetter/i],["Scheduling",/schedul|waiting|wait on|standby|stand ?by|delay|no work|permit/i]];
 function guessCat(t){ t=t||""; for(var i=0;i<KW.length;i++){ if(KW[i][1].test(t)) return KW[i][0]; } return "Other"; }
@@ -1327,11 +1347,13 @@ function renderDash(){
   var stats=keys.map(function(k){ var s=dayStats(k); s.k=k; return s; });
   var tU=0,tDT=0,tM=0,tNPT=0,tC=0,tE=0,agg={};
   stats.forEach(function(s){ tU+=s.union; tDT+=s.dt; tM+=(s.maint||0); tNPT+=s.npt; tC+=s.clear; tE+=s.count; for(var c in s.cats) agg[c]=(agg[c]||0)+s.cats[c]; });
+  var __tOther=0; stats.forEach(function(s){ __tOther+=(s.other||0); });
   document.getElementById("kpiCards").innerHTML=
     kpi("Days logged",keys.length,"")+
     kpi("Actual downtime",hm(tDT),"#dd3b40")+
     kpi("Maintenance",hm(tM),"#4c9a6a")+
     kpi("Non-productive (NPT)",hm(tNPT),"#c98a2a")+
+    kpi("Other lost time",hm(__tOther),"#7a7a7a")+
     kpi("Clear running",hm(tC),"#0f9bad")+
     kpi("Events logged",tE,"")+
     kpi("Worst category",'<span style="font-size:15px">'+worstCat(agg)+'</span>',"");
@@ -1346,7 +1368,7 @@ function renderDash(){
   stats.forEach(function(s){
     var sum=0; for(var c in s.cats) sum+=s.cats[c];
     var scale=Math.max(s.len,sum)||1; var segsH="";
-    CATS.forEach(function(c){ if(c==="Maintenance") return; if(s.cats[c]) segsH+='<div class="seg" style="width:'+(s.cats[c]/scale*100)+'%;background:'+CCOL[c]+'" title="'+c+' '+r2(s.cats[c])+'h"></div>'; });
+    CATS.forEach(function(c){ if(c==="Maintenance") return; if(s.cats[c]) segsH+='<div class="seg" style="width:'+(s.cats[c]/scale*100)+'%;background:'+CCOL[c]+'" title="'+c+' '+hm(s.cats[c])+'"></div>'; });
     dc.appendChild(htmlRow(fmtDay(s.k),'<div class="stack">'+segsH+'</div>',hm(s.dt)+" DT / "+hm(s.npt)+" NPT"));
   });
   var rb=document.getElementById("rollupBody"); rb.innerHTML="";
@@ -1424,7 +1446,7 @@ function renderPerDay(stats){
         '<h4>'+fmtDay(s.k)+'</h4>'+
         '<div class="pd-tot">Day '+hm(s.len)+' · DT '+hm(s.dt)+' · Maint '+hm(s.maint||0)+' · NPT '+hm(s.npt)+' · Other '+hm(s.other||0)+' · Clear '+hm(s.clear)+' · '+s.count+' event'+(s.count===1?"":"s")+'</div>'+
         bar+
-        '<table style="margin-top:8px"><thead><tr><th class="tw">Start</th><th class="tw">End</th><th>Category</th><th class="tw">Type</th><th class="num">Dur h</th><th>Description</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+        '<table style="margin-top:8px"><thead><tr><th class="tw">Start</th><th class="tw">End</th><th>Category</th><th class="tw">Type</th><th class="num">Duration</th><th>Description</th></tr></thead><tbody>'+rows+'</tbody></table>'+
         '</div>';
     }).join("");
   }
@@ -1553,11 +1575,11 @@ function buildDayRecord(key){
     '<h3 style="margin:14px 0 2px;font-size:11pt">Sequential daily log</h3>'+
     '<table><thead><tr><th style="width:60px">Time</th><th>Entry</th><th style="width:90px">WBS</th><th style="width:56px">By</th></tr></thead><tbody>'+logRows+'</tbody></table>'+
     '<h3 style="margin:10px 0 2px;font-size:11pt">Events</h3>'+
-    '<table><thead><tr><th style="width:110px">Category</th><th style="width:56px">Start</th><th style="width:62px">End</th><th style="width:86px">Type</th><th style="width:52px">Dur h</th><th>Description</th><th style="width:56px">By</th></tr></thead><tbody>'+evRows+'</tbody></table>'+
+    '<table><thead><tr><th style="width:110px">Category</th><th style="width:56px">Start</th><th style="width:62px">End</th><th style="width:86px">Type</th><th style="width:52px">Duration</th><th>Description</th><th style="width:56px">By</th></tr></thead><tbody>'+evRows+'</tbody></table>'+
     '<div class="drTotals">Day length <b>'+hm(st.len)+' </b> &middot; Actual downtime <b>'+hm(st.dt)+' </b> &middot; Maintenance <b>'+hm(st.maint||0)+' </b> &middot; NPT <b>'+hm(st.npt)+' </b> &middot; Other <b>'+hm(st.other||0)+' </b> &middot; Clear running <b>'+hm(st.clear)+' </b></div>'+
     (function(){ var __m=maCalc().days[key]; var __t;
     if(!__m) __t="";
-    else if(__m.eligible) __t='<div class="drFoot">Maintenance allowance: eligible operational day '+__m.operationalDayOrdinal+' (period '+__m.periodNumber+', day '+__m.dayInPeriod+' of 30)'+(__m.confirmed?'':' [assumed eligible, unconfirmed]')+'. Accrued '+hm(__m.accrued)+', used '+hm(__m.used)+', balance '+hm(__m.bal)+(__m.excessMin>0?', excess '+hm(__m.excess):'')+'. Policy '+__m.policyVersion+'.</div>';
+    else if(__m.eligible) __t='<div class="drFoot">Maintenance allowance: eligible operational day '+__m.operationalDayOrdinal+' (period '+__m.periodNumber+', day '+__m.dayInPeriod+' of 30)'+(__m.confirmed?'':' (eligibility assumed, not yet confirmed by the reviewer; figures indicative until then)')+'. Accrued '+hm(__m.accrued)+', used '+hm(__m.used)+', balance '+hm(__m.bal)+(__m.excessMin>0?', excess '+hm(__m.excess):'')+'. Policy '+__m.policyVersion+'.</div>';
     else __t='<div class="drFoot">Maintenance allowance: '+esc(__m.eligibilityStatus)+' ('+esc(__m.eligibilityReason)+'), not accruing and not advancing the operational-day count.</div>';
     return __t; })()+
     '<div class="drFoot">System-generated daily record produced from the Endura Asset Intelligence Project Event Log &middot; '+PEL_ENV.env+' &middot; build '+APP_BUILD+' &middot; schema '+PEL_ENV.schema+' &middot; policy '+MA_POLICY.version+lockNote+'. Times are vessel local. Maintenance hours are handled under contract clause 1.8 and are reported separately from downtime.</div>';
@@ -1982,7 +2004,8 @@ function withPrintTitle(t){
   setTimeout(done,4000);
   window.print();
 }
-function dl(txt,name,type){ var b=new Blob([txt],{type:type||"text/csv"}); var a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=name; a.click(); setTimeout(function(){ try{URL.revokeObjectURL(a.href);}catch(e){} },5000); }
+function dl(txt,name,type){ var __n=Date.now(); if(dl.last && dl.last.name===name && (__n-dl.last.t)<1500) return; dl.last={name:name,t:__n}; var b=new Blob([txt],{type:type||"text/csv"}); var a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=name; a.click(); setTimeout(function(){ try{URL.revokeObjectURL(a.href);}catch(e){} },5000); try{ pelToast("Saved to your Downloads: "+name); }catch(e){} }
+function pelToast(msg){ var el=document.getElementById("pelToast"); if(!el){ el=document.createElement("div"); el.id="pelToast"; el.className="noprint"; el.style.cssText="position:fixed;right:16px;bottom:52px;max-width:min(420px,80vw);background:#1A1A1A;color:#fff;font-size:12.5px;line-height:1.4;padding:10px 14px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:9999;opacity:0;transition:opacity .2s"; document.body.appendChild(el); } el.textContent=msg; el.style.opacity="1"; clearTimeout(window.__pelToastT); window.__pelToastT=setTimeout(function(){ el.style.opacity="0"; }, 3500); }
 function exportCSV(){
   var key=curKey(); var day=data[key]; var st=dayStats(key);
   var csv="LOG\nTime,Entry,WBS,By\n";
@@ -2039,13 +2062,77 @@ var sb=null, channel=null, saveTimer=null, applyingRemote=false, lastSavedJSON="
 function payload(){ return JSON.stringify({app:"Endura Project Event Log",version:5,saved:new Date().toISOString(),days:data,wbs:WBSL,ctype:CTYPE,locks:LOCKS,lockpw:LOCKPW,cycles:(typeof CYC==="object"?CYC:undefined),dpr:(typeof DPR==="object"?DPR:undefined)},null,2); }
 
 function curProject(){ try{ return localStorage.getItem(PROJK)||"MEFF-SAR"; }catch(e){ return "MEFF-SAR"; } }
+/* The shared record is two rows in the same table. The main row (project name) carries the days log in the
+   shape every build of this app writes, so an older build saving the log cannot touch the register. The
+   register row (project name + "_register") carries the reel register and the DPR records; only builds that
+   know the register read or write it. The split was introduced on 21 September 2026 after a save from the
+   production build (which knows only the log) emptied the register held in the single shared row. */
+var lastSavedRegJSON=""; var __ownWrites=[];
+function pelCanon(v){ if(v===undefined) return "null"; if(v===null||typeof v!=="object") return JSON.stringify(v); if(Array.isArray(v)) return "["+v.map(pelCanon).join(",")+"]"; var ks=Object.keys(v).filter(function(k){ return v[k]!==undefined; }).sort(); return "{"+ks.map(function(k){ return JSON.stringify(k)+":"+pelCanon(v[k]); }).join(",")+"}"; }
+function regKey(){ return curProject()+"_register"; }
+function mainDoc(){ return {days:data,wbs:WBSL,ctype:CTYPE,locks:LOCKS,lockpw:LOCKPW}; }
+function regDoc(){ return {app:"Endura Project Event Log",kind:"register",version:1,cycles:(typeof CYC==="object"?CYC:undefined),dpr:(typeof DPR==="object"?DPR:undefined)}; }
+function regDocFrom(c){ var out={app:"Endura Project Event Log",kind:"register",version:1}; try{ out.cycles=cycSanitise(c&&c.cycles); }catch(e){ out.cycles=undefined; } try{ out.dpr=dprSanitise(c&&c.dpr); }catch(e){ out.dpr=undefined; } return out; }
+function regContent(){ return pelCanon({cycles:(typeof CYC==="object"?CYC:null),dpr:(typeof DPR==="object"?DPR:null)}); }
+function regContentOf(doc){ var c=null, d=null; try{ c=cycSanitise(doc&&doc.cycles); }catch(e){} try{ d=dprSanitise(doc&&doc.dpr); }catch(e){} return pelCanon({cycles:c,dpr:d}); }
+function noteOwnWrite(at){ __ownWrites.push(at); while(__ownWrites.length>24) __ownWrites.shift(); }
+function isOwnWrite(row){ var u=row&&row.updated_at; if(!u) return false; var t=Date.parse(u); return __ownWrites.some(function(w){ return w===u || (isFinite(t) && Date.parse(w)===t); }); }
+function pelAdoptRegister(doc, origin){
+  var c=(doc&&typeof doc==="object")?doc.cycles:undefined, d=(doc&&typeof doc==="object")?doc.dpr:undefined;
+  try{ var nc=(typeof cycSanitise==="function")?cycSanitise(c):null; var nd=(typeof dprSanitise==="function")?dprSanitise(d):null; if(nc) CYC=nc; if(nd) DPR=nd; window.__regBad=false; }
+  catch(e){ window.__regBad=true; try{ console.warn("register data could not be read ("+origin+"); the register is read-only until reload", e); }catch(_){} }
+}
+/* re-render whatever the person is looking at, unless they are mid-edit in a field (then wait for the blur) */
+function pelActiveTab(){ var ids={tabToday:"today",tabLog:"log",tabDash:"dash",tabWbs:"wbs",tabDpr:"dpr",tabCyc:"cyc"}; for(var k in ids){ var b=document.getElementById(k); if(b&&b.classList&&b.classList.contains("active")) return ids[k]; } return "log"; }
+function pelRerender(){
+  try{ var ae=document.activeElement; if(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && (ae.closest("#view-log") || ae.closest("#view-cyc") || ae.closest("#view-today"))){ if(!window.__pelRerenderWait){ window.__pelRerenderWait=true; ae.addEventListener("blur", function(){ window.__pelRerenderWait=false; setTimeout(pelRerender,0); }, {once:true}); } return; } }catch(e){}
+  try{ renderLog(); }catch(e){}
+  var t=pelActiveTab();
+  try{ if(t==="today" && typeof renderToday==="function") renderToday(); else if(t==="dash" && typeof renderDash==="function") renderDash(); else if(t==="wbs" && typeof renderWbs==="function") renderWbs(); else if(t==="dpr" && typeof renderDprLog==="function") renderDprLog(); else if(t==="cyc" && typeof renderCyc==="function" && !window.__cycPending) renderCyc(); }catch(e){}
+}
+/* one in-page question box for the few decisions that used browser prompts. Resolves with the button value
+   (and the typed text when an input is requested). A harness can drive it through window.__pelAskAuto. */
+function pelAsk(o){
+  return new Promise(function(resolve){
+    o=o||{};
+    if(typeof window.__pelAskAuto==="function"){ var av; try{ av=window.__pelAskAuto(o); }catch(e){ av=null; } resolve(av); return; }
+    var m=document.getElementById("lockModal"); if(!m){ resolve(null); return; }
+    document.getElementById("lmTitle").textContent=o.title||"";
+    document.getElementById("lmBody").innerHTML=(o.body||"")+(o.input?'<label class="lm-field">'+esc(o.input.label||"")+'<input id="pelAskIn" placeholder="'+esc(o.input.placeholder||"")+'" maxlength="'+(o.input.max||120)+'" value="'+esc(o.input.value||"")+'"></label>':"");
+    document.getElementById("lmError").textContent="";
+    var done=false;
+    window.__pelAskCb=function(v){
+      if(done) return;
+      if(o.input && v===(o.input.okValue||"ok")){ var f=document.getElementById("pelAskIn"); var t=String((f&&f.value)||"").trim(); if(o.input.min && t.length<o.input.min){ lmErr(o.input.err||"Please add a few words."); return; } done=true; closeLockModal(); window.__pelAskCb=null; resolve({value:v,text:t}); return; }
+      done=true; closeLockModal(); window.__pelAskCb=null; resolve(o.input?{value:v,text:""}:v);
+    };
+    setLmButtons((o.buttons||[["OK","ok","primary"]]).map(function(b){ return [b[0],"window.__pelAskCb('"+String(b[1]).replace(/[^a-z0-9_\-]/gi,"")+"')",b[2]||""]; }));
+    m.style.display="flex";
+    if(o.input){ setTimeout(function(){ var f=document.getElementById("pelAskIn"); if(f){ f.focus(); f.addEventListener("keydown", function(ev){ if(ev.key==="Enter"){ ev.preventDefault(); window.__pelAskCb && window.__pelAskCb(o.input.okValue||"ok"); } }); } },50); }
+  });
+}
+/* held offline copies: kept on this device until someone uploads, downloads or discards them */
+function pelHeldKeys(){ try{ var suf="_"+curProject(); return Object.keys(localStorage).filter(function(x){ return x.indexOf("endura_pel_offline_held_")===0 && x.slice(-suf.length)===suf; }).sort(); }catch(e){ return []; } }
+function pelHeldRefresh(){ var ks=pelHeldKeys(); window.__heldNote=ks.length>0; var b=document.getElementById("heldBtn"); if(b){ b.style.display=ks.length?"":"none"; b.textContent="Held offline copies ("+ks.length+")"; } refreshSync(); }
+function openHeldCopies(){
+  var ks=pelHeldKeys(); var m=document.getElementById("lockModal"); if(!m) return;
+  document.getElementById("lmTitle").textContent="Held offline copies \u2014 "+curProject();
+  var body=document.getElementById("lmBody"); document.getElementById("lmError").textContent="";
+  if(!ks.length){ body.innerHTML='<p class="lm-note">Nothing is held on this device. A copy is held when changes made offline are not uploaded on reconnection.</p>'; setLmButtons([["Close","closeLockModal()"]]); m.style.display="flex"; return; }
+  body.innerHTML='<p class="lm-note">These copies were saved on this device while it was offline and were not uploaded. <b>Upload</b> replaces the shared record with the copy (changes others made since would be overwritten). <b>Download</b> keeps a file. <b>Discard</b> removes the copy from this device.</p><div style="max-height:260px;overflow:auto">'+ks.map(function(k,i){ var when=""; var days=0; try{ var mt=k.match(/held_(\d+)_/); if(mt) when=new Date(+mt[1]).toLocaleString(); var d=JSON.parse(localStorage.getItem(k)||"{}"); days=d&&d.days?Object.keys(d.days).length:0; }catch(e){} return '<div class="row" style="gap:8px;padding:7px 0;border-bottom:1px solid var(--line)"><div><div style="font-weight:600;font-size:13px">'+esc(when||k)+'</div><div class="sub" style="font-size:11px">'+days+' day'+(days===1?"":"s")+' in the copy</div></div><div class="spacer"></div><button class="btn" onclick="pelHeldDownload('+i+')">Download</button><button class="btn" onclick="pelHeldUpload('+i+')">Upload</button><button class="btn danger" onclick="pelHeldDiscard('+i+')">Discard</button></div>'; }).join("")+'</div>';
+  setLmButtons([["Close","closeLockModal()"]]); m.style.display="flex";
+}
+function pelHeldDownload(i){ var k=pelHeldKeys()[i]; if(!k) return; var pend=localStorage.getItem(k)||""; var mt=k.match(/held_(\d+)_/); var ts=mt?new Date(+mt[1]):new Date(); dl(pend, "Project Event Log - Held Offline Copy - "+curProject()+" - "+ts.toISOString().slice(0,19).replace(/:/g,"")+"Z.json", "application/json"); }
+async function pelHeldDiscard(i){ var k=pelHeldKeys()[i]; if(!k) return; var a=await pelAsk({title:"Discard this held copy?", body:'<p class="lm-note">The copy is removed from this device. Anything in it that never reached the shared record is lost. Download it first if you are not sure.</p>', buttons:[["Keep it","keep"],["Discard","discard","danger"]]}); if(a!=="discard"){ openHeldCopies(); return; } try{ localStorage.removeItem(k); }catch(e){} pelHeldRefresh(); openHeldCopies(); }
+async function pelHeldUpload(i){ var k=pelHeldKeys()[i]; if(!k) return; if(pelRO()) return; if(!sb){ alert("Not connected to the shared record right now; try again when the sync light is green."); return; } var a=await pelAsk({title:"Upload this copy?", body:'<p class="lm-note">The shared record for '+esc(curProject())+' is replaced by this copy. Changes anyone made since the copy was taken would be overwritten. The current shared state is backed up on this device first.</p>', buttons:[["Cancel","cancel"],["Upload and replace","upload","primary"]]}); if(a!=="upload"){ openHeldCopies(); return; } try{ writeLocalBackup(); }catch(e){} var pend=localStorage.getItem(k)||""; var res=await pelUploadCopy(pend, k); pelHeldRefresh(); if(res==="sent") setSync("green","held copy uploaded \u00b7 "+curProject()); openHeldCopies(); }
+
 function setProject(v){ v=(v||"").trim().slice(0,60)||"MEFF-SAR"; try{ localStorage.setItem(PROJK,v); }catch(e){} location.reload(); }
 
 function setSync(state,msg){
   window.__lastSync={s:state,m:msg};
   var el=document.getElementById("syncStatus"); if(!el) return;
   var col={green:"#2fae54",amber:"#E87722",red:"#dd3b40",grey:"#8C8C8C"}[state]||"#8C8C8C";
-  el.textContent=""; var dot=document.createElement("b"); dot.style.color=col; dot.textContent="\u25cf"; el.appendChild(dot); el.appendChild(document.createTextNode(" "+msg+(window.__heldNote?" \u00b7 held offline copy on this device (downloaded)":"")));
+  el.textContent=""; var dot=document.createElement("b"); dot.style.color=col; dot.textContent="\u25cf"; el.appendChild(dot); el.appendChild(document.createTextNode(" "+msg+(window.__heldNote?" \u00b7 held offline copy on this device, see Settings":"")));
 }
 
 function validDayKey(k){
@@ -2097,7 +2184,7 @@ function validateDoc(input){
       if(e[1]!=="" && toMin(e[1])==null){ issues.push(k+": event "+(i+1)+" invalid start "+e[1].slice(0,8)); fatal.push(k+": invalid event start"); }
       if(e[2]!=="" && toMin(e[2])==null){ issues.push(k+": event "+(i+1)+" invalid end "+e[2].slice(0,8)); fatal.push(k+": invalid event end"); }
       if(e[1]!=="" && e[2]!=="" && toMin(e[1])!=null && toMin(e[2])!=null && toMin(e[2])<=toMin(e[1])){ quality.push(k+": event "+(i+1)+" end is not after start (zero effect)"); }
-      if(e[5]!==undefined && e[5]!=="" && e[5]!=="DT" && e[5]!=="NPT" && e[5]!=="OTHER"){ issues.push(k+": event "+(i+1)+" invalid type override reset"); e[5]=undefined; }
+      if(e[5]==null || e[5]==="") e[5]=""; else if(e[5]!=="DT" && e[5]!=="NPT" && e[5]!=="OTHER"){ issues.push(k+": event "+(i+1)+" invalid type override reset"); e[5]=""; }
     });
     if(d.maSt){
       if(!(d.maSt.s==="eligible"||d.maSt.s==="excluded"||d.maSt.s==="pending")){ issues.push(k+": invalid maintenance eligibility reset"); delete d.maSt; }
@@ -2138,7 +2225,7 @@ function validateDoc(input){
   else { cleaned={days:days, schemaVersion:PEL_ENV.schema}; }
   return {ok:true, issues:issues, fatal:fatal, quality:quality, cleaned:cleaned};
 }
-function adopt(txt, strict){
+function adopt(txt, strict, withRegister){
   if(!txt) return;
   var o;
   if(typeof txt==="string"){ if(!txt.trim()) return; o=JSON.parse(txt); }
@@ -2151,8 +2238,7 @@ function adopt(txt, strict){
   if(v.issues.length){ try{ console.warn("adopt: cleaned "+v.issues.length+" issue(s)", v.issues); }catch(_){} }
   if(o&&o.days){
     data=o.days; WBSL=Array.isArray(o.wbs)?o.wbs:WBSL;
-    try{ if(typeof cycSanitise==="function") CYC=cycSanitise(o.cycles); }catch(__e){}
-    try{ if(typeof dprSanitise==="function") DPR=dprSanitise(o.dpr); }catch(__e){}
+    if(withRegister && (o.cycles!==undefined || o.dpr!==undefined)) pelAdoptRegister({cycles:o.cycles, dpr:o.dpr}, "embedded");
     if(o.ctype){ for(var __ck in CTYPE) delete CTYPE[__ck]; for(var __cd in CTYPE_DEFAULT) CTYPE[__cd]=CTYPE_DEFAULT[__cd]; for(var k in o.ctype){ if(o.ctype[k]==="DT"||o.ctype[k]==="NPT"||o.ctype[k]==="OTHER") CTYPE[k]=o.ctype[k]; } saveCtype(); }
     LOCKS=(o.locks&&typeof o.locks==="object")?o.locks:{};   /* Batch 3: restore lock set */
     LOCKPW=(typeof o.lockpw==="string")?o.lockpw:"";          /* restore shared password hash */
@@ -2211,7 +2297,7 @@ async function restoreBackup(i){ if(pelRO()) return;
   writeLocalBackup();
   var doc=list[i].doc;
   applyingRemote=true;
-  try{ adopt(doc); }
+  try{ adopt(doc,false,true); }
   catch(__e){ alert("Backup rejected: "+(__e&&__e.message?__e.message:"invalid data")); return; }
   finally{ applyingRemote=false; }
   try{
@@ -2223,8 +2309,7 @@ async function restoreBackup(i){ if(pelRO()) return;
       window.__heldNote=true; refreshSync();
     }
   }catch(__e){}
-  closeLockModal(); renderLog();
-  if(typeof renderDash==="function") renderDash();
+  closeLockModal(); renderLog(); pelRerender();
   var ok;
   if(sb){ ok=await cloudSave(); }
   else { try{ localStorage.setItem("endura_pel_local_"+curProject(), payload()); ok=true; }catch(e){ ok=false; } }
@@ -2233,17 +2318,22 @@ async function restoreBackup(i){ if(pelRO()) return;
 async function cloudSave(){
   if(window.__remoteBad) return false;
   if(!sb){ try{ localStorage.setItem("endura_pel_offline_"+curProject(),payload()); }catch(e){} return; }
-  var body={ doc:{days:data,wbs:WBSL,ctype:CTYPE,locks:LOCKS,lockpw:LOCKPW,cycles:(typeof CYC==="object"?CYC:undefined),dpr:(typeof DPR==="object"?DPR:undefined)}, updated_at:new Date().toISOString(), updated_by:curUser()||"?" };
-  lastSavedJSON=JSON.stringify(body.doc);
+  var main=mainDoc(); var mainJ=pelCanon(main); var regJ=regContent();
+  var needMain=(mainJ!==lastSavedJSON); var needReg=(regJ!==lastSavedRegJSON) && !window.__regBad;
+  if(!needMain && !needReg){ online=true; setSync("green","synced \u00b7 "+curProject()); try{ localStorage.removeItem("endura_pel_offline_"+curProject()); }catch(_){} return true; }
+  var at=new Date().toISOString(), by=curUser()||"?"; noteOwnWrite(at);
+  var prevMain=lastSavedJSON, prevReg=lastSavedRegJSON;
+  if(needMain) lastSavedJSON=mainJ; if(needReg) lastSavedRegJSON=regJ;
   setSync("amber","saving\u2026");
   try{
-    var r=await sb.from("event_logs").upsert({ project:curProject(), doc:body.doc, updated_at:body.updated_at, updated_by:body.updated_by }, { onConflict:"project" });
-    if(r.error) throw r.error;
+    if(needMain){ var r=await sb.from("event_logs").upsert({ project:curProject(), doc:main, updated_at:at, updated_by:by }, { onConflict:"project" }); if(r.error) throw r.error; }
+    if(needReg){ var r2=await sb.from("event_logs").upsert({ project:regKey(), doc:regDoc(), updated_at:at, updated_by:by }, { onConflict:"project" }); if(r2.error) throw r2.error; }
     online=true; setSync("green","synced \u00b7 "+curProject());
-    try{ localStorage.setItem("endura_pel_local_"+curProject(), lastSavedJSON); }catch(_){}
+    try{ localStorage.setItem("endura_pel_local_"+curProject(), payload()); }catch(_){}
     try{ localStorage.removeItem("endura_pel_offline_"+curProject()); }catch(_){}
     return true;
   }catch(e){
+    lastSavedJSON=prevMain; lastSavedRegJSON=prevReg;
     online=false;
     try{ localStorage.setItem("endura_pel_offline_"+curProject(),payload()); }catch(_){}
     setSync("red","offline \u2014 saved on this device, will sync when back");
@@ -2256,30 +2346,54 @@ async function cloudSave(){
 async function cloudLoad(){
   if(!sb) return false;
   try{
-    var r=await sb.from("event_logs").select("doc,updated_by,updated_at").eq("project",curProject()).maybeSingle();
+    var r=await sb.from("event_logs").select("project,doc,updated_by,updated_at").in("project",[curProject(),regKey()]);
     if(r.error) throw r.error;
-    if(r.data && r.data.doc){ applyingRemote=true; var __bad=false; try{ adopt(r.data.doc); }catch(__e){ __bad=true; window.__remoteBad=true; setSync("red","remote data invalid \u2014 read-only; reload to retry"); }; applyingRemote=false; if(!__bad){ try{ localStorage.setItem("endura_pel_local_"+curProject(), JSON.stringify(r.data.doc)); }catch(_){} } return __bad?"invalid":"found"; }
-    return "missing";
-  }catch(e){ console.warn("cloud load failed",e); return "error"; }
+    var rows=Array.isArray(r.data)?r.data:(r.data?[r.data]:[]); var main=null, reg=null;
+    rows.forEach(function(x){ if(!x) return; if(x.project===regKey()) reg=x; else if(x.project===curProject()||x.project===undefined) main=x; });
+    if(!(main && main.doc)) return "missing";
+    applyingRemote=true; var __bad=false;
+    try{ adopt(main.doc,false,!(reg&&reg.doc)); }catch(__e){ __bad=true; window.__remoteBad=true; setSync("red","remote data invalid \u2014 read-only; reload to retry"); }
+    if(!__bad){
+      lastSavedJSON=pelCanon(mainDoc());
+      if(reg && reg.doc){ pelAdoptRegister(reg.doc,"shared register"); lastSavedRegJSON=window.__regBad?"":regContent(); window.__regSeed=false; }
+      else { window.__regSeed=true; lastSavedRegJSON=""; }
+      try{ localStorage.setItem("endura_pel_local_"+curProject(), payload()); }catch(_){}
+    }
+    applyingRemote=false;
+    return __bad?"invalid":"found";
+  }catch(e){ applyingRemote=false; console.warn("cloud load failed",e); return "error"; }
 }
 
 /* Live subscription \u2014 when anyone else saves, refresh our copy */
 function subscribe(){
   if(!sb||channel) return;
+  function onMain(p){
+    var doc=p&&p.new&&p.new.doc; if(!doc) return;
+    if(isOwnWrite(p.new)) return;
+    if(pelCanon(doc)===lastSavedJSON) return;     // our own write coming back
+    applyingRemote=true;
+    try{ adopt(doc,false,false); }
+    catch(__e){ applyingRemote=false; window.__remoteBad=true; setSync("red","remote data invalid \u2014 read-only; reload to retry"); return; }
+    applyingRemote=false;
+    lastSavedJSON=pelCanon(mainDoc());
+    try{ localStorage.setItem("endura_pel_local_"+curProject(), payload()); }catch(_){}
+    pelRerender();
+    var by=(p.new&&p.new.updated_by)||"someone";
+    if(window.__remoteBad){ setSync("red","remote updated \u2014 still read-only; reload to resume editing"); } else { setSync("green","updated by "+by+" \u00b7 "+curProject()); }
+  }
+  function onReg(p){
+    var doc=p&&p.new&&p.new.doc; if(!doc) return;
+    if(isOwnWrite(p.new)) return;
+    if(regContentOf(doc)===lastSavedRegJSON) return;
+    applyingRemote=true; try{ pelAdoptRegister(doc,"shared register"); }catch(__e){} applyingRemote=false;
+    if(!window.__regBad) lastSavedRegJSON=regContent();
+    try{ localStorage.setItem("endura_pel_local_"+curProject(), payload()); }catch(_){}
+    pelRerender();
+    var by=(p.new&&p.new.updated_by)||"someone"; if(!window.__remoteBad) setSync("green","register updated by "+by+" \u00b7 "+curProject());
+  }
   channel=sb.channel("pel_"+curProject())
-    .on("postgres_changes",{event:"*",schema:"public",table:"event_logs",filter:"project=eq."+curProject()},function(p){
-      var doc=p.new&&p.new.doc; if(!doc) return;
-      var incoming=JSON.stringify(doc);
-      if(incoming===lastSavedJSON) return;     // it's our own write coming back
-      applyingRemote=true;
-      try{ adopt(doc); }
-      catch(__e){ window.__remoteBad=true; setSync("red","remote data invalid \u2014 read-only; reload to retry"); return; }
-      finally{ applyingRemote=false; }
-      lastSavedJSON=incoming;
-      renderLog(); var t=document.getElementById("tabDash"); if(t&&t.classList&&t.classList.contains&&t.classList.contains("active")&&typeof renderDash==="function") renderDash();
-      var by=(p.new&&p.new.updated_by)||"someone";
-      if(window.__remoteBad){ setSync("red","remote updated \u2014 still read-only; reload to resume editing"); } else { setSync("green","updated by "+by+" \u00b7 "+curProject()); }
-    })
+    .on("postgres_changes",{event:"*",schema:"public",table:"event_logs",filter:"project=eq."+curProject()},onMain)
+    .on("postgres_changes",{event:"*",schema:"public",table:"event_logs",filter:"project=eq."+regKey()},onReg)
     .subscribe();
 }
 
@@ -2290,62 +2404,62 @@ async function flushOffline(){
   try{
     var pend=localStorage.getItem(k);
     if(!pend) return "none";
-    if(!confirm("Offline changes from this device are pending upload. Uploading will REPLACE the cloud copy, which may contain newer changes made elsewhere. OK uploads this device's version; Cancel keeps the changes held locally, not uploaded.")){
-      try{
-        var heldKey="endura_pel_offline_held_"+Date.now()+"_"+curProject();
-        localStorage.setItem(heldKey, pend);
-        localStorage.removeItem(k);
-        dl(pend, "Project Event Log - Held Offline Copy - "+curProject()+" - "+new Date().toISOString().slice(0,19).replace(/:/g,"")+"Z.json", "application/json");
-      }catch(e){}
-      window.__heldNote=true;
+    if(window.__flushBusy) return "busy"; window.__flushBusy=true;
+    var choice=null;
+    try{ choice=await pelAsk({ title:"Changes saved offline on this device", body:'<p class="lm-note">Changes made on this device while it was offline have not reached the shared record for '+esc(curProject())+' yet.</p><p class="lm-note"><b>Upload</b> replaces the shared record with this device\'s copy; anything others changed in the meantime would be overwritten.<br><b>Keep held</b> stores the copy on this device only. You can upload, download or discard it later from Settings on the Daily Log.</p>', buttons:[["Keep held on this device","held"],["Upload this device\'s copy","upload","primary"]] }); }
+    finally{ window.__flushBusy=false; }
+    if(choice!=="upload"){
+      try{ var heldKey="endura_pel_offline_held_"+Date.now()+"_"+curProject(); localStorage.setItem(heldKey, pend); localStorage.removeItem(k); }catch(e){}
+      pelHeldRefresh();
       setSync("amber","offline changes held on this device \u2014 not uploaded \u00b7 "+curProject());
       return "held";
     }
-    var doc=JSON.parse(pend);
-    var __v=null; var __docOk=false;
-    try{ __v=validateDoc(doc); __docOk=!!(__v && __v.ok && (!__v.fatal||!__v.fatal.length) && __v.cleaned && __v.cleaned.days); }catch(__e){ __docOk=false; }
-    if(!__docOk){
-      try{
-        var __hk="endura_pel_offline_held_"+Date.now()+"_"+curProject();
-        localStorage.setItem(__hk, pend);
-        localStorage.removeItem(k);
-      }catch(__e){}
-      window.__heldNote=true;
-      setSync("red","offline copy INVALID \u2014 quarantined on this device, not uploaded \u00b7 "+curProject());
-      return "invalid";
-    }
-    doc=__v.cleaned;
-    var r=await sb.from("event_logs").upsert({ project:curProject(), doc:doc, updated_at:new Date().toISOString(), updated_by:(curUser()||"?")+" (offline replay)" }, { onConflict:"project" });
-    if(!r.error){
-      localStorage.removeItem(k);
-      try{
-        applyingRemote=true;
-        try{ adopt(doc); }catch(__e){}
-        applyingRemote=false;
-        lastSavedJSON=JSON.stringify(doc);
-        localStorage.setItem("endura_pel_local_"+curProject(), JSON.stringify(doc));
-        renderLog(); if(typeof renderDash==="function") renderDash();
-      }catch(__e){}
-      return "sent";
-    }
-    setSync("red","offline replay FAILED \u2014 the offline copy is kept on this device; retry when the connection is stable");
-    return "failed";
+    return await pelUploadCopy(pend, k);
   }catch(e){
+    window.__flushBusy=false;
     setSync("red","offline replay FAILED \u2014 the offline copy is kept on this device; retry when the connection is stable");
     return "failed";
   }
 }
+/* upload a full local copy (offline or held) as the shared record: log row, then register row */
+async function pelUploadCopy(pend, removeKey){
+  var doc=null; try{ doc=JSON.parse(pend); }catch(e){ doc=null; }
+  var __v=null; var __docOk=false;
+  try{ __v=validateDoc(doc); __docOk=!!(__v && __v.ok && (!__v.fatal||!__v.fatal.length) && __v.cleaned && __v.cleaned.days); }catch(__e){ __docOk=false; }
+  if(!__docOk){
+    try{ var __hk="endura_pel_offline_held_"+Date.now()+"_"+curProject(); localStorage.setItem(__hk, pend); if(removeKey) localStorage.removeItem(removeKey); }catch(__e){}
+    pelHeldRefresh();
+    setSync("red","offline copy INVALID \u2014 quarantined on this device, not uploaded \u00b7 "+curProject());
+    return "invalid";
+  }
+  var c=__v.cleaned; var at=new Date().toISOString(); var by=(curUser()||"?")+" (offline replay)";
+  var main={days:c.days, wbs:Array.isArray(c.wbs)?c.wbs:WBSL, ctype:(c.ctype&&typeof c.ctype==="object")?c.ctype:CTYPE, locks:(c.locks&&typeof c.locks==="object")?c.locks:{}, lockpw:(typeof c.lockpw==="string")?c.lockpw:LOCKPW};
+  var hasReg=(c.cycles!==undefined || c.dpr!==undefined);
+  noteOwnWrite(at);
+  var r=await sb.from("event_logs").upsert({ project:curProject(), doc:main, updated_at:at, updated_by:by }, { onConflict:"project" });
+  if(r.error){ setSync("red","offline replay FAILED \u2014 the offline copy is kept on this device; retry when the connection is stable"); return "failed"; }
+  if(hasReg){ var r2=await sb.from("event_logs").upsert({ project:regKey(), doc:regDocFrom(c), updated_at:at, updated_by:by }, { onConflict:"project" }); if(r2.error){ setSync("red","offline replay: the log uploaded but the register did not \u2014 the copy is kept on this device; retry when the connection is stable"); return "failed"; } }
+  try{ if(removeKey) localStorage.removeItem(removeKey); }catch(_){}
+  try{
+    applyingRemote=true; try{ adopt(c,false,true); }catch(__e){} applyingRemote=false;
+    lastSavedJSON=pelCanon(mainDoc()); if(hasReg && !window.__regBad) lastSavedRegJSON=regContent();
+    localStorage.setItem("endura_pel_local_"+curProject(), payload());
+    renderLog(); pelRerender();
+  }catch(__e){}
+  return "sent";
+}
 
 async function initCloud(){
   document.getElementById("projectName").value=curProject();
+  /* paint this device's last copy at once; the shared record replaces it as soon as it arrives */
+  try{ var __lc=localStorage.getItem("endura_pel_local_"+curProject()); if(__lc){ applyingRemote=true; try{ adopt(__lc,false,true); window.__pelLocalPaint=true; }catch(__e){} applyingRemote=false; if(window.__pelLocalPaint){ renderLog(); pelRerender(); } } }catch(e){}
   var configured = SUPA_URL.indexOf("http")===0 && SUPA_KEY.length>20;
   if(!configured){
     setSync("grey","not configured \u2014 running local only (see setup note)");
-    try{ var s=localStorage.getItem("endura_pel_local_"+curProject()); if(s) adopt(s); }catch(e){}
     try{ writeLocalBackup(); }catch(e){}
-    try{ if(Object.keys(localStorage).some(function(x){ return x.indexOf("endura_pel_offline_held_")===0 && x.slice(-("_"+curProject()).length)===("_"+curProject()); })) window.__heldNote=true; refreshSync(); }catch(e){}
+    try{ pelHeldRefresh(); }catch(e){}
     save=function(){ if(window.__remoteBad){ setSync("red","read-only \u2014 change NOT saved; reload to retry"); return; } writeLocalBackup(); try{ localStorage.setItem("endura_pel_local_"+curProject(),payload()); }catch(e){} };
-    renderLog();
+    renderLog(); pelRerender();
     return;
   }
   try{
@@ -2353,30 +2467,30 @@ async function initCloud(){
     setSync("amber","loading\u2026");
     var got=await cloudLoad();
     if(got==="missing"){ await cloudSave(); }   // first run: seed only on a confirmed empty read
+    else if(got==="found" && window.__regSeed){ window.__regSeed=false; await cloudSave(); }   // first load after the split: the register gets its own row
     subscribe();
     if(got==="invalid"){
       /* validation failure: stay read-only; no offline replay, no green state */
     } else if(got==="error"){
       window.__remoteBad=true;
-      setSync("red","cloud read failed \u2014 read-only until reload; data shown may be stale.");
+      setSync("red","cloud read failed \u2014 read-only until reload; showing this device\'s last copy, which may be stale.");
     } else {
-      try{ if(Object.keys(localStorage).some(function(x){ return x.indexOf("endura_pel_offline_held_")===0 && x.slice(-("_"+curProject()).length)===("_"+curProject()); })) window.__heldNote=true; }catch(e){}
+      try{ pelHeldRefresh(); }catch(e){}
       try{ writeLocalBackup(); }catch(e){}
       var __fo=await flushOffline();
       if(__fo==="failed"){ /* red state already set; do not report green */ }
       else if(window.__remoteBad){ /* read-only state stands */ }
       else setSync("green","synced \u00b7 "+curProject());
     }
-    renderLog();
+    renderLog(); pelRerender();
     window.addEventListener("online",function(){ flushOffline(); });
   }catch(e){
     setSync("red","could not connect \u2014 running local only");
     console.warn(e);
-    try{ var __ls=localStorage.getItem("endura_pel_local_"+curProject()); if(__ls) adopt(__ls); }catch(_e){}
     try{ writeLocalBackup(); }catch(_e){}
-    try{ if(Object.keys(localStorage).some(function(x){ return x.indexOf("endura_pel_offline_held_")===0 && x.slice(-("_"+curProject()).length)===("_"+curProject()); })) window.__heldNote=true; refreshSync(); }catch(_e){}
+    try{ pelHeldRefresh(); }catch(_e){}
     save=function(){ if(window.__remoteBad){ setSync("red","read-only \u2014 change NOT saved; reload to retry"); return; } writeLocalBackup(); try{ localStorage.setItem("endura_pel_local_"+curProject(),payload()); }catch(_e){} };
-    renderLog();
+    renderLog(); pelRerender();
   }
 }
 
@@ -2485,7 +2599,7 @@ function printDprBatch(){
     '<table class="dpr-rec-table"><thead><tr><th>DPR</th><th>Date</th><th>Matched day</th><th class="num">App DT</th><th class="num">DPR W+M</th><th class="num">DPR V+ROV</th><th>Result</th></tr></thead><tbody>'+rows+'</tbody></table>'+
     '<div class="dpr-pilot">Comparison basis remains subject to written confirmation; numerical comparison lines are preliminary. Pilot tool. Downtime figures are read automatically from each contractor PDF. Figures should be verified against the source DPRs. Source of truth remains the contractor DPRs and the Santos event record.</div>';
   document.body.classList.add("printing-dpr");
-  withPrintTitle(pelName("dprBatch", new Date().toISOString().slice(0,10)));
+  withPrintTitle(pelName("dprBatch", todayKey()));
   setTimeout(function(){ document.body.classList.remove("printing-dpr"); }, 500);
 }
 
@@ -2705,12 +2819,12 @@ function printDprRecord(){
       '<div class="m"><div class="mk">Checked</div><div class="mv">'+gen.toLocaleDateString("en-GB")+' '+gen.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})+'</div></div>'+
     '</div>'+
     '<div class="dpr-verdict '+(agree?"ok":"bad")+'">'+(agree
-        ? "The contractor DPR and the Santos record match numerically for "+fmtDay(key)+" under the unapproved comparison basis (policy pending)."
-        : "The contractor DPR and the Santos record do not match numerically on downtime for "+fmtDay(key)+". See the comparison below.")+'</div>'+
-    '<table class="dpr-rec-table"><thead><tr><th>Comparison</th><th class="num">Santos record (h)</th><th class="num">Contractor DPR (h)</th><th>Result</th></tr></thead><tbody>'+
+        ? "The contractor DPR and this log match numerically for "+fmtDay(key)+" under the unapproved comparison basis (policy pending)."
+        : "The contractor DPR and this log do not match numerically on downtime for "+fmtDay(key)+". See the comparison below.")+'</div>'+
+    '<table class="dpr-rec-table"><thead><tr><th>Comparison</th><th class="num">This log (h)</th><th class="num">Contractor DPR (h)</th><th>Result</th></tr></thead><tbody>'+
       '<tr><td>Downtime vs DPR Weather + Mechanical</td><td class="num">'+appDT.toFixed(2)+'</td><td class="num">'+dprSummary.toFixed(2)+'</td><td>'+resCell(appDT,dprSummary)+'</td></tr>'+
       '<tr><td>Downtime vs DPR Vessel + ROV (ancillary)</td><td class="num">'+appDT.toFixed(2)+'</td><td class="num">'+dprAnc.toFixed(2)+'</td><td>'+resCell(appDT,dprAnc)+'</td></tr>'+
-      '<tr><td>Non-productive time (Santos record)</td><td class="num">'+appNPT.toFixed(2)+'</td><td class="num" style="color:#888">n/a</td><td style="color:#888">DPR has no separate NPT field</td></tr>'+
+      '<tr><td>Non-productive time (this log)</td><td class="num">'+appNPT.toFixed(2)+'</td><td class="num" style="color:#888">n/a</td><td style="color:#888">DPR has no separate NPT field</td></tr>'+
     '</tbody></table>'+
     '<div class="dpr-detail"><strong>DPR figures used (today):</strong> Weather '+w.toFixed(2)+'h \u00b7 Mechanical '+me.toFixed(2)+'h \u00b7 Vessel '+ve.toFixed(2)+'h \u00b7 ROV '+ro.toFixed(2)+'h</div>'+
     ((d.warnings&&d.warnings.length)?'<div class="dpr-detail" style="color:#8a5a16"><strong>Extraction notes:</strong> '+d.warnings.map(esc).join(" ")+'</div>':"")+
@@ -2773,7 +2887,7 @@ function exportJSON(){ dl(JSON.stringify({meta:{project:curProject()||"",env:PEL
 function importJSON(inp){ if(pelRO()){ inp.value=""; return; } var f=inp.files[0]; if(!f) return;
   var lockN=0; try{ lockN=Object.keys(LOCKS||{}).length; }catch(e){}
   if(prompt("This import replaces ALL data for this project"+(lockN?(" including "+lockN+" locked day(s)"):"")+" and syncs to everyone.\n\nType REPLACE to continue.")!=="REPLACE"){ inp.value=""; return; }
-  var rd=new FileReader(); rd.onload=function(){ try{ adopt(rd.result,true); save(); renderLog(); alert("Project data loaded. Verify the sync light goes green before closing."); }catch(e){ alert(e && e.message ? e.message : "That file could not be read."); } }; rd.readAsText(f); inp.value=""; }
+  var rd=new FileReader(); rd.onload=function(){ try{ adopt(rd.result,true,true); save(); renderLog(); pelRerender(); alert("Project data loaded. Verify the sync light goes green before closing."); }catch(e){ alert(e && e.message ? e.message : "That file could not be read."); } }; rd.readAsText(f); inp.value=""; }
 
 document.getElementById("userTag").value=curUser();
 renderLog();
@@ -3232,6 +3346,7 @@ function pelChart(spec){
     input.value="";
     add("pelA-m pelA-q",q);
     var think=add("pelA-think","asking the log\u2026");
+    var __t0=Date.now(); var __tick=setInterval(function(){ try{ if(!think || !think.parentNode){ clearInterval(__tick); return; } var s=Math.round((Date.now()-__t0)/1000); think.textContent="asking the log\u2026 "+s+" s"+(s>=12?" (reading the whole record; a long answer can take up to a minute)":""); }catch(e){ clearInterval(__tick); } }, 1000);
     busy=true; aborter=new AbortController(); send.innerHTML="&#9632;"; send.classList.add("stopping"); send.title="Stop";
 
     var payload={ question:q, history:hist.slice(-24), context:collectContext() };
@@ -3292,7 +3407,7 @@ function pelChart(spec){
         saveThread();
         if(bubble) attachCopy(bubble, full);
         showNextChips(parts.next);
-        if(inTok!=null) useEl.textContent=fmtUsage({input_tokens:inTok,output_tokens:(outTok||0)});
+        if(inTok!=null){ var __u=fmtUsage({input_tokens:inTok,output_tokens:(outTok||0)}); useEl.textContent=""; useEl.title=__u; useEl.setAttribute("data-usage",__u); window.__pelALastUsage=__u; }
       }
     }catch(e){
       try{think.remove();}catch(_){}
@@ -3405,6 +3520,8 @@ function cycStepKey(name){
   if(d.indexOf("loa")>=0) return "loa"; if(d.indexOf("tensioner")>=0) return "tensioner"; if(d.indexOf("on reel")>=0) return "reel1"; return "other";
 }
 function cycStepName(k){ var st=CYC_STEPS.filter(function(s){ return s.k===k; })[0]; return st?st.n:k; }
+/* stage from a Daily Log line in the convention: whole words only, so "loading" is not LOA and "cutting tooling" is not a cut */
+function cycLogStageKey(rest){ var d=String(rest||"").toLowerCase(); if(!d) return null; if(/\btransfer\b/.test(d)) return "transfer"; if(/\boffload/.test(d)) return "offload"; if(/\bsecur(e|ed|ing)\b/.test(d) && /\b(reel|end|2nd)\b/.test(d)) return "secure"; if(/\bcut\b/.test(d)) return "cut"; if(/\bmidline\b|\banode/.test(d)) return "midline"; if(/^recovery\b/.test(d)) return "recovery"; if(/\bclamp\b/.test(d)) return "clamp"; if(/\bloa\b/.test(d)) return "loa"; if(/\btensioner\b/.test(d)) return "tensioner"; if(/\bon reel\b/.test(d)) return "reel1"; return "other"; }
 
 /* NORM threshold policy: one function for screen, exports, report, agent and preview */
 function cycNormStatus(values, policy){
@@ -3550,11 +3667,11 @@ function cycSanitise(c){
     var src=(r.src&&typeof r.src==="object"&&!Array.isArray(r.src))?{sheet:cycStr(r.src.sheet,20),row:bnd(r.src.row,0,1000000),file:cycStr(r.src.file,200),hash:/^[a-f0-9;]{0,1000}$/.test(String(r.src.hash||""))?String(r.src.hash||""):"",parser:cycStr(r.src.parser,30),files:Array.isArray(r.src.files)?r.src.files.map(function(x){ return cycStr(x,200); }).slice(0,12):[]}:null;
     return { cycleId:(typeof r.cycleId==="string"&&/^[a-z0-9]{1,24}$/.test(r.cycleId))?r.cycleId:((typeof r.uid==="string"&&/^[a-z0-9]{1,24}$/.test(r.uid))?r.uid:cycUid()), id:String(r.id).toUpperCase().slice(0,12), occurrence:bnd(r.occurrence,1,999)||1, seq:bnd(r.seq,0,100000)!=null?+r.seq:i+1, cohortSeq:bnd(r.cohortSeq,1,100000), campaignSeq:bnd(r.campaignSeq,1,100000), flowlineId:fid, tripId:(typeof r.tripId==="string"&&/^[a-z0-9]{1,24}$/.test(r.tripId))?r.tripId:null, dateStart:cycDate(r.dateStart), trip:bnd(r.trip,0,999), hlvTp:bnd(r.hlvTp,0,999),
       steps:Array.isArray(r.steps)?r.steps.filter(function(st){ return st&&!Array.isArray(st)&&typeof st==="object"&&bnd(st.min,0,10080)!=null; }).slice(0,60).map(function(st){ return { k:KEYS[st.k]?String(st.k):"other", name:cycStr(st.name,120), start:bnd(st.start,0,1440), end:bnd(st.end,0,1440), min:Math.round(+st.min), note:cycStr(st.note,400), date:cycDate(st.date), row:bnd(st.row,0,1000000) }; }):[],
-      override:ov, cycleMin:bnd(r.cycleMin,0,20160), weightTe:bnd(r.weightTe,0,2000), lengthM:bnd(r.lengthM,0,50000), notes:Array.isArray(r.notes)?r.notes.map(function(x){ return cycStr(x,200); }).filter(Boolean).slice(0,20):[], src:src, srcHistory:Array.isArray(r.srcHistory)?r.srcHistory.filter(function(h){ return h&&typeof h==="object"; }).slice(-10).map(function(h){ return {sheet:cycStr(h.sheet,20),row:bnd(h.row,0,1000000),file:cycStr(h.file,200),hash:/^[a-f0-9;]{0,1000}$/.test(String(h.hash||""))?String(h.hash||""):"",parser:cycStr(h.parser,30)}; }):[], revisions:Array.isArray(r.revisions)?r.revisions.filter(function(v){ return v&&typeof v==="object"; }).slice(-20).map(function(v){ var fo={}; if(v.fields&&typeof v.fields==="object"){ Object.keys(v.fields).slice(0,30).forEach(function(k){ var e=v.fields[k]||{}; fo[cycStr(k,24)]={from:(typeof e.from==="number"||typeof e.from==="string"||e.from===null)?(typeof e.from==="string"?e.from.slice(0,40):e.from):null, to:(typeof e.to==="number"||typeof e.to==="string"||e.to===null)?(typeof e.to==="string"?e.to.slice(0,40):e.to):null}; }); } return { at:cycStr(v.at,30), by:cycStr(v.by,40), reason:cycStr(v.reason,200), from:cycStr(v.from,200), to:cycStr(v.to,200), fields:fo, prevSteps:Array.isArray(v.prevSteps)?v.prevSteps.filter(function(st){ return st&&typeof st==="object"&&bnd(st.min,0,10080)!=null; }).slice(0,60).map(function(st){ return { k:KEYS[st.k]?String(st.k):"other", name:cycStr(st.name,120), start:bnd(st.start,0,1440), end:bnd(st.end,0,1440), min:Math.round(+st.min), note:cycStr(st.note,400), date:cycDate(st.date), row:bnd(st.row,0,1000000) }; }):[] }; }):[], alternatives:Array.isArray(r.alternatives)?r.alternatives.slice(0,12).map(function(a){ return {stage:cycStr(a.stage,16), chosen:cycStr(a.chosen,300), earlier:cycStr(a.earlier,300)}; }):[], boundaries:(r.boundaries&&typeof r.boundaries==="object"&&!Array.isArray(r.boundaries))?Object.keys(r.boundaries).filter(function(k){ return /^[a-z0-9_]{1,16}$/.test(k); }).slice(0,12).reduce(function(o,k){ var b=r.boundaries[k]||{}; o[k]={day:cycDate(b.day)||"", clock:cycStr(b.clock,8), text:cycStr(b.text,400), report:cycStr(b.report,12), page:bnd(b.page,0,500), line:bnd(b.line,0,100000)}; return o; },{}):{}, templateAtAccept:cycStr(r.templateAtAccept,40), sourceLinks:Array.isArray(r.sourceLinks)?r.sourceLinks.filter(function(l){ return l&&typeof l==="object"&&l.key; }).slice(-12).map(function(l){ return {key:cycStr(l.key,200), hash:/^[a-f0-9;]{0,1000}$/.test(String(l.hash||""))?String(l.hash||""):"", by:cycStr(l.by,40), at:cycStr(l.at,30)}; }):[], reviewedDiffs:(r.reviewedDiffs&&typeof r.reviewedDiffs==="object"&&!Array.isArray(r.reviewedDiffs))?Object.keys(r.reviewedDiffs).slice(0,40).reduce(function(o,k){ var v=r.reviewedDiffs[k]||{}; o[cycStr(k,60)]={incoming:(typeof v.incoming==="number"?v.incoming:(v.incoming==null?null:String(v.incoming).slice(0,40))), current:(typeof v.current==="number"?v.current:(v.current==null?null:String(v.current).slice(0,40))), by:cycStr(v.by,40), at:cycStr(v.at,30), reason:cycStr(v.reason,120)}; return o; },{}):{}, started:!!r.started, included:r.included!==false, excludeReason:cycStr(r.excludeReason,120), excludedBy:cycStr(r.excludedBy,40), excludedAt:cycStr(r.excludedAt,30), deleted:!!r.deleted, deletedAt:cycStr(r.deletedAt,30), acceptedAt:cycStr(r.acceptedAt,30), status:"planned" }; }).sort(function(a,b){ return a.seq-b.seq; });
+      override:ov, cycleMin:bnd(r.cycleMin,0,20160), weightTe:bnd(r.weightTe,0,2000), lengthM:bnd(r.lengthM,0,50000), notes:Array.isArray(r.notes)?r.notes.map(function(x){ return cycStr(x,200); }).filter(Boolean).slice(0,20):[], src:src, srcHistory:Array.isArray(r.srcHistory)?r.srcHistory.filter(function(h){ return h&&typeof h==="object"; }).slice(-10).map(function(h){ return {sheet:cycStr(h.sheet,20),row:bnd(h.row,0,1000000),file:cycStr(h.file,200),hash:/^[a-f0-9;]{0,1000}$/.test(String(h.hash||""))?String(h.hash||""):"",parser:cycStr(h.parser,30)}; }):[], revisions:Array.isArray(r.revisions)?r.revisions.filter(function(v){ return v&&typeof v==="object"; }).slice(-20).map(function(v){ var fo={}; if(v.fields&&typeof v.fields==="object"){ Object.keys(v.fields).slice(0,30).forEach(function(k){ var e=v.fields[k]||{}; fo[cycStr(k,24)]={from:(typeof e.from==="number"||typeof e.from==="string"||e.from===null)?(typeof e.from==="string"?e.from.slice(0,40):e.from):null, to:(typeof e.to==="number"||typeof e.to==="string"||e.to===null)?(typeof e.to==="string"?e.to.slice(0,40):e.to):null}; }); } return { at:cycStr(v.at,30), by:cycStr(v.by,40), reason:cycStr(v.reason,200), from:cycStr(v.from,200), to:cycStr(v.to,200), fields:fo, prevSteps:Array.isArray(v.prevSteps)?v.prevSteps.filter(function(st){ return st&&typeof st==="object"&&bnd(st.min,0,10080)!=null; }).slice(0,60).map(function(st){ return { k:KEYS[st.k]?String(st.k):"other", name:cycStr(st.name,120), start:bnd(st.start,0,1440), end:bnd(st.end,0,1440), min:Math.round(+st.min), note:cycStr(st.note,400), date:cycDate(st.date), row:bnd(st.row,0,1000000) }; }):[] }; }):[], alternatives:Array.isArray(r.alternatives)?r.alternatives.slice(0,12).map(function(a){ return {stage:cycStr(a.stage,16), chosen:cycStr(a.chosen,300), earlier:cycStr(a.earlier,300)}; }):[], boundaries:(r.boundaries&&typeof r.boundaries==="object"&&!Array.isArray(r.boundaries))?Object.keys(r.boundaries).filter(function(k){ return /^[a-z0-9_]{1,16}$/.test(k); }).slice(0,12).reduce(function(o,k){ var b=r.boundaries[k]||{}; o[k]={day:cycDate(b.day)||"", clock:cycStr(b.clock,8), text:cycStr(b.text,400), report:cycStr(b.report,12), page:bnd(b.page,0,500), line:bnd(b.line,0,100000)}; return o; },{}):{}, templateAtAccept:cycStr(r.templateAtAccept,40), sourceLinks:Array.isArray(r.sourceLinks)?r.sourceLinks.filter(function(l){ return l&&typeof l==="object"&&l.key; }).slice(-12).map(function(l){ return {key:cycStr(l.key,200), hash:/^[a-f0-9;]{0,1000}$/.test(String(l.hash||""))?String(l.hash||""):"", by:cycStr(l.by,40), at:cycStr(l.at,30)}; }):[], reviewedDiffs:(r.reviewedDiffs&&typeof r.reviewedDiffs==="object"&&!Array.isArray(r.reviewedDiffs))?Object.keys(r.reviewedDiffs).slice(0,40).reduce(function(o,k){ var v=r.reviewedDiffs[k]||{}; o[cycStr(k,60)]={incoming:(typeof v.incoming==="number"?v.incoming:(v.incoming==null?null:String(v.incoming).slice(0,40))), current:(typeof v.current==="number"?v.current:(v.current==null?null:String(v.current).slice(0,40))), by:cycStr(v.by,40), at:cycStr(v.at,30), reason:cycStr(v.reason,120)}; return o; },{}):{}, started:!!r.started, included:r.included!==false, excludeReason:cycStr(r.excludeReason,120), excludedBy:cycStr(r.excludedBy,40), excludedAt:cycStr(r.excludedAt,30), deleted:!!r.deleted, deletedAt:cycStr(r.deletedAt,30), acceptedAt:cycStr(r.acceptedAt,30), enteredBy:cycStr(r.enteredBy,40), status:"planned" }; }).sort(function(a,b){ return a.seq-b.seq; });
   f.reels.forEach(function(r){ r.status=cycStatusOf(r); });
   cycAssignSequences(f);
-  if(Array.isArray(c.trips)) f.trips=c.trips.filter(function(t){ return t&&typeof t==="object"&&!Array.isArray(t)&&/^[A-Z]\d{1,2}$/.test(String(t.reel||"").toUpperCase()); }).slice(0,2000).map(function(t){ return { tripId:(typeof t.tripId==="string"&&/^[a-z0-9]{1,24}$/.test(t.tripId))?t.tripId:cycUid(), cycleId:(typeof t.cycleId==="string"&&/^[a-z0-9]{1,24}$/.test(t.cycleId))?t.cycleId:null, reel:String(t.reel).toUpperCase(), occurrence:bnd(t.occurrence,1,999)||1, date:cycDate(t.date), trip:bnd(t.trip,0,999), hlvTp:bnd(t.hlvTp,0,999), weightTe:bnd(t.weightTe,0,2000), durationMin:bnd(t.durationMin,0,40320), lengthM:bnd(t.lengthM,0,50000), flowlineId:(t.flowlineId||t.flowline)&&cycFlowIdOk(String(t.flowlineId||t.flowline).toUpperCase())?String(t.flowlineId||t.flowline).toUpperCase():null, flowText:cycStr(t.flowText,60), src:(t.src&&typeof t.src==="object")?{sheet:cycStr(t.src.sheet,20),row:bnd(t.src.row,0,1000000)}:null }; });
-  if(Array.isArray(c.readings)) f.readings=c.readings.filter(function(x){ return x&&typeof x==="object"&&!Array.isArray(x)&&/^[A-Z]\d{1,2}$/.test(String(x.reel||"").toUpperCase())&&Array.isArray(x.readings); }).slice(0,2000).map(function(x){ return { readingId:(typeof x.readingId==="string"&&/^[a-z0-9]{1,24}$/.test(x.readingId))?x.readingId:cycUid(), cycleId:(typeof x.cycleId==="string"&&/^[a-z0-9]{1,24}$/.test(x.cycleId))?x.cycleId:null, reel:String(x.reel).toUpperCase(), occurrence:bnd(x.occurrence,1,999)||1, location:cycStr(x.location,60), readings:x.readings.map(function(v){ return bnd(v,0,1000); }).filter(function(v){ return v!=null; }).slice(0,8), recoveredM:bnd(x.recoveredM,0,50000), src:(x.src&&typeof x.src==="object")?{sheet:cycStr(x.src.sheet,20),row:bnd(x.src.row,0,1000000)}:null }; });
+  if(Array.isArray(c.trips)) f.trips=c.trips.filter(function(t){ return t&&typeof t==="object"&&!Array.isArray(t)&&cycIdOk(String(t.reel||"").toUpperCase()); }).slice(0,2000).map(function(t){ return { tripId:(typeof t.tripId==="string"&&/^[a-z0-9]{1,24}$/.test(t.tripId))?t.tripId:cycUid(), cycleId:(typeof t.cycleId==="string"&&/^[a-z0-9]{1,24}$/.test(t.cycleId))?t.cycleId:null, reel:String(t.reel).toUpperCase(), occurrence:bnd(t.occurrence,1,999)||1, date:cycDate(t.date), trip:bnd(t.trip,0,999), hlvTp:bnd(t.hlvTp,0,999), weightTe:bnd(t.weightTe,0,2000), durationMin:bnd(t.durationMin,0,40320), lengthM:bnd(t.lengthM,0,50000), flowlineId:(t.flowlineId||t.flowline)&&cycFlowIdOk(String(t.flowlineId||t.flowline).toUpperCase())?String(t.flowlineId||t.flowline).toUpperCase():null, flowText:cycStr(t.flowText,60), src:(t.src&&typeof t.src==="object")?{sheet:cycStr(t.src.sheet,20),row:bnd(t.src.row,0,1000000)}:null }; });
+  if(Array.isArray(c.readings)) f.readings=c.readings.filter(function(x){ return x&&typeof x==="object"&&!Array.isArray(x)&&cycIdOk(String(x.reel||"").toUpperCase())&&Array.isArray(x.readings); }).slice(0,2000).map(function(x){ return { readingId:(typeof x.readingId==="string"&&/^[a-z0-9]{1,24}$/.test(x.readingId))?x.readingId:cycUid(), cycleId:(typeof x.cycleId==="string"&&/^[a-z0-9]{1,24}$/.test(x.cycleId))?x.cycleId:null, reel:String(x.reel).toUpperCase(), occurrence:bnd(x.occurrence,1,999)||1, location:cycStr(x.location,60), readings:x.readings.map(function(v){ return bnd(v,0,1000); }).filter(function(v){ return v!=null; }).slice(0,8), recoveredM:bnd(x.recoveredM,0,50000), enteredBy:cycStr(x.enteredBy,40), at:cycStr(x.at,30), src:(x.src&&typeof x.src==="object")?{sheet:cycStr(x.src.sheet,20),row:bnd(x.src.row,0,1000000)}:null }; });
   if(Array.isArray(c.importLog)) f.importLog=c.importLog.filter(function(l){ return l&&typeof l==="object"; }).slice(-60).map(function(l){ return { at:cycStr(l.at,30), file:cycStr(l.file,300), hash:/^[a-f0-9;]{0,520}$/.test(String(l.hash||""))?String(l.hash||""):"", size:bnd(l.size,0,1e10), sheets:Array.isArray(l.sheets)?l.sheets.map(function(s){ return cycStr(s,40); }).slice(0,20):[], added:bnd(l.added,0,1e6)||0, updated:bnd(l.updated,0,1e6)||0, unchanged:bnd(l.unchanged,0,1e6)||0, issues:bnd(l.issues,0,1e6)||0, decisions:Array.isArray(l.decisions)?l.decisions.map(function(d){ return cycStr(d,200); }).slice(0,200):[], reviewer:cycStr(l.reviewer,40), action:cycStr(l.action,200), conventions:cycStr(l.conventions,300), parser:cycStr(l.parser,30), policy:cycStr(l.policy,300), links:bnd(l.links,0,9999)||0, reviewed:bnd(l.reviewed,0,9999)||0, dataChanged:l.dataChanged!==false, registerRevisionBefore:bnd(l.registerRevisionBefore,0,1e9)||0, curvesBefore:cycCurvesSan(l.curvesBefore), curvesAfter:cycCurvesSan(l.curvesAfter) }; });
   f.reviewRevision=bnd(c.reviewRevision,0,1e9)||0;
   var sp=(c.settings&&typeof c.settings==="object")?c.settings:{}; var np=(sp.normPolicy&&typeof sp.normPolicy==="object")?sp.normPolicy:{};
@@ -3641,8 +3758,8 @@ function cycSourceOf(r){ var sh=(r.src&&r.src.sheet)||""; var f=(r.src&&r.src.fi
 function cycLastImportCard(){ var L=(CYC.importLog||[]); var last=L[L.length-1]; if(!last || !last.at || last.action) return ''; var ageMin=(Date.now()-Date.parse(last.at))/60000; if(!(ageMin<240)) return ''; var ttl=(last.dataChanged===false)?'Last import changed nothing in the curves':'What the last import did';
   var lines=[]; if(last.added) lines.push(last.added+' reel(s) added'); if(last.updated) lines.push(last.updated+' reel(s) corrected'); if(last.links) lines.push(last.links+' source link(s) saved'); if(last.reviewed) lines.push(last.reviewed+' difference(s) remembered as reviewed'); if(!lines.length) lines.push('nothing to update');
   var moved=[]; var b=last.curvesBefore||{}, a=last.curvesAfter||{}; Object.keys(a).forEach(function(f){ var x=b[f]||{n:0,mean:null,lr:null}, y=a[f]; if(x.n!==y.n || x.mean!==y.mean || x.lr!==y.lr){ moved.push(esc(f)+': '+x.n+' → '+y.n+' reels, mean '+(x.mean!=null?cycH(x.mean):'–')+' → '+(y.mean!=null?cycH(y.mean):'–')+(y.lr!=null||x.lr!=null?', learning rate '+(x.lr!=null?x.lr+'%':'–')+' → '+(y.lr!=null?y.lr+'%':'–'):'')); } });
-  return '<div class="cyc-note ink" style="margin-top:8px;border-left-color:#2f7d4a"><b>'+ttl+'</b> ('+esc((last.file||"").slice(0,60))+', '+esc((last.at||"").replace("T"," ").slice(0,16))+(last.reviewer?', '+esc(last.reviewer):'')+'): '+esc(lines.join(', '))+'. '+(moved.length?'<b>Curves that moved:</b> '+moved.join(' · ')+'.':'<b>No curve moved</b>: the values the curves use were already in the register.')+'</div>'; }
-function cycUnchangedNote(){ var L=(CYC.importLog||[]); var last=L[L.length-1]; if(!last || last.dataChanged!==false) return ''; var n=0; for(var i=L.length-1;i>=0 && L[i].dataChanged===false;i--) n++; return '<div class="cyc-note ink" style="margin-top:8px"><b>Register unchanged by the last '+(n>1?n+' imports':'import')+'</b> ('+esc((last.file||"").slice(0,60))+', '+esc((last.at||"").replace("T"," ").slice(0,16))+'): '+(last.links||0)+' source link(s) saved, '+(last.reviewed||0)+' difference(s) recorded as reviewed, no accepted changes. The curves and norms draw on accepted values only, so they did not move. Revision '+(CYC.revision||0)+', review revision '+(CYC.reviewRevision||0)+'.</div>'; }
+  return '<div class="cyc-note ink" style="margin-top:8px;border-left-color:#2f7d4a"><b>'+ttl+'</b> ('+esc((last.file||"").slice(0,60))+', '+esc(pelStamp(last.at))+(last.reviewer?', '+esc(last.reviewer):'')+'): '+esc(lines.join(', '))+'. '+(moved.length?'<b>Curves that moved:</b> '+moved.join(' · ')+'.':'<b>No curve moved</b>: the values the curves use were already in the register.')+'</div>'; }
+function cycUnchangedNote(){ var L=(CYC.importLog||[]); var last=L[L.length-1]; if(!last || last.dataChanged!==false) return ''; var n=0; for(var i=L.length-1;i>=0 && L[i].dataChanged===false;i--) n++; return '<div class="cyc-note ink" style="margin-top:8px"><b>Register unchanged by the last '+(n>1?n+' imports':'import')+'</b> ('+esc((last.file||"").slice(0,60))+', '+esc(pelStamp(last.at))+'): '+(last.links||0)+' source link(s) saved, '+(last.reviewed||0)+' difference(s) recorded as reviewed, no accepted changes. The curves and norms draw on accepted values only, so they did not move. Revision '+(CYC.revision||0)+', review revision '+(CYC.reviewRevision||0)+'.</div>'; }
 function cycSourceSummary(sel){ var counts={}; sel.filter(function(r){ return r.status==="complete" && cycIncluded(r) && r.cycleMin!=null; }).forEach(function(r){ var sc=cycSourceOf(r); var k=sc.corrected?sc.base+", corrected from another source":sc.base; counts[k]=(counts[k]||0)+1; }); var parts=Object.keys(counts).map(function(k){ return counts[k]+" from "+k; }); return parts.length?'<div class="cyc-note ink" style="margin-top:8px"><b>Where these numbers come from:</b> '+esc(parts.join(" · "))+'. Counted over the reels the curve and norms use (complete, included). Each reel names its source and any correction in the Register.</div>':''; }
 function cycV_kpis(sel){
   var complete=sel.filter(function(r){ return r.status==="complete"; }); var norms=cycNorms(sel,CYC_UI.midRule); var c=norms.cycle;
@@ -3710,8 +3827,8 @@ function cycV_register(sel){
     var steps=(r.steps||[]).slice().sort(function(a,b){ var ka=(a.date||"")+"|"+("0000"+(a.start==null?9999:a.start)).slice(-4), kb=(b.date||"")+"|"+("0000"+(b.start==null?9999:b.start)).slice(-4); return ka<kb?-1:ka>kb?1:0; });
     var srows=steps.map(function(s){ return '<tr><td>'+esc(s.name)+'</td><td class="n">'+(s.start!=null?cycH(s.start):"")+'</td><td class="n">'+(s.end!=null?(s.end===1440?"24:00":cycH(s.end)):"")+'</td><td class="n"><b>'+cycH(s.min)+'</b></td><td class="dim">'+esc(s.note||"")+(s.row?' <span style="font-size:10px">row '+s.row+'</span>':'')+'</td></tr>'; }).join("");
     var notes=(r.notes||[]).filter(function(n){ return n && !/^total time/i.test(String(n).trim()); }).map(function(n){ return '<div class="cyc-note">'+esc(n)+'</div>'; }).join("");
-    var src=r.src?'<div class="dim" style="font-size:11.5px;margin-top:6px">Source: '+esc(r.src.file||"manual entry")+(r.src.row?', timings row '+r.src.row:'')+(r.src.hash?', file '+esc(String(r.src.hash).slice(0,12))+'…':'')+(r.src.parser?' · '+esc(r.src.parser):'')+' · cycle '+esc(r.cycleId)+' · campaign #'+(r.campaignSeq||"")+', cohort #'+(r.cohortSeq||"")+'</div>':'';
-    if(r.revisions&&r.revisions.length){ src+='<div class="dim" style="font-size:11.5px;margin-top:4px">Revisions ('+r.revisions.length+'): '+r.revisions.slice(-3).map(function(v){ return esc((v.at||"").slice(0,16).replace("T"," "))+' '+esc(v.by||"?")+': '+esc(Object.keys(v.fields||{}).map(function(k){ var e=v.fields[k]; return k+' '+(e.from==null?"–":(typeof e.from==="number"&&/stage|cycleMin/.test(k)?cycH(e.from):e.from))+' → '+(e.to==null?"–":(typeof e.to==="number"&&/stage|cycleMin/.test(k)?cycH(e.to):e.to)); }).join(", "))+(v.from?' (from '+esc(v.from)+' to '+esc(v.to||"")+')':''); }).join(" · ")+'; earlier values are retained on the reel</div>'; }
+    var src=r.src?'<div class="dim" style="font-size:11.5px;margin-top:6px">Source: '+esc(r.src.file||"manual entry")+(r.src.row?', timings row '+r.src.row:'')+(r.src.hash?', file '+esc(String(r.src.hash).slice(0,12))+'…':'')+(r.src.parser?' · '+esc(r.src.parser):'')+(r.enteredBy?' · entered by '+esc(r.enteredBy):'')+(r.acceptedAt?' on '+esc(pelStamp(r.acceptedAt)):'')+' · cycle '+esc(r.cycleId)+' · campaign #'+(r.campaignSeq||"")+', cohort #'+(r.cohortSeq||"")+'</div>':'';
+    if(r.revisions&&r.revisions.length){ src+='<div class="dim" style="font-size:11.5px;margin-top:4px">Revisions ('+r.revisions.length+'): '+r.revisions.slice(-3).map(function(v){ return esc(pelStamp(v.at))+' '+esc(v.by||"?")+': '+esc(Object.keys(v.fields||{}).map(function(k){ var e=v.fields[k]; return k+' '+(e.from==null?"–":(typeof e.from==="number"&&/stage|cycleMin/.test(k)?cycH(e.from):e.from))+' → '+(e.to==null?"–":(typeof e.to==="number"&&/stage|cycleMin/.test(k)?cycH(e.to):e.to)); }).join(", "))+(v.from?' (from '+esc(v.from)+' to '+esc(v.to||"")+')':''); }).join(" · ")+'; earlier values are retained on the reel</div>'; }
     var edit=client?'':'<div class="noprint" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px"><span class="dim">Correct a stage (minutes or h:mm; imported times stay on file'+(r.override&&Object.keys(r.override).length?'; corrected: '+esc(Object.keys(r.override).map(cycStepName).join(", ")):'')+'):</span>'+CYC_STEPS.map(function(st){ return '<label style="display:flex;flex-direction:column;font-size:10.5px;color:#7a7a7a">'+esc(st.s)+'<input value="'+(d.stepMin[st.k]!=null?cycH(d.stepMin[st.k]):"")+'" style="width:64px;padding:3px 5px;border:1px solid #d9d2c5;border-radius:3px" onchange="cycEditStep(\''+esc(r.cycleId)+'\',\''+st.k+'\',this.value,this)"></label>'; }).join("")+'<label style="display:flex;flex-direction:column;font-size:10.5px;color:#7a7a7a">Cycle<input value="'+(r.cycleMin!=null?cycH(r.cycleMin):"")+'" style="width:64px;padding:3px 5px;border:1px solid #d9d2c5;border-radius:3px" onchange="cycEditField(\''+esc(r.cycleId)+'\',\'cycleMin\',this.value,this)"></label><label style="display:flex;flex-direction:column;font-size:10.5px;color:#7a7a7a">Length m<input value="'+(r.lengthM!=null?r.lengthM:"")+'" style="width:70px;padding:3px 5px;border:1px solid #d9d2c5;border-radius:3px" onchange="cycEditField(\''+esc(r.cycleId)+'\',\'lengthM\',this.value,this)"></label><label style="display:flex;flex-direction:column;font-size:10.5px;color:#7a7a7a">Weight t<input value="'+(r.weightTe!=null?r.weightTe:"")+'" style="width:64px;padding:3px 5px;border:1px solid #d9d2c5;border-radius:3px" onchange="cycEditField(\''+esc(r.cycleId)+'\',\'weightTe\',this.value,this)"></label><span style="margin-left:auto"></span>'+(r.included===false?'<button class="ghost" onclick="cycInclude(\''+esc(r.cycleId)+'\')">Include again</button>':'<button class="ghost" onclick="cycExclude(\''+esc(r.cycleId)+'\')">Exclude from analysis</button>')+(r.deleted?'<button class="ghost" onclick="cycRestoreReel(\''+esc(r.cycleId)+'\')">Restore</button>':'<button class="ghost" onclick="cycDeleteReel(\''+esc(r.cycleId)+'\')">Delete</button>')+'</div>';
     return '<div class="cyc-reel'+(open?" open":"")+(r.included===false||r.deleted?" excluded":"")+'"><div class="cyc-reel-h" onclick="CYC_UI.open[\''+esc(r.cycleId)+'\']=!CYC_UI.open[\''+esc(r.cycleId)+'\'];renderCyc()"><b>'+esc(cycReelLabel(r))+'</b><span>'+esc(r.flowlineId||"flowline ?")+'</span><span>'+esc(r.dateStart||"")+'</span>'+(r.trip!=null?'<span>trip '+r.trip+(r.hlvTp!=null?' · HLV '+r.hlvTp:'')+'</span>':'')+'<span><b>'+(r.cycleMin!=null?cycH(r.cycleMin)+" h cycle":esc(r.status))+'</b></span>'+(r.lengthM!=null?'<span>'+cycFmtNum(Math.round(r.lengthM))+' m</span>':'')+(r.weightTe!=null?'<span>'+r.weightTe+' t</span>':'')+(d.mPerHr!=null?'<span>'+d.mPerHr+' m/h</span>':'')+(d.unallocated!=null&&Math.abs(d.unallocated)>2?'<span class="warn">'+cycH(d.unallocated)+' unallocated</span>':'')+(d.missing.length&&r.status!=="planned"?'<span class="warn">missing: '+esc(d.missing.slice(0,3).join(", "))+(d.missing.length>3?" +"+(d.missing.length-3):"")+'</span>':'')+(r.included===false?'<span class="warn">excluded'+(r.excludeReason?": "+esc(r.excludeReason):"")+'</span>':'')+(r.deleted?'<span class="bad">deleted</span>':'')+'<span class="dim" style="margin-left:auto">'+esc(r.status)+' · '+(open?"hide":"details")+'</span></div><div class="cyc-reel-b">'+(srows?'<table class="cyc-t"><thead><tr><th>Stage</th><th class="n">Start</th><th class="n">Finish</th><th class="n">Duration</th><th>Comment</th></tr></thead><tbody>'+srows+'</tbody></table>':'<div class="dim" style="padding:8px 0">No stage times recorded yet.</div>')+notes+src+edit+'</div></div>'; }).join("");
   return '<p class="cyc-h">Reel by reel</p><p class="cyc-sub">Every reel with its recorded stages, the offshore comments that came with them, and its source. Open a reel to see or correct its times; excluding a reel removes it from every calculation but never from the record.'+(client?'':' <label style="font-size:12px;margin-left:8px"><input type="checkbox" '+(CYC_UI.includeExcluded?"checked":"")+' onchange="CYC_UI.includeExcluded=this.checked;renderCyc()"> show excluded and deleted</label>')+'</p>'+(html||'<div class="dim">No reels in this selection.</div>');
@@ -3720,23 +3837,24 @@ function cycV_import(){
   var pol=CYC.settings.normPolicy, sp=CYC.settings.statsPolicy;
   var flowRows=(CYC.flowlines||[]).filter(function(f){ return (CYC.reels||[]).some(function(r){ return r.flowlineId===f.id && !r.deleted; }); }).map(function(f){ return '<tr><td><b>'+esc(f.id)+'</b> <span class="dim">'+esc(f.name!==f.id?f.name:"")+'</span></td><td class="n">'+(f.lengthM!=null?cycFmtNum(Math.round(f.lengthM))+" m":"")+'</td><td class="n">'+(f.nominalIn!=null?f.nominalIn+'"':"")+'</td><td><select onchange="cycSetFlowTemplate(\''+esc(f.id)+'\',this.value)" style="font-size:12px">'+(CYC.templates||[]).map(function(t){ return '<option value="'+esc(t.id)+'"'+(f.templateId===t.id?' selected':'')+'>'+esc(t.name)+'</option>'; }).join("")+'</select> <label style="font-size:11px" title="Tick only when recovery method, spread and crew are recorded for this line; it allows a controlled comparison"><input type="checkbox" '+(f.controlsRecorded?"checked":"")+' onchange="cycSetFlowControls(\''+esc(f.id)+'\',this.checked)"> controls recorded</label></td></tr>'; }).join("");
   var __L=(CYC.importLog||[]).slice(-40).reverse(); var __groups=[]; __L.forEach(function(l){ var ro=(l.dataChanged===false); var g=__groups[__groups.length-1]; if(ro && g && g.reviewOnly){ g.items.push(l); } else __groups.push({reviewOnly:ro, items:[l]}); });
-  var logRows=__groups.slice(0,10).map(function(g){ if(g.reviewOnly && g.items.length>1){ var f=g.items[0], last=g.items[g.items.length-1]; return '<div class="dim" style="font-size:12px;margin-top:3px">'+g.items.length+' review-only imports (no data change), '+esc((last.at||"").replace("T"," ").slice(0,16))+' to '+esc((f.at||"").replace("T"," ").slice(0,16))+': '+g.items.reduce(function(a,l){ return a+(l.links||0); },0)+' source link(s) saved, '+g.items.reduce(function(a,l){ return a+(l.reviewed||0); },0)+' difference(s) recorded as reviewed</div>'; } var l=g.items[0]; return '<div class="dim" style="font-size:12px;margin-top:3px">'+esc((l.at||"").replace("T"," ").slice(0,16))+' · '+esc(l.action||(l.file+": "+l.added+" added, "+l.updated+" updated, "+(l.unchanged||0)+" unchanged"+(l.issues?", "+l.issues+" item(s) reviewed":"")+(l.dataChanged===false?"; review only, "+(l.links||0)+" link(s), "+(l.reviewed||0)+" reviewed difference(s)":"")))+(l.reviewer?' · '+esc(l.reviewer):'')+(l.hash?' · '+esc(String(l.hash).slice(0,12))+'…':'')+(l.decisions&&l.decisions.length&&l.dataChanged!==false?'<div style="margin-left:14px">'+l.decisions.map(function(d){ return '· '+esc(d); }).join("<br>")+'</div>':'')+'</div>'; }).join("");
+  var logRows=__groups.slice(0,10).map(function(g){ if(g.reviewOnly && g.items.length>1){ var f=g.items[0], last=g.items[g.items.length-1]; return '<div class="dim" style="font-size:12px;margin-top:3px">'+g.items.length+' review-only imports (no data change), '+esc(pelStamp(last.at))+' to '+esc(pelStamp(f.at))+': '+g.items.reduce(function(a,l){ return a+(l.links||0); },0)+' source link(s) saved, '+g.items.reduce(function(a,l){ return a+(l.reviewed||0); },0)+' difference(s) recorded as reviewed</div>'; } var l=g.items[0]; return '<div class="dim" style="font-size:12px;margin-top:3px">'+esc(pelStamp(l.at))+' · '+esc(l.action||(l.file+": "+l.added+" added, "+l.updated+" updated, "+(l.unchanged||0)+" unchanged"+(l.issues?", "+l.issues+" item(s) reviewed":"")+(l.dataChanged===false?"; review only, "+(l.links||0)+" link(s), "+(l.reviewed||0)+" reviewed difference(s)":"")))+(l.reviewer?' · '+esc(l.reviewer):'')+(l.hash?' · '+esc(String(l.hash).slice(0,12))+'…':'')+(l.decisions&&l.decisions.length&&l.dataChanged!==false?'<div style="margin-left:14px">'+l.decisions.map(function(d){ return '· '+esc(d); }).join("<br>")+'</div>':'')+'</div>'; }).join("");
   return '<p class="cyc-h">Import</p><p class="cyc-sub">Choose one or several timing workbooks. Nothing changes until the preview is reviewed: blocking items must be cleared, conflicts need a decision, warnings need acknowledgement, and every change to an existing reel is listed before it is accepted. Identical re-imports change nothing.</p><div class="cyc-actions"><button class="btn" onclick="document.getElementById(\'cycFile\').click()">Choose workbook(s)</button><input id="cycFile" type="file" accept=".xlsx,.xlsm,.xls" multiple style="display:none" onchange="cycImportFile(this)"><button class="btn" onclick="cycToggleForm(true)">+ Add a reel by hand</button><button class="btn" onclick="cycImportFromLog()" title="Build reels from Daily Log lines written as: A2 · 1st end in tensioner">Build from Daily Log lines</button><button class="btn" onclick="document.getElementById(\'cycDprFiles\').click()" title="Derive reel cycles from contractor Daily Progress Report PDFs">Import DPR PDFs</button><input id="cycDprFiles" type="file" accept=".pdf,application/pdf" multiple style="display:none" onchange="cycImportDprFiles(this)"></div><div class="cyc-note" style="margin-top:8px"><b>From DPRs.</b> Choose the contractor Daily Progress Report PDFs for the days covering the reels (several at once). The app reads each report\'s detailed activity log, finds each reel\'s block and the lines that bound every stage, and builds the reels through the same review as a workbook import, with the DPR line quoted under every stage. Image-only reports cannot be read and are listed as gaps.</div><div class="cyc-note ink" style="margin-top:8px"><b>Daily Log convention.</b> Log each stage on its own line at the time it starts, reel first: <i>A2 · Clamp deployment</i>, <i>A2 · 1st end at LOA</i>, <i>A2 · 1st end in tensioner</i>, <i>A2 · 1st end on reel</i>, <i>A2 · Recovery</i>, <i>A2 · Anode removal and midline</i>, <i>A2 · 2nd end cut</i>, <i>A2 · 2nd end secure on reel</i>, and close with <i>A2 · Offload 299.6 t 2192.5 m</i>. Name the flowline once on the first line (FL5). Each line ends the previous stage for that reel; Build from Daily Log lines turns them into reels through the same review as a workbook import.</div><div id="cycImportPreview" class="cyc-import" style="display:none"></div><div id="cycFormWrap" style="display:none"></div>'+
-    '<p class="cyc-h" style="margin-top:20px">Settings</p><div class="cyc-grid2"><div><b style="font-size:13px">Flowlines and templates</b><table class="cyc-t"><thead><tr><th>Flowline</th><th class="n">Control length</th><th class="n">Nominal</th><th>Activity template</th></tr></thead><tbody>'+(flowRows||'<tr><td colspan="4" class="dim">No flowlines yet.</td></tr>')+'</tbody></table><div class="dim" style="font-size:11.5px;margin-top:6px">Templates: '+(CYC.templates||[]).map(function(t){ return esc(t.name)+' ['+esc(t.status)+']'; }).join(" · ")+'. Draft templates carry the SURF stage set until a validated set exists for that activity. <button class="ghost" style="font-size:11px" onclick="var n=cycResetTemplatesToSurf(); alert(n?n+\' line(s) set to Rigid flowline recovery (SURF reel)\':\'All lines with reels already use the SURF template\');">Use the SURF template for every line with reels</button></div></div><div><b style="font-size:13px">NORM policy</b><div class="cyc-form"><label>Policy ID<input id="npId" value="'+esc(pol.id)+'"></label><label>Trigger value<input id="npVal" type="number" step="0.01" min="0" value="'+pol.value+'"></label><label>Unit<input id="npUnit" value="'+esc(pol.unit)+'"></label><label>Operator<select id="npOp">'+[">",">=","<","<="].map(function(o){ return '<option'+(pol.operator===o?' selected':'')+'>'+o+'</option>'; }).join("")+'</select></label><label>Effective from<input id="npFrom" type="date" value="'+esc(pol.effectiveFrom)+'"></label><label>Approved by<input id="npBy" value="'+esc(pol.approvedBy||"")+'"></label></div><div class="cyc-actions" style="margin-top:8px"><button class="btn" onclick="cycSavePolicy()">Save NORM policy</button><span class="dim" style="font-size:11.5px">Changing the policy re-evaluates the screen and every new export; earlier issued reports keep the policy they were issued under.</span></div><div style="margin-top:12px"><b style="font-size:13px">Statistics policy</b> <span class="dim" style="font-size:12px">1 to 2 reels: data points only; from '+sp.minFit+': provisional descriptive trend; from '+(sp.minIndicative||5)+': indicative fitted curve; from '+sp.minPlanning+': planning consideration subject to quality gates</span></div><div style="margin-top:12px"><b style="font-size:13px">Import log</b>'+(logRows||'<div class="dim" style="font-size:12px">Nothing imported yet.</div>')+'</div></div></div>'+provHtml();
+    '<p class="cyc-h" style="margin-top:20px">Settings</p><div class="cyc-grid2"><div><b style="font-size:13px">Flowlines and templates</b><table class="cyc-t"><thead><tr><th>Flowline</th><th class="n">Control length</th><th class="n">Nominal</th><th>Activity template</th></tr></thead><tbody>'+(flowRows||'<tr><td colspan="4" class="dim">No flowlines yet.</td></tr>')+'</tbody></table><div class="dim" style="font-size:11.5px;margin-top:6px">Templates: '+(CYC.templates||[]).map(function(t){ return esc(t.name)+' ['+esc(t.status)+']'; }).join(" · ")+'. Draft templates carry the SURF stage set until a validated set exists for that activity. <button class="ghost" style="font-size:11px" onclick="var n=cycResetTemplatesToSurf(); alert(n?n+\' line(s) set to Rigid flowline recovery (SURF reel)\':\'All lines with reels already use the SURF template\');">Use the SURF template for every line with reels</button></div></div><div><b style="font-size:13px">NORM policy</b><div class="cyc-form"><label>Policy ID<input id="npId" value="'+esc(pol.id)+'"></label><label>Trigger value<input id="npVal" type="number" step="0.01" min="0" value="'+pol.value+'"></label><label>Unit<input id="npUnit" value="'+esc(pol.unit)+'"></label><label>Operator<select id="npOp">'+[">",">=","<","<="].map(function(o){ return '<option'+(pol.operator===o?' selected':'')+'>'+o+'</option>'; }).join("")+'</select></label><label>Effective from (dd/mm/yyyy)<input id="npFrom" placeholder="dd/mm/yyyy" value="'+esc(pol.effectiveFrom?fmtDay(pol.effectiveFrom):"")+'"></label><label>Approved by<input id="npBy" value="'+esc(pol.approvedBy||"")+'"></label></div>'+(pol.approvedBy?'':'<div class="cyc-err" style="margin-top:6px">DRAFT policy: not yet approved, Approved by is blank. Screens and reports say so until a name is entered.</div>')+'<div class="cyc-actions" style="margin-top:8px"><button class="btn" onclick="cycSavePolicy()">Save NORM policy</button><span class="dim" style="font-size:11.5px">Changing the policy re-evaluates the screen and every new export; earlier issued reports keep the policy they were issued under.</span></div><div style="margin-top:12px"><b style="font-size:13px">Statistics policy</b> <span class="dim" style="font-size:12px">1 to 2 reels: data points only; from '+sp.minFit+': provisional descriptive trend; from '+(sp.minIndicative||5)+': indicative fitted curve; from '+sp.minPlanning+': planning consideration subject to quality gates</span></div><div style="margin-top:12px"><b style="font-size:13px">Import log</b>'+(logRows||'<div class="dim" style="font-size:12px">Nothing imported yet.</div>')+'</div></div></div>'+provHtml();
 }
 
 function cycRenderShell(){
   var client=cycClient(); var q=cycQuality();
-  document.getElementById("cycTopActions").innerHTML=(client?'':'<button class="btn" onclick="CYC_UI.view=\'import\';renderCyc()">Import workbook</button>')+'<button class="btn" onclick="cycExportXLSX()">Export current analysis</button><button class="btn" onclick="cycExportReport()">Client report</button><button class="btn" onclick="cycPrint()">Print / PDF</button>'+(client?'':'<button class="ghost" onclick="cycExportRegister()">Full register</button><button class="ghost" onclick="cycExportExchange()">Data exchange</button>')+'<label style="font-size:12px;margin-left:6px"><input type="checkbox" '+(client?"checked":"")+' onchange="CYC.settings.clientView=this.checked;renderCyc()"> client view</label>';
+  document.getElementById("cycTopActions").innerHTML=(client?'':'<button class="btn" onclick="CYC_UI.view=\'import\';renderCyc()">Import workbook</button>')+'<button class="btn" onclick="cycExportXLSX()" title="Excel workbook (.xlsx): the analysis as shown, one sheet per view, with a manifest sheet">Export current analysis</button><button class="btn" onclick="cycExportReport()" title="Web page file (.html): a frozen client report of the current selection, no controls">Client report</button><button class="btn" onclick="cycPrint()" title="Prints this screen through the browser print dialog; choose Save as PDF there">Print / PDF</button>'+(client?'':'<button class="ghost" onclick="cycExportRegister()" title="Excel workbook (.xlsx): every reel with every stage, revision and source, for audit">Full register</button><button class="ghost" onclick="cycExportExchange()" title="Data file (.json): the register in its exchange format for another system or a later import">Data exchange</button>')+'<label style="font-size:12px;margin-left:6px"><input type="checkbox" '+(client?"checked":"")+' onchange="CYC.settings.clientView=this.checked;renderCyc()"> client view</label>';
   var flows=cycFlows(); var dot=q.level==="blocking"?"#c0392b":q.level==="warning"?"#b9822b":"#2f7d4a";
-  document.getElementById("cycFilterBar").innerHTML=(flows.length?'<span class="cyc-chips"><span class="dim">Show:</span><button class="cyc-chip'+(CYC_UI.flow===""?" on":"")+'" onclick="CYC_UI.flow=\'\';renderCyc()">All flowlines</button>'+flows.map(function(f){ return '<button class="cyc-chip'+(CYC_UI.flow===f?" on":"")+'" onclick="CYC_UI.flow=\''+esc(f)+'\';renderCyc()" title="'+esc(cycFlowName(f))+'">'+esc(f)+'</button>'; }).join("")+'</span><label>Cohort reels <input type="number" min="1" placeholder="from" value="'+(CYC_UI.seqFrom||"")+'" onchange="CYC_UI.seqFrom=parseInt(this.value,10)||null;renderCyc()"> to <input type="number" min="1" placeholder="to" value="'+(CYC_UI.seqTo||"")+'" onchange="CYC_UI.seqTo=parseInt(this.value,10)||null;renderCyc()"></label>':'')+'<span class="cyc-dq" title="Data quality: '+q.counts.blocking+' blocking, '+q.counts.warning+' warning, '+q.counts.note+' note"><i style="background:'+dot+'"></i>data quality: '+(q.level==="clean"?"clean":q.level)+(q.items.length?' ('+q.items.length+')':'')+'</span><span class="dim">revision '+(CYC.revision||0)+' · scope '+esc(cycScopeTag())+'</span>';
+  document.getElementById("cycFilterBar").innerHTML=(flows.length?'<span class="cyc-chips"><span class="dim">Show:</span><button class="cyc-chip'+(CYC_UI.flow===""?" on":"")+'" onclick="CYC_UI.flow=\'\';renderCyc()">All flowlines</button>'+flows.map(function(f){ return '<button class="cyc-chip'+(CYC_UI.flow===f?" on":"")+'" onclick="CYC_UI.flow=\''+esc(f)+'\';renderCyc()" title="'+esc(cycFlowName(f))+'">'+esc(f)+'</button>'; }).join("")+'</span><label>Cohort reels <input type="number" min="1" placeholder="from" value="'+(CYC_UI.seqFrom||"")+'" onchange="CYC_UI.seqFrom=parseInt(this.value,10)||null;renderCyc()"> to <input type="number" min="1" placeholder="to" value="'+(CYC_UI.seqTo||"")+'" onchange="CYC_UI.seqTo=parseInt(this.value,10)||null;renderCyc()"></label>':'')+'<span class="cyc-dq" title="Data quality: '+q.counts.blocking+' blocking, '+q.counts.warning+' warning, '+q.counts.note+' note"><i style="background:'+dot+'"></i>data quality: '+((CYC.reels||[]).some(function(r){ return !r.deleted; })?(q.level==="clean"?"clean":q.level):"no reels yet")+(q.items.length?' ('+q.items.length+')':'')+'</span><span class="dim">revision '+(CYC.revision||0)+' · scope '+esc(cycScopeTag())+'</span>';
   document.getElementById("cycNav").innerHTML=CYC_VIEWS.filter(function(v){ return !(client && (v[0]==="import")); }).map(function(v){ return '<button class="'+(CYC_UI.view===v[0]?"on":"")+'" onclick="CYC_UI.view=\''+v[0]+'\';renderCyc()">'+esc(v[1])+(v[0]==="quality"&&q.items.length?'<span class="badge">'+q.items.length+'</span>':'')+'</button>'; }).join("");
 }
 function renderCyc(){
   if(!document.getElementById("view-cyc")) return;
   var hasAny=(CYC.reels||[]).some(function(r){ return !r.deleted; });
   cycRenderShell(); var body=document.getElementById("cycBody");
-  if(!hasAny && CYC_UI.view!=="import"){ body.innerHTML='<div class="panel"><div class="cyc-empty"><h3>No reels in the register yet</h3><p>Import the offshore SURF timing workbook and every completed reel arrives with its stage times, cycle total, weight, recovered length and NORM readings, reviewed before anything is committed. Or add the first reel by hand.</p><div class="cyc-actions noprint" style="justify-content:center"><button class="btn" onclick="CYC_UI.view=\'import\';renderCyc()">Go to import</button></div></div></div>'; return; }
+  if(cycClient() && CYC_UI.view==="import"){ CYC_UI.view="overview"; }
+  if(!hasAny && CYC_UI.view!=="import"){ body.innerHTML='<div class="panel"><div class="cyc-empty"><h3>No reels in the register yet</h3>'+(cycClient()?'<p>Reels appear here once the offshore timing workbook or the contractor reports have been imported and reviewed.</p>':'<p>Import the offshore SURF timing workbook and every completed reel arrives with its stage times, cycle total, weight, recovered length and NORM readings, reviewed before anything is committed. Or add the first reel by hand.</p><div class="cyc-actions noprint" style="justify-content:center"><button class="btn" onclick="CYC_UI.view=\'import\';renderCyc()">Go to import</button></div>')+'</div></div>'; return; }
   var sel=cycSel(); var v=CYC_UI.view; var h='';
   if(v==="overview"){ h='<div class="panel cyc-sec"><p class="cyc-h">Where we stand</p>'+cycLastImportCard()+cycV_kpis(sel)+cycUnchangedNote()+cycSourceSummary(sel)+cycV_interp(sel)+'</div><div class="panel cyc-sec"><p class="cyc-h">Learning curve</p><p class="cyc-sub">Cycle time per reel in the order recovered, one chart per flowline on the same scale. Lower is better.</p><div class="cyc-grid2">'+cycV_curves(sel,236)+'</div></div><div class="panel cyc-sec">'+cycV_norms(sel)+'</div>'; }
   else if(v==="learning"){ h='<div class="panel cyc-sec"><p class="cyc-h">Learning curve</p><p class="cyc-sub">Cycle time per reel in the order recovered, one chart per flowline on the same scale, with the fitted curve where the cohort allows it.</p><div class="cyc-grid2">'+cycV_curves(sel,250)+'</div>'+cycV_interp(sel)+'</div><div class="panel cyc-sec">'+cycV_stepTrend(sel)+'</div>'; }
@@ -3767,7 +3885,7 @@ function cycEditField(id,field,val,el){
   else return;
   rl[field]=n; rl.status=cycStatusOf(rl); cycBump(); save(); renderCyc();
 }
-function cycExclude(id){ if(pelRO()) return; var rl=cycReel(id); if(!rl) return; var reason=prompt("Reason for excluding "+cycReelLabel(rl)+" from analysis (kept in the record):"); if(reason==null) return; rl.included=false; rl.excludeReason=String(reason).slice(0,120); rl.excludedBy=curUser()||""; rl.excludedAt=new Date().toISOString(); cycBump(); save(); renderCyc(); }
+function cycExclude(id){ if(pelRO()) return; var rl=cycReel(id); if(!rl) return; return pelAsk({title:"Exclude "+cycReelLabel(rl)+" from analysis", body:'<p class="lm-note">The reel stays in the record and keeps its sequence numbers; it leaves every mean, curve and norm until it is included again. Say why in a few words, for example "tooling trial" or "aborted after weather stand-down".</p>', input:{label:"Reason (kept with the reel)", placeholder:"why this reel is not representative", min:3, max:120, err:"A reason of at least three characters is needed."}, buttons:[["Cancel","cancel"],["Exclude","ok","primary"]]}).then(function(a){ if(!a || a.value!=="ok") return false; rl.included=false; rl.excludeReason=String(a.text).slice(0,120); rl.excludedBy=curUser()||""; rl.excludedAt=new Date().toISOString(); cycBump(); save(); renderCyc(); return true; }); }
 function cycInclude(id){ if(pelRO()) return; var rl=cycReel(id); if(!rl) return; rl.included=true; rl.excludeReason=""; cycBump(); save(); renderCyc(); }
 function cycDeleteReel(id){ if(pelRO()) return; var rl=cycReel(id); if(!rl) return; if(!confirm("Delete reel "+cycReelLabel(rl)+"? It is kept in the record as deleted and its sequence numbers do not change.")) return; rl.deleted=true; rl.deletedAt=new Date().toISOString(); CYC.importLog.push({ at:new Date().toISOString(), action:"deleted reel "+cycReelLabel(rl)+" (cycle "+rl.cycleId+")", reviewer:curUser()||"" }); cycBump(); save(); renderCyc(); }
 function cycRestoreReel(id){ if(pelRO()) return; var rl=cycReel(id); if(!rl) return; rl.deleted=false; rl.deletedAt=""; cycBump(); save(); renderCyc(); }
@@ -3776,7 +3894,7 @@ function cycResetTemplatesToSurf(){ if(pelRO()) return 0; var n=0; (CYC.flowline
 function cycSetFlowControls(fid,on){ if(pelRO()) return; var f=cycFlow(fid); if(f){ f.controlsRecorded=!!on; cycBump(); save(); renderCyc(); } }
 function cycSetFlowType(fid,activity){ cycSetFlowTemplate(fid, cycTemplateForActivity(activity)); }
 function cycSetTrigger(v){ if(pelRO()) return; var n=cycNumStrict(v,0,1000); if(n==null) return; CYC.settings.normPolicy.value=n; cycBump(); save(); renderCyc(); }
-function cycSavePolicy(){ if(pelRO()) return; var g=function(i){ var e=document.getElementById(i); return e?e.value:""; }; var n=cycNumStrict(g("npVal"),0,1000); if(n==null){ alert("Trigger value must be a non-negative number."); return; } CYC.settings.normPolicy={ id:cycStr(g("npId"),40)||"NORM-TRIGGER-v1", measurement:CYC.settings.normPolicy.measurement, value:n, unit:cycStr(g("npUnit"),16)||"Bq/cm2", operator:([">",">=","<","<="].indexOf(g("npOp"))>=0)?g("npOp"):">", effectiveFrom:cycDate(g("npFrom"))||CYC.settings.normPolicy.effectiveFrom, approvedBy:cycStr(g("npBy"),40), note:CYC.settings.normPolicy.note }; cycBump(); save(); renderCyc(); }
+function cycSavePolicy(){ if(pelRO()) return; var g=function(i){ var e=document.getElementById(i); return e?e.value:""; }; var n=cycNumStrict(g("npVal"),0,1000); if(n==null){ alert("Trigger value must be a non-negative number."); return; } CYC.settings.normPolicy={ id:cycStr(g("npId"),40)||"NORM-TRIGGER-v1", measurement:CYC.settings.normPolicy.measurement, value:n, unit:cycStr(g("npUnit"),16)||"Bq/cm2", operator:([">",">=","<","<="].indexOf(g("npOp"))>=0)?g("npOp"):">", effectiveFrom:(function(){ var v=String(g("npFrom")||"").trim(); var m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); var iso=m?(m[3]+"-"+("0"+m[2]).slice(-2)+"-"+("0"+m[1]).slice(-2)):v; return cycDate(iso)||CYC.settings.normPolicy.effectiveFrom; })(), approvedBy:cycStr(g("npBy"),40), note:CYC.settings.normPolicy.note }; cycBump(); save(); renderCyc(); }
 
 /* add a reel by hand */
 function cycToggleForm(show){
@@ -3788,13 +3906,14 @@ function cycSaveForm(){
   if(pelRO()) return; var err=function(m){ var e=document.getElementById("cfErr"); if(e) e.textContent=m; };
   var id=String(document.getElementById("cfId").value||"").trim().toUpperCase(); if(!cycIdOk(id)){ err("Reel ID is required (letters and numbers, up to 12)."); return; }
   var flow=String(document.getElementById("cfFlow").value||"").trim().toUpperCase().replace(/\s+/g,"")||null; if(flow && !cycFlowIdOk(flow)){ err("Flowline must look like FL5 or UMB3."); return; }
+  if(flow && !cycFlow(flow) && window.__cfAckFlow!==flow){ window.__cfAckFlow=flow; err(flow+" is not in the register yet. Save again to create it without a control length; progress for "+flow+" stays unstated until a length is entered under Settings, Flowlines."); return; } window.__cfAckFlow=null;
   var date=cycDate(document.getElementById("cfDate").value)||null; var steps=[];
   for(var i=0;i<CYC_STEPS.length;i++){ var st=CYC_STEPS[i]; var sv=document.getElementById("cfS_"+st.k).value, ev=document.getElementById("cfE_"+st.k).value, dv=document.getElementById("cfD_"+st.k).value; var s=cycClock(sv), e=cycClock(ev), d=cycTime(dv,"dur"); if((sv&&s==null)||(ev&&e==null)){ err(st.n+": start or finish is not a valid clock time."); return; } if(dv && d==null){ err(st.n+": duration must be minutes or h:mm, not negative."); return; } if(d==null && s!=null && e!=null) d=(e>=s)?(e-s):(e+1440-s); if(d!=null) steps.push({ k:st.k, name:st.n, start:s, end:e, min:d, note:"", date:date }); }
   var cyc=cycTime(document.getElementById("cfCycle").value,"dur"); if(document.getElementById("cfCycle").value && cyc==null){ err("Cycle total must be a duration such as 16:26."); return; }
   var len=cycNumStrict(document.getElementById("cfLen").value,0,50000), wt=cycNumStrict(document.getElementById("cfWt").value,0,2000); if((document.getElementById("cfLen").value&&len==null)||(document.getElementById("cfWt").value&&wt==null)){ err("Length and weight must be non-negative numbers."); return; }
   cycAddReelData({ id:id, flowlineId:flow, dateStart:date, trip:cycNumStrict(document.getElementById("cfTrip").value,0,999), steps:steps, cycleMin:cyc, weightTe:wt, lengthM:len, notes:[], src:{file:"manual entry"} }); cycToggleForm(false); CYC_UI.view="register"; renderCyc();
 }
-function cycAddReelData(r){ if(pelRO()) return false; if(!cycIdOk(String(r.id||"").toUpperCase())) return false; var maxSeq=(CYC.reels||[]).reduce(function(a,x){ return Math.max(a,x.seq||0); },0); var rl=cycSanitise({reels:[Object.assign({}, r, {seq:maxSeq+1, occurrence:(CYC.reels||[]).filter(function(x){ return x.id===String(r.id).toUpperCase(); }).length+1})]}).reels[0]; if(!rl) return false; rl.cohortSeq=null; rl.campaignSeq=null; if(flow_needs(rl)) CYC.flowlines.push({ id:rl.flowlineId, name:rl.flowlineId, lengthM:null, templateId:cycTemplateForActivity(cycTypeFor(rl.flowlineId)), product:"", nominalIn:null }); CYC.reels.push(rl); cycAssignSequences(CYC); cycBump(); save(); renderCyc(); return true; }
+function cycAddReelData(r){ if(pelRO()) return false; if(!cycIdOk(String(r.id||"").toUpperCase())) return false; var maxSeq=(CYC.reels||[]).reduce(function(a,x){ return Math.max(a,x.seq||0); },0); var rl=cycSanitise({reels:[Object.assign({}, r, {seq:maxSeq+1, occurrence:(CYC.reels||[]).filter(function(x){ return x.id===String(r.id).toUpperCase(); }).length+1})]}).reels[0]; if(!rl) return false; rl.cohortSeq=null; rl.campaignSeq=null; rl.acceptedAt=new Date().toISOString(); rl.enteredBy=cycReviewerOk(curUser())?curUser():(window.__pelReviewer||curUser()||""); if(flow_needs(rl)) CYC.flowlines.push({ id:rl.flowlineId, name:rl.flowlineId, lengthM:null, templateId:cycTemplateForActivity(cycTypeFor(rl.flowlineId)), product:"", nominalIn:null }); CYC.reels.push(rl); cycAssignSequences(CYC); cycBump(); save(); renderCyc(); return true; }
 function flow_needs(rl){ return rl.flowlineId && !cycFlow(rl.flowlineId); }
 
 /* import transaction */
@@ -3846,7 +3965,7 @@ function cycMatchIncoming(parsed){
 function cycCurvesNow(){ var o={}; try{ cycFlows().forEach(function(f){ var n=cycNorms((CYC.reels||[]).filter(function(r){ return !r.deleted && r.flowlineId===f; }),CYC_UI.midRule).cycle; var fc=(CYC.reels||[]).filter(function(r){ return !r.deleted && r.flowlineId===f && r.status==="complete" && cycIncluded(r) && r.cycleMin!=null; }).sort(function(a,b){ return (a.cohortSeq||0)-(b.cohortSeq||0); }); var ft=cycFit(fc.map(function(r){ return r.cycleMin; })); o[f]={ n:n?n.n:0, mean:n?Math.round(n.mean):null, lr:ft.ok?Math.round(ft.learningRate*100):null }; }); }catch(e){} return o; }
 function cycPreview(parsed, fname, meta){
   parsed.issues=cycNormIssues(parsed.issues); var m=cycMatchIncoming(parsed);
-  __cycPending={ parsed:parsed, fname:fname||"workbook", curvesBefore:cycCurvesNow(), size:meta&&meta.size, hash:meta&&meta.hash, sheets:(meta&&meta.sheets)||[], files:(meta&&meta.files)||[], changes:m.changes, issues:parsed.issues.concat(m.blocking), conflictChoice:{}, ack:false, reviewer:curUser()||"", dprConv:parsed.conv||null };
+  __cycPending={ parsed:parsed, fname:fname||"workbook", revisionAtPreview:(CYC.revision||0), curvesBefore:cycCurvesNow(), size:meta&&meta.size, hash:meta&&meta.hash, sheets:(meta&&meta.sheets)||[], files:(meta&&meta.files)||[], changes:m.changes, issues:parsed.issues.concat(m.blocking), conflictChoice:{}, ack:false, reviewer:curUser()||"", dprConv:parsed.conv||null };
   CYC_UI.view="import"; renderCyc();
 }
 function cycReviewerOk(v){ var t=String(v||"").trim(); return /^[A-Za-z][A-Za-z0-9 .'\-]{1,39}$/.test(t) && (t.match(/[A-Za-z]/g)||[]).length>=2; }
@@ -3873,7 +3992,8 @@ function cycRecommendSummary(P){
   try{ var Q=JSON.parse(JSON.stringify({changes:P.changes.map(function(c){ return {kind:c.kind, decision:c.decision, reason:c.reason, incoming:{id:c.incoming.id, dateStart:c.incoming.dateStart, status:c.incoming.status, notes:c.incoming.notes, steps:(c.incoming.steps||[]).map(function(x){ return {k:x.k,min:x.min}; }), cycleMin:c.incoming.cycleMin}, current:c.current?{id:c.current.id, dateStart:c.current.dateStart, status:c.current.status, steps:(c.current.steps||[]).map(function(x){ return {k:x.k,min:x.min}; }), trip:c.current.trip}:null, fields:c.fields.map(function(f){ return {name:f.name, key:f.key, material:f.material, take:f.take, currentText:f.currentText, incomingText:f.incomingText}; })}; }), issues:P.issues.map(function(i){ return {cls:i.cls, field:i.field, text:i.text, options:i.options}; }), conflictChoice:P.conflictChoice, reviewer:P.reviewer}));
     cycRecommend(Q); var lines=[];
     var pairs=Q.issues.filter(function(i){ return i.cls==="conflict" && i.field==="pairing"; }).length; if(pairs) lines.push(pairs+" reel"+(pairs>1?"s":"")+" whose report date differs from the sheet by a day or two will be treated as the same reel");
-    Q.changes.forEach(function(c){ if(c.kind==="new"){ if(c.decision==="hold") lines.push(c.incoming.id+" ("+(c.incoming.dateStart||"?")+"): partial candidate from the reports, held for later, not added"); else lines.push(c.incoming.id+" ("+(c.incoming.dateStart||"?")+"): new complete reel from the reports, will be added"); return; }
+    var __srcWord=(Q.parsed&&Q.parsed.fromLog)?"the Daily Log lines":(((Q.parsed&&Q.parsed.reels)||[]).some(function(r){ return r.src&&r.src.sheet==="dpr"; })?"the reports":"the workbook");
+    Q.changes.forEach(function(c){ if(c.kind==="new"){ if(c.decision==="hold") lines.push(c.incoming.id+" ("+(c.incoming.dateStart||"?")+"): partial candidate from "+__srcWord+", held for later, not added"+((Q.parsed&&Q.parsed.fromLog&&c.incoming.first&&c.incoming.first.text)?" (first line: "+String(c.incoming.first.text).slice(0,60)+")":"")); else lines.push(c.incoming.id+" ("+(c.incoming.dateStart||"?")+"): new complete reel from "+__srcWord+", will be added"); return; }
       if(c.kind!=="changed") return; var lab=c.current.id+(c.current.trip!=null?" (trip "+c.current.trip+")":""); if(c.decision==="keep"){ var why=(c.incoming.status!=="complete" && c.current.status==="complete")?"the report record is incomplete":"only stage wording conventions differ"; lines.push(lab+": kept as in the sheet ("+why+")"); }
       else { var taken=c.fields.filter(function(f){ return f.take!==false; }); var all=taken.length===c.fields.length && c.fields.some(function(f){ return f.key; }); if(all && (c.current.steps||[]).length===0) lines.push(lab+": the sheet only named this reel; filled from the reports ("+(c.incoming.steps||[]).length+" stage records, cycle "+(c.incoming.cycleMin!=null?cycH(c.incoming.cycleMin):"–")+")"); else lines.push(lab+": "+taken.map(function(f){ return f.name.replace(/^Stage: /,"")+" "+f.currentText+" → "+f.incomingText.replace(/ \(.*\)$/,""); }).join(", ")+" taken from the reports; stage times kept"); } });
     return lines; }catch(e){ return []; }
@@ -3881,7 +4001,7 @@ function cycRecommendSummary(P){
 function cycApplyRecommended(){
   var P=__cycPending; if(!P) return false; if(pelRO()) return false;
   var a=cycRecommend(P); var lbl=cycActionLabel(P); if(!lbl.any){ var pe0=document.getElementById("cycPurpose"); if(pe0) pe0.textContent="Nothing to update: everything in this upload is already in the register, with its earlier decisions remembered."; cycCancelImport(); return true; }
-  if(!cycReviewerOk(P.reviewer)){ var who=prompt("Your initials (recorded as the reviewer for this import):", ""); if(!cycReviewerOk(who)){ alert("Initials are needed once so the record shows who applied the recommended decisions."); return false; } P.reviewer=String(who).trim(); try{ var u=document.getElementById("userName"); if(u && !u.value){ u.value=P.reviewer; u.dispatchEvent(new Event("change")); } }catch(e){} }
+  if(!cycReviewerOk(P.reviewer)){ var who=prompt("Your initials (recorded as the reviewer for this import):", ""); if(!cycReviewerOk(who)){ alert("Initials are needed once so the record shows who applied the recommended decisions."); return false; } P.reviewer=String(who).trim(); try{ var u=document.getElementById("userTag"); if(u && !u.value){ u.value=P.reviewer; u.dispatchEvent(new Event("change")); } }catch(e){} }
   cycRenderPreview(); var ok=cycApplyImport({});
   if(ok){ try{ var pe=document.getElementById("cycPurpose"); if(pe) pe.textContent=(pe.textContent||"")+" Recommended decisions applied: "+a.conflicts+" pairing(s), "+a.filled+" reel(s) filled, "+a.dates+" date/cycle correction(s), "+a.kept+" kept as recorded."; }catch(e){} }
   return ok;
@@ -3951,6 +4071,7 @@ function cycRenderPreview(){
 function cycCancelImport(){ __cycPending=null; var el=document.getElementById("cycImportPreview"); if(el){ el.style.display="none"; el.innerHTML=""; } }
 function cycApplyImport(opts){
   if(pelRO()) return false; var P=__cycPending; if(!P) return false; opts=opts||{};
+  if(P.revisionAtPreview!=null && (CYC.revision||0)!==P.revisionAtPreview){ var __meta={size:P.size, hash:P.hash, sheets:P.sheets, files:P.files}; alert("The register changed while this review was open (revision "+P.revisionAtPreview+" to "+(CYC.revision||0)+", from another device or tab). The preview has been rebuilt against the current register; check it and apply again."); try{ cycPreview(P.parsed, P.fname, __meta); }catch(e){} return false; }
   if(opts.conflicts){ for(var k in opts.conflicts) P.conflictChoice[k]=opts.conflicts[k]; } if(opts.conflictDefault!=null){ P.issues.forEach(function(i,idx){ if(i.cls==="conflict" && i.options && P.conflictChoice[idx]==null) P.conflictChoice[idx]=opts.conflictDefault; }); } if(opts.acknowledge) P.ack=true; if(opts.decisions){ P.changes.forEach(function(c){ if(c.current && opts.decisions[c.current.cycleId]) c.decision=opts.decisions[c.current.cycleId]; }); } if(opts.decisionDefault) P.changes.forEach(function(c){ if(c.kind==="changed") c.decision=opts.decisionDefault; }); if(opts.reviewer) P.reviewer=opts.reviewer;
   var counts={blocking:0,warning:0}; P.issues.forEach(function(i){ counts[i.cls]=(counts[i.cls]||0)+1; }); var undecided=P.issues.filter(function(i,idx){ return i.cls==="conflict" && i.options && P.conflictChoice[idx]==null; }).length;
   if(counts.blocking){ alert(counts.blocking+" blocking item(s) prevent this import."); return false; } if(undecided){ alert(undecided+" conflict(s) need a decision before applying."); return false; } if(counts.warning && !P.ack){ alert("Acknowledge the warnings before applying."); return false; }
@@ -3971,7 +4092,7 @@ function cycApplyImport(opts){
   P.changes.forEach(function(c){ if(!c.current) return; var x=c.current; var sk=cycSourceKey(c.incoming);
     if((c.linkPending || c.kind==="changed" || c.kind==="unchanged") && !(x.sourceLinks||[]).some(function(l){ return l.key===sk; })){ x.sourceLinks=(x.sourceLinks||[]).concat([{ key:sk, hash:(c.incoming.src&&c.incoming.src.hash)||"", by:P.reviewer||"", at:stamp }]).slice(-12); linksSaved++; }
     if(c.kind==="changed"){ x.reviewedDiffs=x.reviewedDiffs||{}; c.fields.forEach(function(f){ if(f.reviewed) return; var keptField=(c.decision!=="accept") || (f.take===false); if(keptField){ x.reviewedDiffs[f.name]={ incoming:f.incoming==null?null:(typeof f.incoming==="number"?f.incoming:String(f.incoming)), current:f.current==null?null:(typeof f.current==="number"?f.current:String(f.current)), by:P.reviewer||"", at:stamp, reason:String(c.reason||"").slice(0,120) }; reviewedSaved++; } }); } });
-    var held=0; P.changes.forEach(function(c){ if(c.incoming.__skip) return; if(c.kind==="new" && c.decision==="hold"){ held++; decisions.push(c.incoming.id+" ("+(c.incoming.dateStart||"?")+"): new candidate held, not added ("+(c.incoming.status||"")+")"); return; } var r=c.incoming; r.src=r.src||{}; r.src.file=r.src.file||P.fname; if(P.hash && !r.src.hash) r.src.hash=String(P.hash).split(";")[0]; if(c.kind==="new"){ var s=cycSanitise({reels:[Object.assign({}, r, {seq:(CYC.reels||[]).reduce(function(a,x){ return Math.max(a,x.seq||0); },0)+1})]}).reels[0]; if(s){ s.cohortSeq=null; s.campaignSeq=null; s.acceptedAt=new Date().toISOString(); s.templateAtAccept=cycTemplateOf(s).id; CYC.reels.push(s); added++; } } else if(c.kind==="changed" && c.decision==="accept"){ var x=c.current; var FMAP={"Start date":"dateStart","Flowline":"flowlineId","Trip":"trip","HLV":"hlvTp","Cycle total":"cycleMin","Length m":"lengthM","Weight t":"weightTe"}; var taken=c.fields.filter(function(f){ return f.take!==false; }); var stageTaken=taken.filter(function(f){ return f.key; }), stageAll=c.fields.filter(function(f){ return f.key; }); var rev={ at:new Date().toISOString(), by:P.reviewer||"", reason:String(c.reason||"").slice(0,200), from:(x.src&&x.src.file)||"", to:(r.src&&r.src.file)||P.fname, fields:{} };
+    var held=0; P.changes.forEach(function(c){ if(c.incoming.__skip) return; if(c.kind==="new" && c.decision==="hold"){ held++; decisions.push(c.incoming.id+" ("+(c.incoming.dateStart||"?")+"): new candidate held, not added ("+(c.incoming.status||"")+")"); return; } var r=c.incoming; r.src=r.src||{}; r.src.file=r.src.file||P.fname; if(P.hash && !r.src.hash) r.src.hash=String(P.hash).split(";")[0]; if(c.kind==="new"){ var s=cycSanitise({reels:[Object.assign({}, r, {seq:(CYC.reels||[]).reduce(function(a,x){ return Math.max(a,x.seq||0); },0)+1})]}).reels[0]; if(s){ s.cohortSeq=null; s.campaignSeq=null; s.acceptedAt=new Date().toISOString(); s.enteredBy=P.reviewer||""; s.templateAtAccept=cycTemplateOf(s).id; CYC.reels.push(s); added++; } } else if(c.kind==="changed" && c.decision==="accept"){ var x=c.current; var FMAP={"Start date":"dateStart","Flowline":"flowlineId","Trip":"trip","HLV":"hlvTp","Cycle total":"cycleMin","Length m":"lengthM","Weight t":"weightTe"}; var taken=c.fields.filter(function(f){ return f.take!==false; }); var stageTaken=taken.filter(function(f){ return f.key; }), stageAll=c.fields.filter(function(f){ return f.key; }); var rev={ at:new Date().toISOString(), by:P.reviewer||"", reason:String(c.reason||"").slice(0,200), from:(x.src&&x.src.file)||"", to:(r.src&&r.src.file)||P.fname, fields:{} };
       taken.forEach(function(f){ var prop=FMAP[f.name]; if(prop && r[prop]!==undefined){ rev.fields[prop]={from:x[prop]==null?null:x[prop], to:r[prop]==null?null:r[prop]}; x[prop]=JSON.parse(JSON.stringify(r[prop])); } });
       if(stageTaken.length){ if(stageTaken.length===stageAll.length && (r.steps||[]).length){ rev.prevSteps=JSON.parse(JSON.stringify(x.steps||[])); rev.prevOverride=JSON.parse(JSON.stringify(x.override||{})); rev.fields.steps={from:(x.steps||[]).length+" rows", to:(r.steps||[]).length+" rows"}; x.steps=JSON.parse(JSON.stringify(r.steps||[])); x.override={}; if(r.started!==undefined) x.started=r.started; } else { x.override=x.override||{}; stageTaken.forEach(function(f){ if(f.incoming!=null){ rev.fields["stage:"+f.key]={from:f.current, to:f.incoming}; x.override[f.key]=f.incoming; } }); } }
       var takenStage=stageTaken.length && stageTaken.length===stageAll.length && (r.steps||[]).length; if(takenStage){ x.srcHistory=(x.srcHistory||[]).concat([x.src||null]).slice(-10); x.src=r.src; } (r.notes||[]).forEach(function(n){ if((x.notes||[]).indexOf(n)<0) x.notes.push(n); });
@@ -3989,10 +4110,10 @@ function cycApplyImport(opts){
 
 /* exports: every output is scoped by the frozen selection snapshot, or explicitly labelled full */
 function cycQ(v){ var t=String(v==null?"":v); if(/^\s*[=+\-@\t\r]/.test(t)) t="'"+t; return '"'+t.replace(/"/g,'""')+'"'; }
-function cycFileName(kind, ext){ return "Project Event Log - Recovery Cycles - "+curProject()+" - "+kind+" - "+new Date().toISOString().slice(0,10)+(ext?"."+ext:""); }
+function cycFileName(kind, ext){ return "Project Event Log - Recovery Cycles - "+curProject()+" - "+kind+" - "+todayKey()+(ext?"."+ext:""); }
 function cycRowsFor(reels, midRule){ var rows=[["Campaign #","Cohort #","Reel","Flowline","Activity template","Start date","Trip","HLV TP"].concat(CYC_STEPS.map(function(s){ return s.n+" (min)"; })).concat(["Sum of stages (min)","Cycle total (min)","Unallocated (min)","Length m","Weight t","Throughput m/h","Active recovery m/h","Status","Included","Cycle ID","Source"])]; reels.forEach(function(rl){ var d=cycDerive(rl,midRule); rows.push([rl.campaignSeq||"",rl.cohortSeq||"",rl.id,rl.flowlineId||"",cycTemplateOf(rl).id,rl.dateStart||"",rl.trip!=null?rl.trip:"",rl.hlvTp!=null?rl.hlvTp:""].concat(CYC_STEPS.map(function(s){ return d.stepMin[s.k]!=null?d.stepMin[s.k]:""; })).concat([d.sumSteps||"",rl.cycleMin!=null?rl.cycleMin:"",d.unallocated!=null?d.unallocated:"",rl.lengthM!=null?rl.lengthM:"",rl.weightTe!=null?rl.weightTe:"",d.mPerHr!=null?d.mPerHr:"",d.activeRate!=null?d.activeRate:"",rl.status,rl.included===false?"excluded"+(rl.excludeReason?": "+rl.excludeReason:""):"yes",rl.cycleId,(rl.src&&rl.src.file)||""])); }); return rows; }
 function cycNormRowsFor(reels, flows, midRule){ var rows=[["Flowline","Stage","Included reels","First (min)","Best (min)","Mean (min)","Latest (min)","First to latest %"]]; flows.forEach(function(f){ var n=cycNorms(reels.filter(function(r){ return r.flowlineId===f; }),midRule); CYC_STEPS.concat([{k:"cycle",n:"Cycle total"}]).forEach(function(st){ var v=n[st.k]; if(v) rows.push([f,st.n,v.n,v.first,v.best,v.mean,v.last,v.change!=null?v.change:""]); }); }); return rows; }
-function cycManifestRows(snap, label){ var pol=snap.normPolicy; return [["Output",label],["Project",snap.project],["Generated",snap.generatedAt],["Build",snap.build],["Register revision",snap.projectRevision],["Scope",snap.scope],["Flowlines",snap.flowlines.join(", ")],["Activity templates",snap.templates.join(", ")],["Cohort sequence range",(snap.cohortSequenceRange[0]||"start")+" to "+(snap.cohortSequenceRange[1]||"end")],["Included cycles",snap.includedCycleIds.length],["Excluded from this output",snap.excludedCycleIds.length],["Midline convention",snap.midlineConvention],["NORM policy",pol.id+" "+pol.operator+" "+pol.value+" "+pol.unit+" effective "+pol.effectiveFrom],["Statistics policy","provisional trend from "+snap.statsPolicy.minFit+" reels, indicative curve from "+(snap.statsPolicy.minIndicative||5)+", planning consideration from "+snap.statsPolicy.minPlanning],["Note","Charts are produced in the application, its client report and its printed output; this workbook carries the data behind them. Sheets named with the scope contain only the selected cycles and their linked records."]]; }
+function cycManifestRows(snap, label){ var pol=snap.normPolicy; return [["Output",label],["Project",snap.project],["Generated",pelStamp(snap.generatedAt)+" (ISO "+snap.generatedAt+")"],["Build",snap.build],["Register revision",snap.projectRevision],["Scope",snap.scope],["Flowlines",snap.flowlines.join(", ")],["Activity templates",snap.templates.join(", ")],["Cohort sequence range",(snap.cohortSequenceRange[0]||"start")+" to "+(snap.cohortSequenceRange[1]||"end")],["Included cycles",snap.includedCycleIds.length],["Excluded from this output",snap.excludedCycleIds.length],["Midline convention",snap.midlineConvention],["NORM policy",pol.id+" "+pol.operator+" "+pol.value+" "+pol.unit+" effective "+pol.effectiveFrom],["Statistics policy","provisional trend from "+snap.statsPolicy.minFit+" reels, indicative curve from "+(snap.statsPolicy.minIndicative||5)+", planning consideration from "+snap.statsPolicy.minPlanning],["Note","Charts are produced in the application, its client report and its printed output; this workbook carries the data behind them. Sheets named with the scope contain only the selected cycles and their linked records."]]; }
 function cycBookFor(reels, label, snap){
   var mid=CYC_UI.midRule, ids=reels.map(function(r){ return r.cycleId; }), flows=reels.map(function(r){ return r.flowlineId; }).filter(function(v,i,a){ return v && a.indexOf(v)===i; });
   var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cycManifestRows(snap,label)), "Manifest");
@@ -4021,10 +4142,10 @@ function cycExportCSV(){ var snap=cycSnapshot(); var reels=cycSel(); var flows=C
 function cycExportReport(){
   var snap=cycSnapshot(); var sel=cycSel(); var prevClient=CYC.settings.clientView, prevOpen=JSON.parse(JSON.stringify(CYC_UI.open)); CYC.settings.clientView=true; sel.forEach(function(r){ CYC_UI.open[r.cycleId]=true; });
   var css=(document.getElementById("view-cyc").querySelector("style")||{}).innerHTML||""; var pol=snap.normPolicy;
-  var manifest='<div style="border:1px solid #e6e1d6;border-radius:6px;padding:12px 14px;font-size:12px;color:#4a4a4a;margin-bottom:14px"><div style="font-size:16px;font-weight:700;color:#1A1A1A">Recovery cycles report · '+esc(snap.project)+'</div><div>Scope '+esc(snap.scope)+' · cohort reels '+(snap.cohortSequenceRange[0]||"start")+' to '+(snap.cohortSequenceRange[1]||"end")+' · '+snap.includedCycleIds.length+' included cycles, '+snap.excludedCycleIds.length+' excluded from this report · register revision '+snap.projectRevision+' · generated '+esc(snap.generatedAt.replace("T"," ").slice(0,16))+' UTC · build '+esc(snap.build)+'</div><div>NORM policy '+esc(pol.id)+' ('+esc(pol.operator)+' '+pol.value+' '+esc(pol.unit)+', effective '+esc(pol.effectiveFrom)+') · statistics policy: provisional trend from '+snap.statsPolicy.minFit+' reels, indicative curve from '+(snap.statsPolicy.minIndicative||5)+', planning consideration from '+snap.statsPolicy.minPlanning+' · midlines: '+esc(snap.midlineConvention)+'</div><div style="margin-top:4px">This report is a frozen analysis snapshot. It is not a contractual performance statement; curves from fewer than five reels are provisional descriptive trends and none is a forecast.</div></div>';
+  var manifest='<div style="border:1px solid #e6e1d6;border-radius:6px;padding:12px 14px;font-size:12px;color:#4a4a4a;margin-bottom:14px"><div style="font-size:16px;font-weight:700;color:#1A1A1A">Recovery cycles report · '+esc(snap.project)+'</div><div>Scope '+esc(snap.scope)+' · cohort reels '+(snap.cohortSequenceRange[0]||"start")+' to '+(snap.cohortSequenceRange[1]||"end")+' · '+snap.includedCycleIds.length+' included cycles, '+snap.excludedCycleIds.length+' excluded from this report · register revision '+snap.projectRevision+' · generated '+esc(pelStamp(snap.generatedAt))+' · build '+esc(snap.build)+'</div><div>NORM policy '+esc(pol.id)+' ('+esc(pol.operator)+' '+pol.value+' '+esc(pol.unit)+', effective '+esc(pol.effectiveFrom)+') · statistics policy: provisional trend from '+snap.statsPolicy.minFit+' reels, indicative curve from '+(snap.statsPolicy.minIndicative||5)+', planning consideration from '+snap.statsPolicy.minPlanning+' · midlines: '+esc(snap.midlineConvention)+'</div><div style="margin-top:4px">This report is a frozen analysis snapshot. It is not a contractual performance statement; curves from fewer than five reels are provisional descriptive trends and none is a forecast.</div></div>';
   var body='<div class="panel cyc-sec"><p class="cyc-h">Where we stand</p>'+cycV_kpis(sel)+cycSourceSummary(sel)+cycV_interp(sel)+'</div><div class="panel cyc-sec"><p class="cyc-h">Learning curve</p><div class="cyc-grid2">'+cycV_curves(sel,236)+'</div></div><div class="panel cyc-sec"><p class="cyc-h">What each cycle was made of</p>'+cycStack(sel,CYC_UI.midRule)+'</div><div class="panel cyc-sec">'+cycV_norms(sel)+'</div>'+(function(){ var c=cycV_compare(sel); return c?'<div class="panel cyc-sec">'+c+'</div>':''; })()+'<div class="panel cyc-sec">'+cycV_productivity(sel)+'</div><div class="panel cyc-sec">'+cycV_progress()+'</div><div class="panel cyc-sec">'+cycV_quality()+'</div><div class="panel cyc-sec">'+cycV_register(sel)+'</div>';
   CYC.settings.clientView=prevClient; CYC_UI.open=prevOpen;
-  var html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(cycFileName("report "+cycScopeTag(),""))+'</title><style>body{font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#1A1A1A;background:#fff;margin:24px;max-width:1200px}.panel{border:1px solid #e6e1d6;border-radius:6px;margin:14px 0;background:#fff}.noprint{display:none !important}.cyc-reel-b{display:block !important}'+css.replace(/#view-cyc\s*/g,"")+'</style></head><body>'+manifest+body+'</body></html>';
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(cycFileName("report "+cycScopeTag(),""))+'</title><style>body{font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#1A1A1A;background:#fff;margin:24px;max-width:1200px}.panel{border:1px solid #e6e1d6;border-radius:6px;margin:14px 0;background:#fff}.noprint{display:none !important}.cyc-reel-b{display:block !important}'+css.replace(/#view-cyc\s*/g,"")+'</style></head><body>'+pelStripUi(manifest+body)+'</body></html>';
   dl(html, cycFileName("report "+cycScopeTag(),"html"), "text/html"); renderCyc();
 }
 function cycPrint(){ showTab("cyc"); var prevOpen=JSON.parse(JSON.stringify(CYC_UI.open)), prevView=CYC_UI.view; cycSel().forEach(function(r){ CYC_UI.open[r.cycleId]=true; }); renderCyc(); var prev=document.title; setTimeout(function(){ document.title=cycFileName("report "+cycScopeTag(),""); var restore=function(){ document.title=prev; CYC_UI.open=prevOpen; CYC_UI.view=prevView; renderCyc(); window.removeEventListener("afterprint",restore); }; window.addEventListener("afterprint",restore); window.print(); setTimeout(restore, 4000); }, 200); }
@@ -4104,13 +4225,13 @@ function renderDprLog(){
   var fmt=function(v){ return v==null?"\u2014":Number(v).toFixed(2); };
   var rec=open.length?open.map(function(c){ var dprTot=(c.sum!=null||c.anc!=null)?Math.max(c.sum||0,c.anc||0):null; var delta=(dprTot!=null&&c.app.dt!=null)?(dprTot-c.app.dt):null;
     return '<tr><td>'+(c.key&&data[c.key]?'<a href="#" onclick="dprOpenDay(\''+esc(c.key)+'\');return false;"><b>'+esc(fmtDay(c.key))+'</b></a>':'<span class="sub">'+esc(c.reportDate||"?")+'</span>')+'</td><td>'+esc(c.file||("DPR "+c.reportNo))+'</td><td class="num">'+fmt(c.dpr.weather)+' / '+fmt(c.dpr.mech)+'</td><td class="num">'+fmt(c.dpr.vessel)+' / '+fmt(c.dpr.rov)+'</td><td class="num">'+fmt(c.app.dt)+'</td><td class="num" style="color:'+(delta!=null&&Math.abs(delta)>0.01?"#c0392b":"#1A1A1A")+'">'+(delta==null?"\u2014":(delta>0?"+":"")+delta.toFixed(2)+" h")+'</td><td>'+esc(dprVerdictText(c))+(c.detail&&c.verdict!=="differ"?' <span class="sub">'+esc(c.detail)+'</span>':'')+'</td><td class="noprint"><input placeholder="note (optional)" style="width:150px;font-size:12px;padding:3px 5px" id="dprNote_'+esc(c.id)+'"> <button class="btn" style="padding:3px 8px;font-size:12px" onclick="dprMarkReviewed(\''+esc(c.id)+'\',document.getElementById(\'dprNote_'+esc(c.id)+'\').value)">Mark reviewed</button></td></tr>'; }).join("") : '<tr><td colspan="8" class="sub">Nothing to reconcile. Every recorded DPR check either matches the log or has been reviewed.</td></tr>';
-  var log=checks.length?checks.map(function(c){ return '<tr'+(c.reviewed?' style="color:#8C8C8C"':'')+'><td>'+esc((c.at||"").replace("T"," ").slice(0,16))+'</td><td>'+(c.key?esc(fmtDay(c.key)):'<span class="sub">'+esc(c.reportDate||"?")+'</span>')+'</td><td>'+esc(c.file||"")+(c.reportNo?' <span class="sub">DPR '+esc(c.reportNo)+'</span>':'')+(c.hash?' <span class="sub" title="'+esc(c.hash)+'">'+esc(c.hash.slice(0,10))+'\u2026</span>':'')+'</td><td class="num">'+fmt(c.dpr.weather)+' / '+fmt(c.dpr.mech)+' / '+fmt(c.dpr.vessel)+' / '+fmt(c.dpr.rov)+'</td><td class="num">'+fmt(c.app.dt)+'</td><td>'+esc(dprVerdictText(c))+'</td><td>'+(c.reviewed?'reviewed by '+esc(c.reviewedBy||"?")+' '+esc((c.reviewedAt||"").slice(0,10))+(c.note?' \u00b7 '+esc(c.note):'')+' <button class="ghost noprint" style="font-size:11px" onclick="dprReopen(\''+esc(c.id)+'\')">reopen</button>':(c.verdict==="match"?'\u2014':'<span style="color:#b9822b">open</span>'))+'</td><td>'+esc(c.by||"")+'</td></tr>'; }).join("") : '<tr><td colspan="8" class="sub">No DPR checks recorded yet. Run a single or batch check above; every automatic result is kept here for everyone.</td></tr>';
+  var log=checks.length?checks.map(function(c){ return '<tr'+(c.reviewed?' style="color:#8C8C8C"':'')+'><td>'+esc(pelStamp(c.at))+'</td><td>'+(c.key?esc(fmtDay(c.key)):'<span class="sub">'+esc(c.reportDate||"?")+'</span>')+'</td><td>'+esc(c.file||"")+(c.reportNo?' <span class="sub">DPR '+esc(c.reportNo)+'</span>':'')+(c.hash?' <span class="sub" title="'+esc(c.hash)+'">'+esc(c.hash.slice(0,10))+'\u2026</span>':'')+'</td><td class="num">'+fmt(c.dpr.weather)+' / '+fmt(c.dpr.mech)+' / '+fmt(c.dpr.vessel)+' / '+fmt(c.dpr.rov)+'</td><td class="num">'+fmt(c.app.dt)+'</td><td>'+esc(dprVerdictText(c))+'</td><td>'+(c.reviewed?'reviewed by '+esc(c.reviewedBy||"?")+' '+esc((c.reviewedAt||"").slice(0,10))+(c.note?' \u00b7 '+esc(c.note):'')+' <button class="ghost noprint" style="font-size:11px" onclick="dprReopen(\''+esc(c.id)+'\')">reopen</button>':(c.verdict==="match"?'\u2014':'<span style="color:#b9822b">open</span>'))+'</td><td>'+esc(c.by||"")+'</td></tr>'; }).join("") : '<tr><td colspan="8" class="sub">No DPR checks recorded yet. Run a single or batch check above; every automatic result is kept here for everyone.</td></tr>';
   var nd=dprNoDay(), ur=dprUnreadable(); var ndTot=nd.reduce(function(a,c){ return a+Math.max(c.sum||0,c.anc||0); },0);
   var extra=(nd.length?'<div class="insight" style="margin-top:10px;background:#fdf3e3;border-left:3px solid #b9822b"><b>DPR days with no logged day ('+nd.length+'):</b> '+nd.map(function(c){ return esc(c.key?fmtDay(c.key):c.reportDate)+(Math.max(c.sum||0,c.anc||0)>0?' ('+Math.max(c.sum||0,c.anc||0).toFixed(2)+' h DPR downtime)':''); }).join(', ')+'. These days exist in the contractor record but not in this log'+(ndTot>0?', including '+ndTot.toFixed(2)+' h of contractor-reported downtime with nothing to compare against':'')+'. Create the days and log them, or confirm they belong to another project.</div>':'')+(ur.length?'<div class="insight" style="margin-top:8px;background:#fdecea;border-left:3px solid #c0392b"><b>Unreadable reports ('+ur.length+'):</b> '+ur.map(function(c){ return esc(c.file); }).join(', ')+'. No date or figures could be read (image-only PDF?); obtain a text version or OCR it.</div>':'');
   host.innerHTML='<div class="panel"><h3>Downtime reconciliation <span class="sub" style="font-weight:400">'+open.length+' open</span></h3><p class="footnote" style="margin-top:0">Days where the contractor DPR and this log disagree on downtime. DPR columns are weather / mechanical and vessel / ROV hours; the log column is this record\'s downtime. A difference usually means an event was logged as text but never tagged: open the day, flag the line, set the category and end time, then mark the row reviewed.</p><table><thead><tr><th>Day</th><th>DPR</th><th class="num">Weather / mech (h)</th><th class="num">Vessel / ROV (h)</th><th class="num">Log DT (h)</th><th class="num">DPR minus log</th><th>Result</th><th class="noprint">Action</th></tr></thead><tbody>'+rec+'</tbody></table>'+extra+'</div>'+
     '<div class="panel"><h3>DPR check log <span class="sub" style="font-weight:400">'+checks.length+' check(s), shared record</span></h3><p class="footnote" style="margin-top:0">Every automatic DPR check with the file name and fingerprint it came from, who ran it and when. <button class="btn noprint" style="padding:3px 10px;font-size:12px" onclick="dprExportLog()">Export CSV</button></p><table><thead><tr><th>Recorded</th><th>Day</th><th>File</th><th class="num">DPR W / M / V / R (h)</th><th class="num">Log DT (h)</th><th>Result</th><th>Review</th><th>By</th></tr></thead><tbody>'+log+'</tbody></table></div>';
 }
-function dprExportLog(){ var rows=[["Recorded","Day","Report date","File","Fingerprint","Report no","DPR weather h","DPR mechanical h","DPR vessel h","DPR ROV h","Log DT h","Verdict","Max difference h","Reviewed","Reviewed by","Reviewed at","Note","Run by"]]; (DPR.checks||[]).forEach(function(c){ rows.push([c.at,c.key,c.reportDate,c.file,c.hash,c.reportNo,c.dpr.weather,c.dpr.mech,c.dpr.vessel,c.dpr.rov,c.app.dt,c.verdict,c.maxDiff,c.reviewed?"yes":"no",c.reviewedBy,c.reviewedAt,c.note,c.by]); }); var csv="DPR CHECK LOG\n"+rows.map(function(r){ return r.map(function(v){ return cycQ(v==null?"":v); }).join(","); }).join("\n")+"\n"; try{ csv+="\n"+exportMetaLine(); }catch(e){} dl(csv, "Project Event Log - DPR check log - "+curProject()+" - "+new Date().toISOString().slice(0,10)+".csv", "text/csv"); }
+function dprExportLog(){ var rows=[["Recorded","Day","Report date","File","Fingerprint","Report no","DPR weather h","DPR mechanical h","DPR vessel h","DPR ROV h","Log DT h","Verdict","Max difference h","Reviewed","Reviewed by","Reviewed at","Note","Run by"]]; (DPR.checks||[]).forEach(function(c){ rows.push([c.at,c.key,c.reportDate,c.file,c.hash,c.reportNo,c.dpr.weather,c.dpr.mech,c.dpr.vessel,c.dpr.rov,c.app.dt,c.verdict,c.maxDiff,c.reviewed?"yes":"no",c.reviewedBy,c.reviewedAt,c.note,c.by]); }); var csv=rows.map(function(r){ return r.map(function(v){ return cycQ(v==null?"":v); }).join(","); }).join("\n")+"\n"; try{ csv+="\n# DPR check log, project "+curProject()+", "+PEL_ENV.env+" build "+APP_BUILD+", generated "+pelStamp()+", register revision "+(CYC.revision||0)+"\n"; }catch(e){} dl(csv, "Project Event Log - DPR check log - "+curProject()+" - "+todayKey()+".csv", "text/csv"); }
 function dprDayNote(){
   var el=document.getElementById("dprDayNote"); if(!el) return; var k=(typeof curKey==="function")?curKey():null; var cs=(DPR.checks||[]).filter(function(c){ return c.key===k; });
   if(!k||!cs.length){ el.style.display="none"; el.innerHTML=""; return; }
@@ -4125,7 +4246,7 @@ function cycDayNum(k){ var m=String(k||"").match(/^(\d{4})-(\d\d)-(\d\d)$/); ret
 function cycFromLog(){
   var out={reels:[], trips:[], flowlines:[], readings:[], issues:[], fromLog:true}; var evts=[], skipped=0, daysWith=0;
   var keys=(typeof allDayKeys==="function"?allDayKeys():Object.keys(data||{})).slice().sort();
-  keys.forEach(function(k){ var d=data[k]; if(!d||!Array.isArray(d.log)) return; var hit=false; d.log.forEach(function(r,i){ var t=toMin(r[0]); var txt=String(r[1]||""); var m=txt.match(CYC_LINE_RE); if(!m) return; if(/^(FL|UMB|TP|DP|KP|MLC|ROV|DWS)\d*$/i.test(m[1])) return; var rest=m[2]; var isOff=/\boffload|\bcycle complete|\bend of cycle|\bcycle end/i.test(rest); var stage=isOff?"offload":cycStepKey(rest); if(stage==="other"||stage==null){ if(/end|reel|recover|clamp|tension|cut|secure|midline|anode|loa/i.test(rest)) skipped++; return; } if(t==null){ out.issues.push({cls:"warning", text:k+" row "+(i+1)+": reel line has no valid time and was skipped"}); return; } hit=true;
+  keys.forEach(function(k){ var d=data[k]; if(!d||!Array.isArray(d.log)) return; var hit=false; d.log.forEach(function(r,i){ var t=toMin(r[0]); var txt=String(r[1]||""); var m=txt.match(CYC_LINE_RE); if(!m) return; if(/^(FL|UMB|TP|DP|KP|MLC|ROV|DWS)\d*$/i.test(m[1])) return; var rest=m[2]; var isOff=/\boffload|\bcycle complete|\bend of cycle|\bcycle end/i.test(rest); var stage=isOff?"offload":cycLogStageKey(rest); if(stage==="other"||stage==null){ if(/end|reel|recover|clamp|tension|cut|secure|midline|anode|loa/i.test(rest)) skipped++; return; } if(t==null){ out.issues.push({cls:"warning", text:k+" row "+(i+1)+": reel line has no valid time and was skipped"}); return; } hit=true;
     var flow=(rest.match(/\b(FL\s?\d+|UMB\s?\d+)\b/i)||[])[1]; var wt=(rest.match(/(\d+(?:\.\d+)?)\s*(?:te|t|tonnes?)\b/i)||[])[1]; var ln=(rest.match(/(\d+(?:\.\d+)?)\s*m\b/i)||[])[1];
     evts.push({ reel:m[1].toUpperCase(), day:k, t:t, abs:cycDayNum(k)*1440+t, text:txt, stage:stage, row:i+1, flow:flow?flow.replace(/\s+/g,"").toUpperCase():null, wt:wt?parseFloat(wt):null, ln:ln?parseFloat(ln):null }); }); if(hit) daysWith++; });
   evts.sort(function(a,b){ return a.abs-b.abs; });
@@ -4145,13 +4266,13 @@ function cycFromLog(){
 function cycImportFromLog(){ if(pelRO()) return; var p=cycFromLog(); if(!p.reels.length){ alert("No reel stage lines found in the Daily Log. Lines must read like 'A2 \u00b7 1st end in tensioner' at the time the stage started, and 'A2 \u00b7 offload' when the reel is offloaded."); return; } cycPreview(p, "Daily Log"); }
 
 /* provenance: every file and every manual entry that has ever changed the record */
-function provRows(){ var rows=[]; (CYC.importLog||[]).forEach(function(l){ rows.push({ kind:l.action?"Register action":"Cycles import", at:l.at||"", file:l.file||(l.action||""), hash:l.hash||"", who:l.reviewer||"", detail:l.action?"":(l.added+" added, "+l.updated+" updated, "+(l.unchanged||0)+" unchanged"+(l.issues?", "+l.issues+" reviewed":"")) }); }); (DPR.checks||[]).forEach(function(c){ rows.push({ kind:"DPR check", at:c.at||"", file:c.file||("DPR "+c.reportNo), hash:c.hash||"", who:c.by||"", detail:(c.key?fmtDay(c.key)+": ":"")+dprVerdictText(c)+(c.reviewed?" (reviewed)":"") }); }); (CYC.reels||[]).filter(function(r){ return r.src&&/manual entry|Daily Log/.test(String(r.src.file||"")); }).forEach(function(r){ rows.push({ kind:"Reel entered", at:r.acceptedAt||"", file:r.src.file, hash:"", who:"", detail:r.id+" "+(r.flowlineId||"")+" "+(r.dateStart||"") }); }); return rows.sort(function(a,b){ return (b.at||"").localeCompare(a.at||""); }); }
-function provHtml(){ var rows=provRows(); return '<p class="cyc-h" style="margin-top:20px">Files and provenance</p><p class="cyc-sub">Every workbook import, DPR check, manual reel and register action, with file fingerprints where a file was involved. <button class="noprint" style="font-size:11px;padding:2px 8px" onclick="provExportCSV()">Export CSV</button></p><table class="cyc-t"><thead><tr><th>When</th><th>Kind</th><th>File or action</th><th>Fingerprint</th><th>Who</th><th>Detail</th></tr></thead><tbody>'+(rows.length?rows.map(function(r){ return '<tr><td>'+esc((r.at||"").replace("T"," ").slice(0,16))+'</td><td>'+esc(r.kind)+'</td><td>'+esc(r.file)+'</td><td><span title="'+esc(r.hash)+'">'+esc(r.hash?r.hash.slice(0,12)+"\u2026":"")+'</span></td><td>'+esc(r.who)+'</td><td>'+esc(r.detail)+'</td></tr>'; }).join(""):'<tr><td colspan="6" class="dim">Nothing recorded yet.</td></tr>')+'</tbody></table>'; }
-function provExportCSV(){ var rows=[["When","Kind","File or action","Fingerprint","Who","Detail"]].concat(provRows().map(function(r){ return [r.at,r.kind,r.file,r.hash,r.who,r.detail]; })); dl("FILES AND PROVENANCE\n"+rows.map(function(r){ return r.map(cycQ).join(","); }).join("\n")+"\n", "Project Event Log - Provenance - "+curProject()+" - "+new Date().toISOString().slice(0,10)+".csv", "text/csv"); }
+function provRows(){ var rows=[]; (CYC.importLog||[]).forEach(function(l){ rows.push({ kind:l.action?"Register action":"Cycles import", at:l.at||"", file:l.file||(l.action||""), hash:l.hash||"", who:l.reviewer||"", detail:l.action?"":(l.added+" added, "+l.updated+" updated, "+(l.unchanged||0)+" unchanged"+(l.issues?", "+l.issues+" reviewed":"")) }); }); (DPR.checks||[]).forEach(function(c){ rows.push({ kind:"DPR check", at:c.at||"", file:c.file||("DPR "+c.reportNo), hash:c.hash||"", who:c.by||"", detail:(c.key?fmtDay(c.key)+": ":"")+dprVerdictText(c)+(c.reviewed?" (reviewed)":"") }); }); (CYC.reels||[]).filter(function(r){ return r.src&&/manual entry|Daily Log/.test(String(r.src.file||"")); }).forEach(function(r){ rows.push({ kind:"Reel entered", at:r.acceptedAt||"", file:r.src.file, hash:"", who:r.enteredBy||"", detail:r.id+" "+(r.flowlineId||"")+" "+(r.dateStart||"") }); }); return rows.sort(function(a,b){ return (b.at||"").localeCompare(a.at||""); }); }
+function provHtml(){ var rows=provRows(); return '<p class="cyc-h" style="margin-top:20px">Files and provenance</p><p class="cyc-sub">Every workbook import, DPR check, manual reel and register action, with file fingerprints where a file was involved. <button class="noprint" style="font-size:11px;padding:2px 8px" onclick="provExportCSV()">Export CSV</button></p><table class="cyc-t"><thead><tr><th>When</th><th>Kind</th><th>File or action</th><th>Fingerprint</th><th>Who</th><th>Detail</th></tr></thead><tbody>'+(rows.length?rows.map(function(r){ return '<tr><td>'+esc(pelStamp(r.at))+'</td><td>'+esc(r.kind)+'</td><td>'+esc(r.file)+'</td><td><span title="'+esc(r.hash)+'">'+esc(r.hash?r.hash.slice(0,12)+"\u2026":"")+'</span></td><td>'+esc(r.who)+'</td><td>'+esc(r.detail)+'</td></tr>'; }).join(""):'<tr><td colspan="6" class="dim">Nothing recorded yet.</td></tr>')+'</tbody></table>'; }
+function provExportCSV(){ var rows=[["When","Kind","File or action","Fingerprint","Who","Detail"]].concat(provRows().map(function(r){ return [r.at,r.kind,r.file,r.hash,r.who,r.detail]; })); dl("FILES AND PROVENANCE\n"+rows.map(function(r){ return r.map(cycQ).join(","); }).join("\n")+"\n", "Project Event Log - Provenance - "+curProject()+" - "+todayKey()+".csv", "text/csv"); }
 
 /* manual NORM reading */
-function cycAddReading(o){ if(pelRO()) return false; o=o||{}; var rl=null; if(o.cycleId){ rl=(CYC.reels||[]).filter(function(x){ return !x.deleted && x.cycleId===o.cycleId; })[0]; } else { var reel=String(o.reel||"").toUpperCase(); var m=(CYC.reels||[]).filter(function(x){ return !x.deleted && x.id===reel && (!o.dateStart || x.dateStart===o.dateStart); }); if(m.length===1) rl=m[0]; else if(m.length>1){ alert("More than one reel is named "+reel+"; choose the exact reel (with its date)."); return false; } } if(!rl){ alert("Choose a reel that is in the register."); return false; } var reel=rl.id; var vals=(Array.isArray(o.values)?o.values:String(o.values||"").split(/[\/,;\s]+/)).map(function(v){ return cycNumStrict(v,0,1000); }).filter(function(v){ return v!=null; }); if(!vals.length){ alert("Enter one or more readings as numbers, for example 0.06 / 0.08"); return false; } var rd=cycSanitise({readings:[{ readingId:cycUid(), cycleId:rl.cycleId, reel:reel, occurrence:rl.occurrence, location:String(o.location||"manual").slice(0,60), readings:vals, src:{sheet:"manual entry", row:0} }]}).readings[0]; if(!rd) return false; CYC.readings.push(rd); cycBump(); save(); renderCyc(); return true; }
-function cycAddReadingForm(){ var cid=document.getElementById("nrReel").value, loc=document.getElementById("nrLoc").value, vals=document.getElementById("nrVals").value; cycAddReading({cycleId:cid, location:loc, values:vals}); }
+function cycAddReading(o){ if(pelRO()) return false; o=o||{}; var rl=null; if(o.cycleId){ rl=(CYC.reels||[]).filter(function(x){ return !x.deleted && x.cycleId===o.cycleId; })[0]; } else { var reel=String(o.reel||"").toUpperCase(); var m=(CYC.reels||[]).filter(function(x){ return !x.deleted && x.id===reel && (!o.dateStart || x.dateStart===o.dateStart); }); if(m.length===1) rl=m[0]; else if(m.length>1){ alert("More than one reel is named "+reel+"; choose the exact reel (with its date)."); return false; } } if(!rl){ alert("Choose a reel that is in the register."); return false; } var reel=rl.id; var vals=(Array.isArray(o.values)?o.values:String(o.values||"").split(/[\/,;\s]+/)).map(function(v){ return cycNumStrict(v,0,1000); }).filter(function(v){ return v!=null; }); if(!vals.length){ alert("Enter one or more readings as numbers, for example 0.06 / 0.08"); return false; } var rd=cycSanitise({readings:[{ readingId:cycUid(), cycleId:rl.cycleId, reel:reel, occurrence:rl.occurrence, location:String(o.location||"manual").slice(0,60), readings:vals, src:{sheet:"manual entry", row:0} }]}).readings[0]; if(!rd){ alert("The reading could not be recorded for "+reel+"; check the reel name and the values."); return false; } rd.enteredBy=cycReviewerOk(curUser())?curUser():(window.__pelReviewer||""); rd.at=new Date().toISOString(); CYC.readings.push(rd); cycBump(); save(); renderCyc(); return true; }
+function cycAddReadingForm(){ var cid=document.getElementById("nrReel").value, loc=document.getElementById("nrLoc").value, vals=document.getElementById("nrVals").value; if(!cid){ alert("Choose the reel the swab was taken from."); return; } if(!String(vals||"").trim()){ alert("Enter one or more readings as numbers, for example 0.06 / 0.08"); return; } cycAddReading({cycleId:cid, location:loc, values:vals}); }
 
 /* hooks into the existing views */
 var __renderLog318=renderLog; renderLog=function(){ var r=__renderLog318.apply(this,arguments); try{ dprDayNote(); }catch(e){} return r; };
@@ -4387,7 +4508,7 @@ function pelTodayIngestParsed(rep){
 function pelTodayDrop(files){
   var list=Array.prototype.slice.call(files||[]); if(!list.length) return; if(pelRO()){ alert("The record is read-only at the moment."); return; }
   if(typeof pdfjsLib==="undefined"){ alert("The PDF reader did not load. Check the connection and try again."); return; }
-  if(!cycReviewerOk(curUser()) && !cycReviewerOk(window.__pelReviewer)){ var who=prompt("Your initials (recorded on every change this report makes):", ""); if(!cycReviewerOk(who)){ alert("Initials are needed once so the record shows who read the report."); return; } try{ var u=document.getElementById("userName"); if(u){ u.value=String(who).trim(); u.dispatchEvent(new Event("change")); } }catch(e){} window.__pelReviewer=String(who).trim(); }
+  if(!cycReviewerOk(curUser()) && !cycReviewerOk(window.__pelReviewer)){ var who=prompt("Your initials (recorded on every change this report makes):", ""); if(!cycReviewerOk(who)){ alert("Initials are needed once so the record shows who read the report."); return; } try{ var u=document.getElementById("userTag"); if(u){ u.value=String(who).trim(); u.dispatchEvent(new Event("change")); } }catch(e){} window.__pelReviewer=String(who).trim(); }
   var el=document.getElementById("tdDigest"); var idx=0, results=[];
   function next(){ if(idx>=list.length){ results.sort(function(a,b){ return (a.date||"").localeCompare(b.date||""); }); var outs=results.map(function(r){ return pelTodayIngestParsed(r); }); renderToday(); return; }
     var f=list[idx++]; if(el) el.innerHTML='<b>Reading '+esc(f.name)+' ('+idx+' of '+list.length+')…</b>';
@@ -4398,7 +4519,7 @@ function pelTodayDrop(files){
 function tdDigestHtml(d){
   var unreadNote=(DPR.unread&&DPR.unread.length)?'<div class="td-warn" style="margin-top:4px">Not read: '+DPR.unread.slice(-3).map(function(u){ return esc(u.file); }).join(", ")+' (see open actions).</div>':'';
   if(!d) return unreadNote+'<div class="td-sub">No contractor report has been dropped yet. The latest reports read: '+esc((DPR.timelines||[]).slice(-3).map(function(t){ return "DPR-"+t.reportNo+" "+t.date; }).join(", ")||"none")+'.</div>';
-  var age=Math.round((dprDayNum(tdKeyToday())-dprDayNum(d.date))||0); var h='<div><b>Latest report read: DPR-'+esc(d.reportNo||"?")+' for '+esc(tdFmt(d.date))+'</b> · read '+esc((d.at||"").replace("T"," ").slice(0,16))+(age<0?' · <span class="td-bad">date conflict: this report is dated '+(-age)+' day(s) after today; check the report date and this device\'s clock</span>':age>1?' · <span class="td-warn">this report is '+age+' days old; today\'s report has not been dropped</span>':age===1?' · yesterday\'s report':' · today\'s report')+'</div>';
+  var age=Math.round((dprDayNum(tdKeyToday())-dprDayNum(d.date))||0); var h='<div><b>Latest report read: DPR-'+esc(d.reportNo||"?")+' for '+esc(tdFmt(d.date))+'</b> · read '+esc(pelStamp(d.at))+(age<0?' · <span class="td-bad">date conflict: this report is dated '+(-age)+' day(s) after today; check the report date and this device\'s clock</span>':age>1?' · <span class="td-warn">this report is '+age+' days old; today\'s report has not been dropped</span>':age===1?' · yesterday\'s report':' · today\'s report')+'</div>';
   if(d.hours){ h+='<div style="margin-top:4px">Downtime in the report '+(d.hours.wm!=null?'weather+mechanical '+d.hours.wm.toFixed(2)+' h, vessel+ROV '+(d.hours.vr||0).toFixed(2)+' h':d.hours.dprDT.toFixed(2)+' h')+'; this log '+(d.hours.logDT==null?"no logged day":d.hours.logDT.toFixed(2)+" h")+'; '+esc(d.hours.verdict==="match"?"numerically matches":d.hours.verdict==="noday"?"no logged day to compare, log it":d.hours.verdict==="close"?"close":d.hours.verdict==="differ"?"differs, reconcile in DPR Check":d.hours.verdict)+'.</div>'; }
   if(d.completed&&d.completed.length) h+='<div style="margin-top:4px"><b>Completed:</b> '+d.completed.map(function(c){ var n=cycNorms((CYC.reels||[]).filter(function(r){ return !r.deleted && r.flowlineId===c.flow; }),"mean").cycle; return esc(c.id)+' on '+esc(c.flow||"?")+(c.cycleMin!=null?', cycle '+cycH(c.cycleMin)+(n&&n.n>1?' against a mean of '+cycH(n.mean):''):''); }).join("; ")+'.</div>';
   if(d.inProgress&&d.inProgress.length) h+='<div style="margin-top:4px"><b>'+(age>1?'Last known as at '+esc(tdFmt(d.date))+' (not current):':'In progress:')+'</b> '+d.inProgress.map(function(c){ return esc(c.id)+' on '+esc(c.flow||"?")+(c.stage?', '+esc(cycStepName(tdStageKeyFromBoundary(c.stage)))+' since '+esc(c.since):'')+' ('+c.found+' of 10 boundaries seen)'; }).join("; ")+'.</div>';
@@ -4415,9 +4536,9 @@ function renderToday(){
   document.getElementById("tdTitle").textContent="Today · "+tdFmt(tdKeyToday())+" · "+curProject()+(latest&&latest.date&&(dprDayNum(tdKeyToday())-dprDayNum(latest.date))>1?" · latest report "+tdFmt(latest.date):"");
   document.getElementById("tdDigest").innerHTML=tdDigestHtml(latest);
   /* active reel: latest in-progress from the last digest, else the most recent register reel */
-  var act=''; var stale=latest&&latest.date?((dprDayNum(tdKeyToday())-dprDayNum(latest.date))>1):false; var actTitle=document.getElementById("tdActiveTitle"); if(actTitle) actTitle.textContent=stale?"Reel status, last known":"Active reel";
+  var act=''; var stale=latest&&latest.date?((dprDayNum(tdKeyToday())-dprDayNum(latest.date))>1):false; var actTitle=document.getElementById("tdActiveTitle"); var __inProg=!!(latest && latest.inProgress && latest.inProgress.length); if(actTitle) actTitle.textContent=stale?"Reel status, last known":(__inProg?"Active reel":"Reel status");
   if(latest && latest.inProgress && latest.inProgress.length){ var c=latest.inProgress[latest.inProgress.length-1]; var fl=(CYC.reels||[]).filter(function(r){ return !r.deleted && r.flowlineId===c.flow && r.status==="complete"; }); var n=cycNorms(fl,"mean"); var k=tdStageKeyFromBoundary(c.stage); var norm=n[k]?n[k].mean:null; act='<div class="td-big">'+esc(c.id)+' <span style="font-size:14px;font-weight:400;color:#5c5c5c">'+esc(c.flow||"")+'</span></div><div class="td-sub">'+(stale?'<span class="td-warn">Last known as at '+esc(tdFmt(latest.date))+', not current: </span>':'')+'stage <b>'+esc(cycStepName(k))+'</b> since '+esc(c.since)+(norm?' · norm for this stage on '+esc(c.flow)+' '+cycH(norm):'')+'</div><div class="td-sub">'+c.found+' of 10 stage boundaries seen so far'+(stale?'; drop the reports since then to bring this up to date':'')+'</div>'; }
-  else { var last=(CYC.reels||[]).filter(function(r){ return !r.deleted; }).sort(function(a,b){ return (b.campaignSeq||0)-(a.campaignSeq||0); })[0]; act=last?'<div class="td-big">'+esc(cycReelLabel(last))+'</div><div class="td-sub">Last reel in the register: '+esc(last.status)+(last.cycleMin!=null?', cycle '+cycH(last.cycleMin):'')+' · '+esc(last.dateStart||"")+'</div><div class="td-sub">No reel in progress in the latest report.</div>':'<div class="td-sub">No reels yet. Drop a report or use the quick log.</div>'; }
+  else { var last=(CYC.reels||[]).filter(function(r){ return !r.deleted; }).sort(function(a,b){ return (b.campaignSeq||0)-(a.campaignSeq||0); })[0]; var __future=!!(last && last.dateStart && last.dateStart>tdKeyToday()); act=last?'<div class="td-big">'+esc(cycReelLabel(last))+'</div><div class="td-sub">'+(__future?'Latest reel in the register, dated '+esc(tdFmt(last.dateStart))+' (a future date), status '+esc(last.status):'Latest reel in the register: '+esc(last.status)+(last.cycleMin!=null?', cycle '+cycH(last.cycleMin):'')+(last.dateStart?', started '+esc(tdFmt(last.dateStart)):''))+'</div><div class="td-sub">'+(latest?'No reel in progress in the latest report.':'No contractor report read yet.')+'</div>':'<div class="td-sub">No reels yet. Drop a report or use the quick log.</div>'; }
   document.getElementById("tdActive").innerHTML=act;
   var pr=cycFlows().map(function(f){ var p=cycProgress(f); if(p.control==null && !p.accepted) return ''; return '<div class="td-act"><b>'+esc(f)+'</b> '+cycFmtNum(p.accepted)+(p.control!=null?' of '+cycFmtNum(p.control):'')+' m'+(p.pct!=null?' · <b>'+p.pct+'%</b>':'')+(p.reelsLeft?' · about '+p.reelsLeft+' reel(s) to go':'')+'</div>'; }).join("");
   document.getElementById("tdProgress").innerHTML=pr||'<div class="td-sub">No flowline lengths yet.</div>';
@@ -4428,18 +4549,40 @@ function renderToday(){
   /* quick log controls */
   var tEl=document.getElementById("qlTime"); if(tEl && !tEl.value){ var now=new Date(); tEl.value=("0"+now.getHours()).slice(-2)+":"+("0"+now.getMinutes()).slice(-2); }
   var sel=document.getElementById("qlReel"); if(sel){ var reels=(CYC.reels||[]).filter(function(r){ return !r.deleted; }).sort(function(a,b){ return (b.campaignSeq||0)-(a.campaignSeq||0); }).slice(0,12); sel.innerHTML='<option value="">reel…</option>'+reels.map(function(r){ return '<option value="'+esc(r.cycleId)+'" data-reel="'+esc(r.id)+'" data-flow="'+esc(r.flowlineId||"")+'">'+esc(cycReelLabel(r))+' · '+esc(r.flowlineId||"")+'</option>'; }).join(""); }
-  var st=document.getElementById("qlStages"); if(st && !st.innerHTML){ st.innerHTML=TD_STAGES.map(function(s){ return '<span class="td-chip" data-k="'+s.k+'" onclick="[].forEach.call(document.querySelectorAll(\'#qlStages .td-chip\'),function(x){ x.classList.remove(\'on\'); }); this.classList.add(\'on\');">'+esc(s.n)+'</span>'; }).join(""); }
+  var st=document.getElementById("qlStages"); if(st && !st.innerHTML){ st.innerHTML=TD_STAGES.map(function(s){ return '<button type="button" class="td-chip" role="radio" aria-checked="false" data-k="'+s.k+'" onclick="pelChipPick(this)">'+esc(s.n)+'</button>'; }).join(""); }
 }
 function pelQuickLog(o){
   if(pelRO()) return false; o=o||{}; var key=o.day||tdKeyToday(); var t=String(o.time||"").trim(); var tm=toMin(t); if(tm==null || tm>=1440) return false; if(o.cycleId){ var ex=(CYC.reels||[]).filter(function(r){ return !r.deleted && r.cycleId===o.cycleId; })[0]; if(ex){ o.reel=ex.id; if(!o.flow) o.flow=ex.flowlineId||""; } } var reel=String(o.reel||"").toUpperCase().trim(); if(!cycIdOk(reel) || /^(FL|UMB|TP|DP|KP|MLC|ROV|DWS)\d*$/i.test(reel)) return false; var stage=TD_STAGES.filter(function(s){ return s.k===o.stage; })[0]; if(!stage) return false;
   if(typeof isLocked==="function" ? isLocked(key) : false) return false;
   var who=cycReviewerOk(curUser())?curUser():(cycReviewerOk(window.__pelReviewer)?window.__pelReviewer:""); if(!who) return false;
   var flow=String(o.flow||"").toUpperCase().replace(/\s+/g,""); var text=reel+" · "+(flow&&cycFlowIdOk(flow)?flow+" · ":"")+stage.n+(o.note?" · "+String(o.note).slice(0,120):"");
-  var d=tdEnsureDay(key); d.log=d.log||[]; if(d.log.some(function(r){ return r[0]===t && r[1]===text; })) return text; var row=[t, text, "", who]; var at=d.log.length; for(var i=0;i<d.log.length;i++){ var lt=toMin(d.log[i][0]); if(lt!=null && lt>tm){ at=i; break; } } d.log.splice(at,0,row); try{ save(); }catch(e){} try{ if(document.getElementById("daySelect")){ document.getElementById("daySelect").value=key; renderLog(); } }catch(e){}
+  var d=tdEnsureDay(key); d.log=d.log||[]; var __pre=reel+" \u00b7 "; if(d.log.some(function(r){ var s=String(r[1]||""); return r[0]===t && (s===text || (s.indexOf(__pre)===0 && s.indexOf(" \u00b7 "+stage.n)>0)); })){ pelQuickLog.lastDup=true; return text; } var row=[t, text, "", who]; d.log.splice(pelLogInsertAt(d.log, tm),0,row); window.__pelDayChosen=true; try{ save(); }catch(e){} try{ if(document.getElementById("daySelect")){ document.getElementById("daySelect").value=key; renderLog(); } }catch(e){}
   if(stage.k==="offload" && !o.noBuild){ try{ var p=cycFromLog(); var mine=p.reels.filter(function(r){ return r.id===reel; }); if(mine.length){ p.reels=mine; p.conv=null; cycPreview(p,"Daily Log"); var P=__cycPending; cycRecommend(P); if(!cycReviewerOk(P.reviewer)) P.reviewer=cycReviewerOk(curUser())?curUser():(window.__pelReviewer||""); if(cycReviewerOk(P.reviewer)){ P.impactHash=cycDecisionHash(P); cycApplyImport({}); } else cycCancelImport(); } }catch(e){} }
   return text;
 }
-function pelQuickLogForm(){ var t=document.getElementById("qlTime").value; var sel=document.getElementById("qlReel"); var reel=document.getElementById("qlReelFree").value||(sel.selectedOptions[0]&&sel.selectedOptions[0].getAttribute("data-reel"))||""; var flow=document.getElementById("qlFlow").value||(sel.selectedOptions[0]&&sel.selectedOptions[0].getAttribute("data-flow"))||""; var chip=document.querySelector("#qlStages .td-chip.on"); var msg=document.getElementById("qlMsg"); if(!chip){ msg.textContent="Tap a stage."; return; } if(!cycReviewerOk(curUser()) && !cycReviewerOk(window.__pelReviewer)){ msg.textContent="Set your initials in the Daily Log logger box first."; return; } if(typeof isLocked==="function" && isLocked(tdKeyToday())){ msg.textContent="Today's log is locked; unlock it on the Daily Log first."; return; } var res=pelQuickLog({time:t, reel:reel, stage:chip.getAttribute("data-k"), flow:flow, note:document.getElementById("qlNote").value, cycleId:sel.value||null}); if(!res){ msg.textContent="Check the time (HH:MM, before 24:00) and the reel name."; return; } msg.textContent="Logged: "+res; document.getElementById("qlNote").value=""; document.getElementById("qlTime").value=""; renderToday(); }
+function pelChipPick(el){ [].forEach.call(document.querySelectorAll("#qlStages .td-chip"),function(x){ x.classList.remove("on"); x.setAttribute("aria-checked","false"); }); if(el){ el.classList.add("on"); el.setAttribute("aria-checked","true"); } }
+function pelQuickLogForm(){
+  var msg=document.getElementById("qlMsg"); if(!msg) return;
+  var now=Date.now(); if(window.__qlBusyUntil && now<window.__qlBusyUntil) return;
+  var t=String(document.getElementById("qlTime").value||"").trim(); var sel=document.getElementById("qlReel"); var opt=sel.selectedOptions&&sel.selectedOptions[0];
+  var reel=String(document.getElementById("qlReelFree").value||"").trim()||(opt&&opt.getAttribute("data-reel"))||""; var flow=String(document.getElementById("qlFlow").value||"").trim()||(opt&&opt.getAttribute("data-flow"))||"";
+  var chip=document.querySelector("#qlStages .td-chip.on");
+  if(!cycReviewerOk(curUser()) && !cycReviewerOk(window.__pelReviewer)){ msg.textContent="Set your initials in the Daily Log logger box first."; return; }
+  if(toMin(t)==null || toMin(t)>=1440){ msg.textContent="Time must be HH:MM, from 00:00 to 23:59."; return; }
+  if(!reel){ msg.textContent="Choose a reel from the list or type a new reel name, for example D1."; return; }
+  var ru=reel.toUpperCase(); if(/^(FL|UMB|TP|DP|KP|MLC|ROV|DWS)\d*$/i.test(ru)){ msg.textContent=ru+" is a flowline or equipment name, not a reel; put it in the flowline box."; return; }
+  if(!cycIdOk(ru)){ msg.textContent="Reel names are letters and numbers, up to 12 characters, for example B1 or D12."; return; }
+  var fu=String(flow).toUpperCase().replace(/\s+/g,""); if(fu && !cycFlowIdOk(fu)){ msg.textContent="Flowline names look like FL5 or UMB3."; return; }
+  if(!chip){ msg.textContent="Tap the stage that is starting."; return; }
+  if(typeof isLocked==="function" && isLocked(tdKeyToday())){ msg.textContent="Today's log is locked; unlock it on the Daily Log first."; return; }
+  window.__qlBusyUntil=now+1500; pelQuickLog.lastDup=false;
+  var res=pelQuickLog({time:t, reel:reel, stage:chip.getAttribute("data-k"), flow:flow, note:document.getElementById("qlNote").value, cycleId:sel.value||null});
+  if(!res){ window.__qlBusyUntil=0; msg.textContent="That line could not be written; check the time and the reel name."; return; }
+  var keepSel=sel.value;
+  if(pelQuickLog.lastDup){ msg.textContent="Already in today's log at "+t+": "+res; }
+  else { msg.textContent="Logged at "+t+": "+res; document.getElementById("qlNote").value=""; document.getElementById("qlTime").value=""; pelChipPick(null); }
+  renderToday(); try{ if(keepSel && sel.querySelector('option[value="'+keepSel+'"]')) sel.value=keepSel; }catch(e){}
+}
 /* weekly client report */
 function pelWeeklyReport(){
   var end=tdKeyToday(); var start=new Date(Date.parse(end)-6*86400000).toISOString().slice(0,10);
@@ -4447,14 +4590,14 @@ function pelWeeklyReport(){
   var completed=(CYC.reels||[]).filter(function(r){ if(r.deleted || r.status!=="complete") return false; var last=(r.steps||[]).map(function(s){ return s.date||""; }).filter(Boolean).sort().pop()||r.dateStart||""; return last>=start && last<=end; });
   var prevClient=CYC.settings.clientView; CYC.settings.clientView=true; var sel=cycSel(); var css=(document.getElementById("view-cyc").querySelector("style")||{}).innerHTML||"";
   var q=cycQuality(); var snap=cycSnapshot();
-  var body='<div style="border:1px solid #e6e1d6;border-radius:6px;padding:12px 14px;font-size:12px;color:#4a4a4a;margin-bottom:14px"><div style="font-size:18px;font-weight:700;color:#1A1A1A">Weekly report · '+esc(curProject())+' · '+esc(tdFmt(start))+' to '+esc(tdFmt(end))+'</div><div>Generated '+esc(new Date().toISOString().replace("T"," ").slice(0,16))+' UTC · build '+esc(APP_BUILD)+' · register revision '+(CYC.revision||0)+' · '+snap.includedCycleIds.length+' included cycles · a frozen snapshot of the record at generation; every figure traces to a report line, a sheet row or a log line.</div>'+(q.counts.blocking?'<div style="margin-top:6px;color:#c0392b"><b>Draft working report:</b> '+q.counts.blocking+' blocking data-quality item(s) are open ('+esc(q.items.filter(function(i){ return i.cls==="blocking"; }).map(function(i){ return i.text; }).join("; ").slice(0,300))+'). Resolve them before issuing.</div>':'')+'</div>';
+  var body='<div style="border:1px solid #e6e1d6;border-radius:6px;padding:12px 14px;font-size:12px;color:#4a4a4a;margin-bottom:14px"><div style="font-size:18px;font-weight:700;color:#1A1A1A">Weekly report · '+esc(curProject())+' · '+esc(tdFmt(start))+' to '+esc(tdFmt(end))+'</div><div>Generated '+esc(pelStamp())+' · build '+esc(APP_BUILD)+' · register revision '+(CYC.revision||0)+' · '+snap.includedCycleIds.length+' included cycles · a frozen snapshot of the record at generation; every figure traces to a report line, a sheet row or a log line.</div>'+(q.counts.blocking?'<div style="margin-top:6px;color:#c0392b"><b>Draft working report:</b> '+q.counts.blocking+' blocking data-quality item(s) are open ('+esc(q.items.filter(function(i){ return i.cls==="blocking"; }).map(function(i){ return i.text; }).join("; ").slice(0,300))+'). Resolve them before issuing.</div>':'')+'</div>';
   body+='<div class="panel cyc-sec"><p class="cyc-h">Day by day</p>'+(days.length?days.map(function(d){ return '<div style="margin-bottom:8px">'+tdDigestHtml(d)+'</div>'; }).join(""):'<div class="dim">No contractor reports were dropped this week.</div>')+'</div>';
   body+='<div class="panel cyc-sec"><p class="cyc-h">Reels completed this week</p>'+(completed.length?'<table class="cyc-t"><thead><tr><th>Reel</th><th>Line</th><th>Start</th><th class="n">Cycle</th><th class="n">Length</th><th>Source</th></tr></thead><tbody>'+completed.map(function(r){ return '<tr><td><b>'+esc(cycReelLabel(r))+'</b></td><td>'+esc(r.flowlineId||"")+'</td><td>'+esc(r.dateStart||"")+'</td><td class="n">'+cycH(r.cycleMin)+'</td><td class="n">'+(r.lengthM!=null?cycFmtNum(Math.round(r.lengthM))+" m":"")+'</td><td>'+esc(cycSourceOf(r).label)+'</td></tr>'; }).join("")+'</tbody></table>':'<div class="dim">None.</div>')+'</div>';
   body+='<div class="panel cyc-sec"><p class="cyc-h">Learning curve</p>'+cycSourceSummary(sel)+cycV_interp(sel)+'<div class="cyc-grid2">'+cycV_curves(sel,236)+'</div></div><div class="panel cyc-sec">'+cycV_norms(sel)+'</div><div class="panel cyc-sec">'+cycV_progress()+'</div>';
   body+='<div class="panel cyc-sec"><p class="cyc-h">Contractor reports against this log</p>'+(checks.length?'<table class="cyc-t"><thead><tr><th>Day</th><th>Report</th><th class="n">Report DT (h)</th><th class="n">Log DT (h)</th><th>Result</th></tr></thead><tbody>'+checks.map(function(c){ return '<tr><td>'+esc(tdFmt(c.key))+'</td><td>'+esc(c.file)+'</td><td class="n">'+(Math.max(c.sum||0,c.anc||0)).toFixed(2)+'</td><td class="n">'+(c.app.dt==null?"–":c.app.dt.toFixed(2))+'</td><td>'+esc(dprVerdictText(c))+(c.reviewed?' (reviewed)':'')+'</td></tr>'; }).join("")+'</tbody></table>':'<div class="dim">No checks this week.</div>')+'</div>';
   body+='<div class="panel cyc-sec">'+cycV_quality()+'</div>';
   CYC.settings.clientView=prevClient;
-  var html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc("Project Event Log - Weekly report - "+curProject()+" - "+end)+'</title><style>body{font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#1A1A1A;background:#fff;margin:24px;max-width:1200px}.panel{border:1px solid #e6e1d6;border-radius:6px;margin:14px 0;background:#fff}.noprint{display:none !important}'+css.replace(/#view-cyc\s*/g,"")+'</style></head><body>'+body+'</body></html>';
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc("Project Event Log - Weekly report - "+curProject()+" - "+end)+'</title><style>body{font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#1A1A1A;background:#fff;margin:24px;max-width:1200px}.panel{border:1px solid #e6e1d6;border-radius:6px;margin:14px 0;background:#fff}.noprint{display:none !important}'+css.replace(/#view-cyc\s*/g,"")+'</style></head><body>'+pelStripUi(body)+'</body></html>';
   dl(html, "Project Event Log - Weekly report"+(q.counts.blocking?" DRAFT":"")+" - "+curProject()+" - "+end+".html", "text/html"); renderCyc();
 }
 /* wiring */
