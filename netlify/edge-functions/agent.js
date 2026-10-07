@@ -60,7 +60,8 @@ export function buildSystemPrompt() {
     "22. Name a section with name_to_use from reel_names or from the register (for example C1 FL7 T6 (HLV trip 6)); the same reel carries different products on different trips and a product can be cut into parts, so the product, the part and the HLV trip are part of the name. Say HLV trip, and give the vessel trip only when asked.",
     "23. When asked why a stage has a figure, why it is blank or why it does not apply, quote the cited line from not_applicable or report_lines for that section, with its report number and time, and say whether the figure used comes from the client's sheet or the report lines (step_source, cycle_source). Where the two sources differ, state both figures and which one the register uses under the time source in force; never average them and never pick one on your own.",
     "24. Tender figures and the tender comparison are not supplied to you. If asked how the campaign compares with the tender, say that the Tender comparison tab holds the figures as entered and the comparison at each level, and offer the register facts that bear on it (cycle totals, elapsed dates, section counts) without stating a tender figure or a verdict against one.",
-    "25. Lengths: use length_m_used and say its source; a length not usable in rates (a progress line) may be quoted as logged but not used to state a rate. Rates (throughput and line rate) are supplied per section and per class; never divide a length by a time yourself."
+    "25. Lengths: use length_m_used and say its source; a length not usable in rates (a progress line) may be quoted as logged but not used to state a rate. Rates (throughput and line rate) are supplied per section and per class; never divide a length by a time yourself.",
+    "26. Never quote a field name or key from the data you were given, in prose, headings or tables: not cycle_source, cycle_min_client_sheet, cycle_min_reports, step_source, length_m_used, campaign_events, day_totals, period_totals, not_applicable, report_lines, reel_names or any other key. Use the words the screen uses: the client's sheet, the report lines, the cycle total, the Daily Log, the day totals, the tagged events, the length used, the stages that do not apply, the section's name. If context.meta.context_note says that earlier days' lines were left out, say so in one short sentence when the question reaches those days; the day totals and tagged events still cover every day."
   ].join("\n");
 }
 
@@ -81,7 +82,7 @@ export function truncateContext(context) {
   }
 
   let s = JSON.stringify(context);
-  if (s.length <= MAX_CONTEXT_CHARS) return { context: context, truncated: false };
+  if (s.length <= MAX_CONTEXT_CHARS) return { context: context, truncated: false, chars: s.length, droppedDays: 0 };
   const pinDays = new Set([context.selectedDay, context.latestLoggedDay].filter(Boolean));
   const days = context && context.days ? Object.keys(context.days).sort().filter(k => !pinDays.has(k)) : [];
   const dropped = [];
@@ -146,7 +147,12 @@ export function truncateContext(context) {
     s = JSON.stringify(context);
   }
   const droppedAny = ((context.meta && context.meta.dropped_fields) || []).length > 0 || ((context.meta && context.meta.invalid_days) || []).length > 0;
-  return { context: context, truncated: dropped.length > 0 || !!dayTrim || clipped > 0 || finalGuard > 0 || droppedAny };
+  const droppedDays = ((context.meta && context.meta.truncated_days) || []).length;
+  if (context.meta && (droppedDays > 0 || dayTrim)) {
+    context.meta.context_note = (droppedDays ? "The day-by-day lines of " + droppedDays + " earlier day(s) were left out of this context for size; " : "Some earlier log rows were trimmed for size; ") + "day_totals, period_totals and campaign_events still cover every logged day, so answer questions about those days from them and say that the lines themselves were not supplied.";
+    s = JSON.stringify(context);
+  }
+  return { context: context, truncated: dropped.length > 0 || !!dayTrim || clipped > 0 || finalGuard > 0 || droppedAny, chars: s.length, droppedDays: droppedDays };
 }
 
 export default async function handler(request) {
@@ -232,7 +238,9 @@ export default async function handler(request) {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-store",
         "X-Accel-Buffering": "no",
-        "X-Pel-Truncated": t.truncated ? "1" : "0"
+        "X-Pel-Truncated": t.truncated ? "1" : "0",
+        "X-Pel-Context-Chars": String(t.chars || 0),
+        "X-Pel-Dropped-Days": String(t.droppedDays || 0)
       }
     });
   } catch (err) {
