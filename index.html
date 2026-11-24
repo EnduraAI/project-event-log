@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-11-24.2 - deploy check string: PEL-BUILD-2026-11-24.2 -->
+<!-- Endura Project Event Log - build 2026-11-24.3 - deploy check string: PEL-BUILD-2026-11-24.3 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -332,7 +332,7 @@ window.PEL_LIB_SOURCE={}; window.PEL_LIB_READY={};
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">v6.2.1 · build 2026-11-24.2</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">v7.0.0 · build 2026-11-24.3</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -651,7 +651,7 @@ window.PEL_LIB_SOURCE={}; window.PEL_LIB_READY={};
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-11-24.2"; var APP_VERSION="6.2.1";
+var APP_BUILD="2026-11-24.3"; var APP_VERSION="7.0.0";
 var PEL_ENV={env:"TEST",agent:true,schema:7};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
@@ -4513,7 +4513,7 @@ function ucLedger(opts){ opts=opts||{}; var scope=opts.scope||CYC_SCOPE; var uni
     if(bz){ var tl=R.filter(function(r){ return r.abs>g0 && (UC_LG_RE.tool.test(r.text) || (r.src==="dpr" && UC_LG_RE.dprTool.test(r.text))) && (bz.act!=="section" || /\b(PRT|pipe recovery tool)\b/i.test(r.text)); })[0];
       if(tl){ var hint=null; R.forEach(function(r){ if(hint==null && r.abs>=tl.abs){ var h=UC_LG_RE.posHint.exec(r.text); if(h) hint=+h[2]; } }); var ns=bz.ns.filter(function(n){ return hint==null?false:n>=hint; }); if(!ns.length) ns=[Math.max.apply(null, bz.ns)];
         var ng={ act:bz.act, trip:bz.trip, line:bz.line, a:tl.abs, b:g1, ns:ns, uids:[], split:true, splitFrom:bz }; G.push(ng); for(var m=tl.abs; m<g1; m++){ if(!owner.has(m)) owner.set(m, G.length-1); } c1=tl.abs; } }
-    if(maxN!=null){ var ex=R.filter(function(r){ if(/\btrip\s*#?\s*\d/i.test(r.text)) return false; var m=UC_LG_RE.extra.exec(r.text); if(!m) return false; var n=+(m[2]||m[3]); return n>=2 && n<maxN && r.abs<c1; })[0];
+    if(maxN!=null && (ucAct(prevG.act, scope)||{}).seq!==false){ var ex=R.filter(function(r){ if(/\btrip\s*#?\s*\d/i.test(r.text)) return false; var m=UC_LG_RE.extra.exec(r.text); if(!m) return false; var n=+(m[2]||m[3]); return n>=2 && n<maxN && r.abs<c1; })[0];
       if(ex){ var done=R.filter(function(r){ var n=nOf(r.text); return r.abs>ex.abs && r.abs<c1 && n!=null && n<=maxN && UC_LG_RE.done.test(r.text); }); var de=done.length?done[done.length-1]:null;
         if(de){ var ev=addEv({ kind:"extra", a:ex.abs, b:de.abs, title:cycCut(ex.text, 160), cat:"Additional work (to confirm)", start:ucLgRow(ex), end:ucLgRow(de), lines:linesIn(ex.abs, de.abs) }); } } }
     var lastGap=(g1===H1 && g0>=Lu);
@@ -5848,7 +5848,7 @@ function ucCountLine(g){ var by={}; g.left.forEach(function(x){ (by[x.kind]=by[x
 function ucNumbersSentence(units){ var sc=cycScope(); var acts=ucActs(); var lines=ucLinesUsed(units); var trips=ucTrips(units); var parts=[]; var lenM=0; acts.forEach(function(a){ var n=units.filter(function(u){ return u.act===a.id; }).length; if(n) parts.push(n+' '+(n===1?a.unit:a.units)); }); units.forEach(function(u){ if(u.act==="section"||u.act==="lift"){ var L=ucLengthOf(u); if(L!=null) lenM+=L; } });
   var first=units.length?units.reduce(function(m,u){ return u.abs<m?u.abs:m; }, units[0].abs):null, last=units.length?units.reduce(function(m,u){ return u.abs>m?u.abs:m; }, units[0].abs):null;
   if(!units.length) return ''; var lineTxt=lines.length===1?(ucLineName(lines[0])+(function(){ var l=ucLineOf(lines[0]); return (l&&l.from&&l.to)?' (from '+l.from+' towards '+l.to+')':''; })()):(lines.length+' lines');
-  return esc(lineTxt)+': '+esc(parts.join(' and '))+(lenM?' ('+cycFmtNum(Math.round(lenM))+' m)':'')+(trips.length?' over '+(trips.length===1?'trip '+trips[0]:'trips '+trips.join(' and ')):'')+', '+esc(fmtDay(ucAbsDay(first)))+(ucAbsDay(first)!==ucAbsDay(last)?' to '+esc(fmtDay(ucAbsDay(last))):'')+'.'; }
+  var andList=function(a){ return a.length<3?a.join(' and '):a.slice(0,-1).join(', ')+' and '+a[a.length-1]; }; return esc(lineTxt)+': '+esc(andList(parts))+(lenM?' ('+cycFmtNum(Math.round(lenM))+' m)':'')+(trips.length?' over '+(trips.length===1?'trip '+trips[0]:'trips '+andList(trips)):'')+', '+esc(fmtDay(ucAbsDay(first)))+(ucAbsDay(first)!==ucAbsDay(last)?' to '+esc(fmtDay(ucAbsDay(last))):'')+'.'; }
 /* the steady state of each trip in a selection that holds several: a trip's own pace is the only pace stated */
 function ucSteadyTrips(g){ if(!g || g.trips.length<2) return []; return g.trips.map(function(t){ var gt=ucGroup(g.all, g.act, {trip:t}); return { trip:t, st:gt.steady }; }); }
 function ucTiles(g){ var a=g.a; var ph=(g.mean!=null && g.mean>0)?Math.round(60/g.mean*10)/10:null; var t=[]; t.push(['<div class="k">'+esc(a.units)+'</div><div class="v">'+g.all.length+'</div><div class="s">'+g.shown.length+' in the curve</div>']);
@@ -5885,9 +5885,11 @@ function ucWhereHtml(g, rows){ var a=g.a; if(!a.stages || !a.stages.length) retu
 function ucUnitsTable(g, rows, units){ var a=g.a; var leftOf={}; g.left.forEach(function(x){ leftOf[x.u.uid]=x; }); var prev=null; var M=g.mean;
   var tr=g.all.map(function(u){ var L=leftOf[u.uid]; var vs=(prev&&prev.min!=null&&u.min!=null&&!ucOut(u)&&!ucOut(prev))?ucPct(u.min, prev.min):null; var am=(u.min!=null&&M!=null&&!ucOut(u))?Math.round(u.min-M):null; var lines=ucLinesIn(u, rows); var row='<tr'+(L?' class="dim"':'')+'><td style="white-space:nowrap"><b>'+esc(ucUnitLabelCap(u))+'</b>'+(u.trip!=null?' <span class="dim">trip '+u.trip+'</span>':'')+'</td><td style="white-space:nowrap">'+esc(ucWhen(u.abs))+'</td><td class="n" style="white-space:nowrap">'+(u.min!=null?ucFmt(u.min):'–')+'</td><td class="n" style="white-space:nowrap">'+(vs==null?'<span class="dim">'+(prev?'–':'first')+'</span>':'<span class="'+(vs<0?'good':(vs>0?'bad':''))+'">'+(vs>0?'+':'')+vs+'%</span>')+'</td><td class="n" style="white-space:nowrap">'+(am==null?'–':((am>0?'+':'')+ucFmt(am)))+'</td><td style="font-size:11.5px">'+esc(L?L.why:(u.intr&&u.keep?'read as interrupted ('+ucFmt(u.min)+' against a cap of '+ucCapFmt(u.capMin||a.cap.min)+'), kept in the curve by the reviewer'+(u.keepReason?': '+u.keepReason:''):(u.grp?'group of '+u.grp.n+' ('+u.grp.from+' to '+u.grp.to+')':(u.paired?'start paired with "cut complete"':'logged'))))+(u.again.length?'; logged again at '+esc(ucAbsClock(u.again[0].abs)):'')+'</td><td style="font-size:11.5px">'+(lines.holdups.length?esc(cycCut(lines.holdups[0].text,90))+(lines.holdups.length>1?' <span class="dim">+'+(lines.holdups.length-1)+'</span>':''):'<span class="dim">'+(lines.total?lines.total+' lines, none read as a hold-up':'')+'</span>')+'</td></tr>'; if(!ucOut(u) && u.min!=null) prev=u; return row; }).join("");
   return '<details class="cyc-more" style="margin-top:8px"'+(g.all.length<=40?' open':'')+'><summary class="dim" style="cursor:pointer;font-size:12px">The '+g.all.length+' '+esc(a.units)+', one row each</summary><div class="u6-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="cyc-t"><thead><tr><th>'+esc(a.unit.charAt(0).toUpperCase()+a.unit.slice(1))+'</th><th>Done</th><th class="n">Cycle</th><th class="n">vs previous</th><th class="n">Against the mean</th><th>Timing</th><th>Logged during it</th></tr></thead><tbody>'+tr+'</tbody></table></div></details>'; }
-function ucV_learning(){ var units=ucSelUnits(); var rows=ucRows(); var ui=ucUI(); var acts=ucActs().filter(function(a){ return units.some(function(u){ return u.act===a.id; }); });
+function ucV_learning(){ return (typeof ucV_learning7==="function")?ucV_learning7():ucV_learningAll(); }
+/* the v6 Learning view: every series of the selection on one chart per activity, the counts, the fit and each unit (under "The full detail" since v7.0.0) */
+function ucV_learningAll(){ var units=ucSelUnits(); var rows=ucRows(); var ui=ucUI(); var acts=ucActs().filter(function(a){ return units.some(function(u){ return u.act===a.id; }); });
   var h='<div class="panel cyc-sec"><p class="cyc-h">Learning curve</p><p class="cyc-sub">Cycle time per unit in campaign order, one chart per activity, with the fitted curve where the points allow it. Hollow points were timed as part of a group (the log named the unit numbers every few units); triangles fell in interrupted intervals and are not fitted. Every chart states how many units are on the register, how many are in the curve and why the rest are left out.</p>';
-  acts.forEach(function(a){ var g=ucGroup(units, a.id, {trip:ui.ucTrip, line:ui.ucLine}); h+='<div style="margin-top:12px"><div style="font-weight:700;font-size:13px">'+esc(a.label)+' <span class="dim" style="font-weight:400">'+(function(){ var p=[]; var nm=ucLinesUsed(g.all).map(ucLineName).filter(function(x){ return !!x; }); if(nm.length) p.push(nm.join(", ")); if(g.trips.length) p.push('trip'+(g.trips.length>1?'s ':' ')+g.trips.join(", ")); return p.length?'· '+esc(p.join(' · ')):''; })()+'</span></div>'+ucChartFor(g, {xOrder:ui.ucTrip!=null})+ucScaleToggle()+ucCountLine(g)+'<div class="dim" style="font-size:11.5px"><b>Fit.</b> '+(g.fit.ok?('Learning rate '+Math.round(g.fit.learningRate*100)+'%, '+esc(ucGradeWord(g.fit, true))+' (R² '+g.fit.r2.toFixed(2)+', n='+g.fit.n+'); the fitted curve reads '+ucFmt(g.fit.predict(1))+' at '+esc(a.unit)+' 1 and '+ucFmt(g.fit.next)+' at '+esc(a.unit)+' '+g.fit.nextUnit+'.'):esc(g.fit.reason))+' <b>Steady state.</b> '+ucSteadyText(g)+'</div>'+ucWhereHtml(g, rows)+ucUnitsTable(g, rows, units)+'</div>'; });
+  acts.forEach(function(a){ var g=ucGroup(units, a.id, {trip:ui.ucTrip, line:ui.ucLine}); h+='<div style="margin-top:12px"><div style="font-weight:700;font-size:13px">'+esc(a.label)+' <span class="dim" style="font-weight:400">'+(function(){ var p=[]; var nm=ucLinesUsed(g.all).map(ucLineName).filter(function(x){ return !!x; }); if(nm.length) p.push(nm.join(", ")); if(g.trips.length) p.push('trip'+(g.trips.length>1?'s ':' ')+g.trips.join(", ")); return p.length?'· '+esc(p.join(' · ')):''; })()+'</span></div>'+ucChartFor(g, {xOrder:ui.ucTrip!=null})+ucScaleToggle()+ucCountLine(g)+'<div class="dim" style="font-size:11.5px"><b>Fit.</b> '+(g.fit.ok?('Learning rate '+Math.round(g.fit.learningRate*100)+'%, '+esc(ucGradeWord(g.fit, true))+' (R² '+g.fit.r2.toFixed(2)+', n='+g.fit.n+'); the fitted curve reads '+ucFmt(g.fit.predict(1))+' at '+esc(a.unit)+' 1 and '+ucFmt(g.fit.next)+' at '+esc(a.unit)+' '+g.fit.nextUnit+'.'):esc(g.fit.reason))+' <b>Steady state.</b> '+ucSteadyText(g)+'</div>'+ucUnitsTable(g, rows, units)+'</div>'; });
   h+='</div><div class="panel cyc-sec">'+acts.map(function(a){ return ucInterp(ucGroup(units, a.id, {trip:ui.ucTrip, line:ui.ucLine})); }).join("")+'</div>'; return h; }
 /* ---- Compare: the trips side by side, per activity ---- */
 /* ---- Compare: groups side by side, per activity, each counted from its own first unit. By trip, by the units' own numbers or by date
@@ -6054,7 +6056,8 @@ function ucExportXLSX(){ if(!window.XLSX || !XLSX.utils || !XLSX.writeFile){ pel
 function ucReportBody(units, rows){ var ui=ucUI(); var acts=ucActs().filter(function(a){ return units.some(function(u){ return u.act===a.id; }); }); var h='';
   h+=ucReportLedger(units, rows);
   h+='<div class="panel cyc-sec"><p class="cyc-h">The campaign in numbers</p><p style="font-size:13.5px;line-height:1.55;margin:4px 0 6px">'+ucNumbersSentence(units)+'</p>'+acts.map(function(a){ var g=ucGroup(units, a.id, {trip:ui.ucTrip, line:ui.ucLine}); return '<div style="font-weight:700;font-size:13px;margin-top:12px">'+esc(a.label)+' <span class="dim" style="font-weight:400">· '+esc(a.cycle)+'</span></div>'+ucTiles(g); }).join("")+'</div>';
-  h+='<div class="panel cyc-sec"><p class="cyc-h">Learning curves</p><p class="cyc-sub">Cycle time per unit in campaign order on a log scale (the first units get the room, the plateau the rest), the median per doubling block as the step line, the fitted curve where the points allow it, the mean and the steady state in the margin; under each curve the median per block of 25 units. Hollow points were timed as part of a group; triangles fell in interrupted intervals and are not fitted. A description of the work done, not a forecast.</p>'+acts.map(function(a){ var g=ucGroup(units, a.id, {trip:ui.ucTrip, line:ui.ucLine}); return '<div style="margin-top:10px">'+ucChartFor(g, {width:960, xOrder:ui.ucTrip!=null})+ucBlockChart(g, {width:960, xOrder:ui.ucTrip!=null, steady:g.steady?g.steady.value:null})+ucInterp(g)+'</div>'; }).join("")+'</div>';
+  /* v7.0.0 the report's learning section: the series as the Learning tab shows them, then each activity's reading in words */
+  h+='<div class="panel cyc-sec"><p class="cyc-h">Learning: how each series ran</p><p class="cyc-sub">'+esc(UC_L7_HOW)+'</p>'+acts.map(function(a){ var g=ucGroup(units, a.id, {trip:ui.ucTrip, line:ui.ucLine}); return ucL7Activity(units, a, {})+ucInterp(g); }).join("")+'</div>';
   h+=ucV_compare({ report:true, units:units });
   var intr=ucInterruptionsHtml(units, rows, 20); if(intr) h+='<div class="panel cyc-sec">'+intr+'</div>';
   var sh=ucShifts(units); if(sh.length>1) h+='<div class="panel cyc-sec"><p class="cyc-h">Shift by shift</p><p class="cyc-sub">Units completed in each 12-hour shift.</p>'+ucShiftChart(sh, {width:960, title:"Units completed per shift"})+'</div>';
@@ -6073,7 +6076,7 @@ function ucReportLedger(units, rows){ var L; try{ L=ucLedger({ scope:CYC_SCOPE, 
 function ucExportReport(){ var sc=cycScope(); var units=ucSelUnits(); var rows=ucRows(); var prevClient=CYC.settings.clientView; CYC.settings.clientView=true; var body; try{ body=ucReportBody(units, rows); } finally{ CYC.settings.clientView=prevClient; }
   var css=(document.getElementById("view-cyc").querySelector("style")||{}).innerHTML||""; var U=ucOf();
   var manifest='<div style="border:1px solid #e6e1d6;border-radius:6px;padding:12px 14px;font-size:12px;color:#4a4a4a;margin-bottom:14px"><div style="font-size:16px;font-weight:700;color:#1A1A1A">'+esc(sc.title)+' report · '+esc(curProject()||"")+'</div><div>Scope '+esc(ucScopeTag())+' · '+units.length+' units · register revision '+(CYC.revision||0)+' · generated '+esc(pelStamp(new Date()))+' · build '+esc(APP_BUILD)+' (v'+esc(APP_VERSION)+'), schema '+PEL_ENV.schema+' · '+esc((function(){ try{ return pelDataCutoff().text; }catch(e){ return ""; } })())+(U.lastBuild&&U.lastBuild.at?' · built from '+(ucViewMode(CYC_SCOPE)==="dpr"?'the DPR':'the log')+' '+esc(pelStamp(U.lastBuild.at))+(U.lastBuild.logTo?(ucViewMode(CYC_SCOPE)==="dpr"?', read to ':', log to ')+esc(fmtDay(U.lastBuild.logTo)):''):'')+'</div><div style="margin-top:4px">'+(ucViewMode(CYC_SCOPE)==="dpr"?'This report is a frozen analysis snapshot built from the contractor’s DPRs kept with the record and, for the days without one, the Daily Log as typed on board.':'This report is a frozen analysis snapshot built from the Daily Log as typed on board.')+' It is not a contractual performance statement; no curve is a forecast; a learning rate is quoted only from five or more timed units.</div></div>';
-  var html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(cycFileName("report "+ucScopeTag(),""))+'</title><style>body{font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#1A1A1A;background:#fff;margin:24px;max-width:1200px}.panel{border:1px solid #e6e1d6;border-radius:6px;margin:14px 0;background:#fff}.noprint{display:none !important}'+css.replace(/:is\(#view-cyc,#view-tender\)\s*/g,'').replace(/#view-cyc\s*/g,'')+'svg.uc text{font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif}'+UC6_CSS+'</style></head><body>'+pelStripUi(manifest+body)+'</body></html>';
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(cycFileName("report "+ucScopeTag(),""))+'</title><style>body{font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#1A1A1A;background:#fff;margin:24px;max-width:1200px}.panel{border:1px solid #e6e1d6;border-radius:6px;margin:14px 0;background:#fff}.noprint{display:none !important}'+css.replace(/:is\(#view-cyc,#view-tender\)\s*/g,'').replace(/#view-cyc\s*/g,'')+'svg.uc text{font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif}'+UC6_CSS+UC7_CSS+'</style></head><body>'+pelStripUi(manifest+body)+'</body></html>';
   dl(html, cycFileName("report "+ucScopeTag(),"html"), "text/html"); renderCyc(); }
 /* Ask the Log: the figures per activity and trip, the latest units, the plan, and the definitions; no raw lines */
 function ucAgentSummaryOne(scope){ var reg=cycRegFor(scope); if(!reg || !reg.uc || !(reg.uc.units||[]).length) return null; return cycWithScope(scope, function(){ var units=ucUnits(); var rowsAll=ucSrcRows(scope, {mode:ucViewMode(scope)}).rows; var nowAbs=rowsAll.length?rowsAll[rowsAll.length-1].abs:null; var out={ scope:scope, title:cycScope().title, units:units.length, lines:(ucOf().lines||[]).map(function(l){ return { id:l.id, name:l.name, from:l.from, to:l.to, step_m:l.stepM }; }), activities:[], definitions:{} };
@@ -6285,7 +6288,7 @@ function ucV6Estimating(L){ var ps=ucPaceWords(L); var rows=[]; var units=ucUnit
   return '<div class="u6-scroll"><table class="u6-t"><thead><tr><th>Item</th><th>Figure</th><th>Basis</th></tr></thead><tbody>'+rows.map(function(r){ return '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td></tr>'; }).join("")+'</tbody></table></div>'; }
 /* ---- the Overview ---- */
 function ucV6Kpis(L, units){ var acts=ucActs(); var out=''; var bl=ucLgBacklog(units);
-  acts.forEach(function(a){ var us=units.filter(function(u){ return u.act===a.id; }); if(!us.length) return; var trips=ucTrips(us); var sub=trips.length>1?trips.map(function(t){ return us.filter(function(u){ return u.trip===t; }).length+' on trip '+t; }).join(', '):(trips.length?'trip '+trips[0]:''); if(a.id==="section" && bl.length) sub+=(sub?' · ':'')+bl.map(function(b){ return b.left+' more lie between the trip '+b.trip+' cuts'+(b.lineName?' on the '+b.lineName:''); }).join('; ');
+  acts.forEach(function(a){ var us=units.filter(function(u){ return u.act===a.id; }); if(!us.length) return; var trips=ucTrips(us); var noTrip=us.filter(function(u){ return u.trip==null; }).length; var sub=(trips.length>1 || (trips.length && noTrip))?trips.map(function(t){ return us.filter(function(u){ return u.trip===t; }).length+' on trip '+t; }).join(', ')+(noTrip?', '+noTrip+' with no trip number in the record':''):(trips.length?'trip '+trips[0]:''); if(a.id==="section" && bl.length) sub+=(sub?' · ':'')+bl.map(function(b){ return b.left+' more lie between the trip '+b.trip+' cuts'+(b.lineName?' on the '+b.lineName:''); }).join('; ');
     out+='<div class="u6-kpi"><div class="k">'+esc(a.label)+'</div><div class="v">'+us.length+'</div><div class="s">'+esc(sub)+'</div></div>'; });
   var ps=ucPaceWords(L); if(ps.length){ var p0=ps[0]; var pw=function(p, first){ return (first?'':ucPace1(p.pace)+' min a '+p.unit+((p.trip!=null || p.lineName)?' on ':''))+ucPaceTag(p, true)+(p.reached!=null?', reached by '+p.unit+' '+p.reached:''); }; out+='<div class="u6-kpi"><div class="k">Crew’s pace</div><div class="v">'+ucPace1(p0.pace)+' min <small>a '+esc(p0.unit)+'</small></div><div class="s">'+esc([pw(p0, true)].concat(ps.slice(1).map(function(p){ return pw(p, false); })).join(' · '))+'</div></div>'; }
   var open=L.stops.filter(function(e){ return e.open; })[0]; var lr=L.lastRow; var ageTxt=lr?ucAgeText(lr.abs):'';
@@ -6348,6 +6351,117 @@ function pelSurfCounts(){ return cycWithScope("surf", function(){ var reels=(CYC
 
 /* v6.2.0 the ledger covers the latest campaign after a break; the units before it are on the register and in the curves */
 function ucV6Earlier(L){ var E=L&&L.earlier; if(!E) return ''; return '<p class="u6-take dim" style="font-size:12.5px">The ledger covers the latest campaign, from '+esc(ucWhenShort(L.H0))+'. The '+E.n+' '+(E.n===1?'unit':'units')+' before it ('+esc(ucWhenShort(E.from))+' to '+esc(ucWhenShort(E.to))+', then '+E.days+' days with no unit while the vessel was on other work) are on the register and in the learning curves.</p>'; }
+
+/* ---- v7.0.0 the Learning tab: one series per trip and line, never pooled. For each activity: the headline figures, the series side
+   by side as bars (median, middle half, count), then one chart per series on a linear axis with the scale set by the bulk of the points
+   (the few far above it are marked at the top edge), a rolling median through them and the steady state. A learning rate is stated only
+   where the points support one; otherwise the series is described as it ran (steady, faster or slower, first third to last third). The
+   pooled chart, the counts and the unit table of v6 are kept under "The full detail". ---- */
+function ucQ(vals, p){ if(!vals || !vals.length) return null; var s=vals.slice().sort(function(a,b){ return a-b; }); var i=(s.length-1)*p; var lo=Math.floor(i), hi=Math.ceil(i); return s[lo]+(s[hi]-s[lo])*(i-lo); }
+function ucL7Pace(v){ return (v==null||!isFinite(v))?"–":(v<20?ucPace1(v)+" min":ucFmt(v)); }
+/* the series of an activity in the units given: one per trip and line, in the order they started */
+function ucL7Series(units, a){ var mine=units.filter(function(u){ return u.act===a.id; }); var keys=[], by={};
+  mine.forEach(function(u){ var k=(u.trip==null?"":u.trip)+"|"+(u.line||""); if(!by[k]){ by[k]={ key:k, trip:(u.trip==null?null:u.trip), line:u.line||"", first:u.abs, last:u.abs }; keys.push(k); } by[k].first=Math.min(by[k].first, u.abs); by[k].last=Math.max(by[k].last, u.abs); });
+  var nLines=keys.map(function(k){ return by[k].line; }).filter(function(v,i,arr){ return arr.indexOf(v)===i; }).length;
+  return keys.map(function(k){ var s=by[k]; s.g=ucGroup(mine.filter(function(u){ return (u.line||"")===s.line && u.trip===s.trip; }), a.id, { xOrder:true }); s.n=s.g.all.length; s.m=s.g.shown.length; s.med=s.g.median; s.q1=ucQ(s.g.vals, 0.25); s.q3=ucQ(s.g.vals, 0.75);
+    var nm=[]; if(s.trip!=null) nm.push("Trip "+s.trip); if(s.line && (nLines>1 || s.trip==null)) nm.push(ucLineName(s.line)); if(!nm.length) nm.push(s.line?ucLineName(s.line):a.label); if(s.trip==null) nm.push(ucDayShort(ucAbsDay(s.first))+(ucAbsDay(s.last)!==ucAbsDay(s.first)?" to "+ucDayShort(ucAbsDay(s.last)):""));
+    s.name=nm.join(" · "); s.verdict=ucL7Verdict(s, a); return s; }).sort(function(x,y){ return x.first-y.first; }); }
+/* how a series ran, in words: a learning rate only where the fit holds; else the first third against the last third */
+function ucL7Verdict(s, a){ var g=s.g; var v=g.vals; if(s.m<5) return { kind:"few", text:(s.m===0?"No timed "+a.units+" (the first of a series has no previous one to time it from)":s.m+" timed "+(s.m===1?a.unit:a.units)+": too few to read a trend") };
+  var th=cycThirds(v); var st=g.steady; /* a learning rate needs the fit to hold (R² 0.5 or more) and the last third to run at least a tenth quicker than the first: a start-up
+     followed by a flat run fits a curve on paper and is not learning through the series */
+  var fitOK=!!(g.fit && g.fit.ok && g.fit.r2>=0.5 && g.fit.learningRate<=0.97 && (!th || th.last<=0.9*th.first));
+  if(fitOK) return { kind:"learning", text:"Getting faster: learning rate "+Math.round(g.fit.learningRate*100)+"% (R² "+g.fit.r2.toFixed(2)+", "+g.fit.n+" "+a.units+")"+(th?", from "+ucL7Pace(th.first)+" over the first third to "+ucL7Pace(th.last)+" over the last":"") };
+  if(!th) return { kind:"flat", text:"Median "+ucL7Pace(s.med)+" over "+s.m+" "+a.units+"; too short for a steady state" };
+  /* faster or slower is read from thirds of eight or more units each; a shorter series is described by its median */
+  if(th.k<8) return { kind:"flat", text:"Median "+ucL7Pace(s.med)+" over "+s.m+" "+a.units+": too short to read a trend" };
+  var ch=(th.first>0)?(th.last-th.first)/th.first:0; var reached=(st && st.reached)?", reached by "+ucUnitLabel(st.reached):"";
+  if(ch<=-0.15) return { kind:"faster", text:"Faster through the series: "+ucL7Pace(th.first)+" over the first third, "+ucL7Pace(th.last)+" over the last ("+Math.round(-ch*100)+"% quicker)" };
+  if(ch>=0.15) return { kind:"slower", text:"Slower through the series: "+ucL7Pace(th.first)+" over the first third, "+ucL7Pace(th.last)+" over the last ("+Math.round(ch*100)+"% slower)" };
+  /* a start-up the thirds do not show: the units before the steady state was reached ran a quarter or more above it */
+  if(st && st.reached){ var ri=g.shown.indexOf(st.reached); if(ri>=3){ var pre=ucMedian(g.shown.slice(0, ri).map(function(u){ return u.min; })); if(pre>=1.25*st.value) return { kind:"faster", text:"Start-up over the first "+ri+" "+a.units+" (median "+ucL7Pace(pre)+"), then steady at about "+ucL7Pace(st.value)+" from "+ucUnitLabel(st.reached) }; } }
+  return { kind:"steady", text:"No learning trend: steady at about "+ucL7Pace(th.last)+reached }; }
+/* the headline tiles of an activity */
+function ucL7Head(S, a){ var timed=S.filter(function(s){ return s.m>=5; }); var tot=S.reduce(function(t,s){ return t+s.n; },0), inC=S.reduce(function(t,s){ return t+s.m; },0); var t=[];
+  t.push(['<div class="k">'+esc(a.label)+'</div><div class="v">'+tot+'</div><div class="s">'+inC+' timed in '+S.length+' '+(S.length===1?'series':'series')+' (one per trip and line)</div>']);
+  if(timed.length){ var latest=timed[timed.length-1]; var main=timed.slice().sort(function(x,y){ return y.m-x.m; })[0]; var paceOf=function(x){ return x.g.steady?x.g.steady.value:x.med; };
+    t.push(['<div class="k">Largest series</div><div class="v">'+esc(ucL7Pace(paceOf(main)))+'</div><div class="s">'+esc(main.name)+', '+main.m+' timed'+(main.g.steady?', steady state':', median')+'</div>']);
+    if(latest!==main && latest.m>=20) t.push(['<div class="k">Latest series</div><div class="v">'+esc(ucL7Pace(paceOf(latest)))+'</div><div class="s">'+esc(latest.name)+(latest.g.steady?', steady state':', median')+'</div>']);
+    var best=timed.slice().sort(function(x,y){ return x.med-y.med; })[0]; if(timed.length>1) t.push(['<div class="k">Quickest series</div><div class="v">'+esc(ucL7Pace(best.med))+'</div><div class="s">'+esc(best.name)+', median of '+best.m+'</div>']);
+    /* first to latest on one line: the line with the most series */
+    var byLine={}; timed.forEach(function(s){ (byLine[s.line]=byLine[s.line]||[]).push(s); }); var ln=Object.keys(byLine).sort(function(x,y){ return byLine[y].length-byLine[x].length; })[0]; var L=ln!=null?byLine[ln]:[];
+    if(L.length>1){ var f=L[0], l=L[L.length-1]; var ch=(f.med>0)?(l.med-f.med)/f.med:0; t.push(['<div class="k">First to latest'+(ln?', '+esc(ucLineName(ln)):'')+'</div><div class="v">'+esc(ucL7Pace(f.med))+' → '+esc(ucL7Pace(l.med))+'</div><div class="s">'+esc(f.name.split(" · ")[0])+' to '+esc(l.name.split(" · ")[0])+', medians: '+(Math.abs(ch)<0.05?'about the same':(Math.round(Math.abs(ch)*100)+'% '+(ch<0?'quicker':'slower')))+'</div>']); } }
+  /* lifts: minutes per tonne where the weight is on record */
+  if(a.id==="lift"){ var mt=[]; S.forEach(function(s){ s.g.shown.forEach(function(u){ if(u.weightTe!=null && u.weightTe>0) mt.push(u.min/u.weightTe); }); }); if(mt.length>=3) t.push(['<div class="k">Per tonne lifted</div><div class="v">'+esc(ucPace1(ucMedian(mt)))+' min/t</div><div class="s">median over the '+mt.length+' timed lifts with a weight in air on record; lifts differ from 5 to 35 t, so a lift is not a like-for-like unit</div>']); }
+  return '<div class="cyc-tiles">'+t.map(function(x){ return '<div class="cyc-tile">'+x[0]+'</div>'; }).join("")+'</div>'; }
+/* the series side by side: the median as a bar, the middle half as a line over it, the count */
+function ucL7Bars(S, a, o){ o=o||{}; var R=S.filter(function(s){ return s.m>=1; }); if(R.length<2) return ''; var W=o.width||960; var FS=11.5; var labW=Math.min(300, Math.max.apply(null, R.map(function(s){ return ucTextW(s.name, FS); }))+14); var valW=170; var x0=labW, x1=W-valW; var rowH=24, top=22; var H=top+R.length*rowH+8;
+  var mx=Math.max.apply(null, R.map(function(s){ return Math.max(s.med||0, s.q3||0); }))*1.08||1; var X=function(v){ return x0+(x1-x0)*Math.min(1, v/mx); };
+  var best=R.filter(function(s){ return s.m>=5; }).sort(function(x,y){ return x.med-y.med; })[0];
+  var s='<div class="u7-bars">'+ucSvgOpen(W, H, "Median cycle per series, "+a.label.toLowerCase())+ucText(x0, 12, 10.5, UC_C.dim, 'median cycle per '+esc(a.unit)+' · the line over each bar is the middle half of its '+esc(a.units))+'<line x1="'+x0+'" y1="'+(top-4)+'" x2="'+x0+'" y2="'+(H-6)+'" stroke="'+UC_C.axis+'"/>';
+  R.forEach(function(r, i){ var y=top+i*rowH; var few=r.m<5; var col=(best && r===best)?UC_C.green:UC_C.orange;
+    s+=ucText(x0-8, y+15, FS, UC_C.ink, esc(ucFitText(r.name, FS, labW-12)), 'text-anchor="end"')+'<rect x="'+x0+'" y="'+(y+4)+'" width="'+Math.max(1,(X(r.med)-x0)).toFixed(1)+'" height="14" rx="2" fill="'+col+'" fill-opacity="'+(few?0.35:0.85)+'"><title>'+esc(r.name+': median '+ucL7Pace(r.med)+' over '+r.m+' timed '+a.units)+'</title></rect>';
+    if(r.m>=5 && r.q1!=null) s+='<line x1="'+X(r.q1).toFixed(1)+'" y1="'+(y+11)+'" x2="'+X(r.q3).toFixed(1)+'" y2="'+(y+11)+'" stroke="'+UC_C.ink+'" stroke-width="1.6"/><line x1="'+X(r.q1).toFixed(1)+'" y1="'+(y+7)+'" x2="'+X(r.q1).toFixed(1)+'" y2="'+(y+15)+'" stroke="'+UC_C.ink+'" stroke-width="1.2"/><line x1="'+X(r.q3).toFixed(1)+'" y1="'+(y+7)+'" x2="'+X(r.q3).toFixed(1)+'" y2="'+(y+15)+'" stroke="'+UC_C.ink+'" stroke-width="1.2"/>';
+    s+=ucText(x1+10, y+15, FS, UC_C.ink, '<tspan font-weight="700">'+esc(ucL7Pace(r.med))+'</tspan><tspan fill="'+UC_C.dim+'"> · '+r.m+' timed'+(few?', few':'')+'</tspan>'); });
+  return s+'</svg></div>'; }
+/* one series: its points in order on a linear axis, the scale set by the bulk of them */
+function ucL7Chart(sr, a, o){ o=o||{}; var g=sr.g; var pts=ucPointsOf(g, { xOrder:true }); if(pts.length<3) return '';
+  var W=o.width||560, H=o.height||240; var PL=44, PR=14, PT=10, PB=40; var FS=10.5;
+  var vals=g.vals.slice(); var med=sr.med; var p95=ucQ(vals, 0.95); var cap=vals.length?Math.max(p95*1.25, med*2):Math.max.apply(null, pts.map(function(p){ return p.v; }));
+  var step=(cap>=90)?[15,30,60,120,240,480].filter(function(v){ return cap/v<=5; })[0]||960:ucNiceStep(cap, 4, cap>=8); var ymax=Math.ceil(cap/step)*step; var N=Math.max.apply(null, pts.map(function(p){ return p.x; })); var xmin=1, xmax=Math.max(2, N);
+  var X=function(x){ return PL+(W-PL-PR)*(x-xmin)/(xmax-xmin); }, Y=function(v){ return PT+(H-PT-PB)*(1-Math.min(v, ymax)/ymax); };
+  var s=ucSvgOpen(W, H, sr.name+": cycle time per "+a.unit+" in order");
+  for(var yv=0; yv<=ymax+1e-9; yv+=step){ s+='<line x1="'+PL+'" y1="'+Y(yv).toFixed(1)+'" x2="'+(W-PR)+'" y2="'+Y(yv).toFixed(1)+'" stroke="'+(yv===0?UC_C.axis:UC_C.grid)+'"/>'+ucText(PL-6, Y(yv)+3.5, FS, UC_C.dim, esc(yv>=60?ucFmt(yv):(Math.round(yv*10)/10)+(yv===0?' min':'')), 'text-anchor="end"'); }
+  var xs=ucNiceStep(xmax-xmin, 6, true); for(var xv=(xs>1?xs:1); xv<=xmax; xv+=xs){ s+=ucText(X(xv), H-PB+13, FS, UC_C.dim, String(xv), 'text-anchor="middle"'); } if(xs>1) s+=ucText(X(1), H-PB+13, FS, UC_C.dim, '1', 'text-anchor="middle"');
+  s+=ucText((PL+W-PR)/2, H-6, FS, UC_C.dim, esc(a.unit+' in order within the series'), 'text-anchor="middle"');
+  /* the steady state, or the median when the series is too short for one */
+  var ref=(g.steady?g.steady.value:med); if(ref!=null && sr.m>=3){ s+='<line x1="'+PL+'" y1="'+Y(ref).toFixed(1)+'" x2="'+(W-PR)+'" y2="'+Y(ref).toFixed(1)+'" stroke="'+UC_C.green+'" stroke-dasharray="2 3" stroke-width="1.2"/>'; }
+  /* the points: over the top of the scale they sit on the top edge as marks */
+  var over=0; pts.forEach(function(p){ var left=(p.kind==="intr"||p.kind==="seq"||p.kind==="excl"); var top=p.v>ymax; if(top) over++; var x=X(p.x), y=top?PT+4:Y(p.v); var col=left?UC_C.grey:UC_C.orange; var ti='<title>'+esc(p.title)+'</title>';
+    if(top || left) s+='<path d="M'+(x-3).toFixed(1)+' '+(y+3).toFixed(1)+' L'+x.toFixed(1)+' '+(y-3).toFixed(1)+' L'+(x+3).toFixed(1)+' '+(y+3).toFixed(1)+' Z" fill="'+(left?'none':col)+'" stroke="'+col+'" stroke-width="1">'+ti+'</path>';
+    else if(p.kind==="group") s+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="2.1" fill="#fff" stroke="'+col+'" stroke-opacity="0.75" stroke-width="1">'+ti+'</circle>';
+    else s+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="2.3" fill="'+(p.best?UC_C.green:col)+'" fill-opacity="'+(p.best?1:0.6)+'">'+ti+'</circle>'; });
+  /* the rolling median through the units in the curve */
+  var inC=pts.filter(function(p){ return p.kind==="logged"||p.kind==="group"; }).sort(function(x,y){ return x.x-y.x; });
+  if(inC.length>=3){ var w=(inC.length>=8)?Math.max(5, Math.round(inC.length/25)|1):1; var half=Math.floor(w/2); var d=''; inC.forEach(function(p, i){ var lo=Math.max(0, i-half), hi=Math.min(inC.length, i+half+1); var m=ucMedian(inC.slice(lo, hi).map(function(q){ return q.v; })); d+=(i?' L':'M')+X(p.x).toFixed(1)+' '+Y(m).toFixed(1); }); s+='<path d="'+d+'" fill="none" stroke="'+UC_C.ink+'" stroke-width="'+(w>1?1.8:1)+'" stroke-linejoin="round"'+(w>1?'':' stroke-opacity="0.45"')+'/>'; sr.roll=w; }
+  if(ref!=null && sr.m>=3){ var lab=(g.steady?'steady ':'median ')+ucL7Pace(ref); var lw=ucTextW(lab, FS)+10; s+='<rect x="'+(W-PR-lw-2).toFixed(1)+'" y="'+(Y(ref)-16).toFixed(1)+'" width="'+lw.toFixed(1)+'" height="14" rx="3" fill="#fff" fill-opacity="0.9"/>'+ucText(W-PR-7, Y(ref)-5.5, FS, UC_C.green, esc(lab), 'text-anchor="end"'); }
+  sr.over=over; return s+'</svg>'; }
+function ucL7Card(sr, a){ var ch=ucL7Chart(sr, a, {}); var foot=sr.n+' on the register, '+sr.m+' in the curve'+(sr.over?'; '+sr.over+' above the scale, marked on the top edge':'')+(sr.roll>1?'; black line: rolling median of '+sr.roll:'');
+  return '<div class="u7-card"><div class="u7-name">'+esc(sr.name)+'</div><div class="u7-verdict u7-'+sr.verdict.kind+'">'+esc(sr.verdict.text)+'</div>'+ch+'<div class="u7-foot">'+esc(foot)+'</div></div>'; }
+/* the Learning panel of one activity */
+function ucL7Activity(units, a, o){ o=o||{}; var S=ucL7Series(units, a); if(!S.length) return ''; var big=S.filter(function(s){ return s.m>=5; }); var small=S.filter(function(s){ return big.indexOf(s)<0; });
+  var h='<div class="u7-act"><div class="u7-acth">'+esc(a.label)+' <span class="dim" style="font-weight:400">· '+esc(a.cycleShort)+'</span></div>'+ucL7Head(S, a)+ucL7Bars(S, a, o);
+  if(big.length) h+='<div class="u7-grid">'+big.map(function(s){ return ucL7Card(s, a); }).join("")+'</div>';
+  var tableOn=(function(){ var n=S.reduce(function(t,x){ return t+x.n; },0); return n>0 && n<=80 && (a.id==="lift" || !big.length); })();
+  if(small.length && !tableOn) h+='<div class="dim" style="font-size:11.5px;margin-top:6px">Fewer than five timed '+esc(a.units)+', so no chart: '+small.map(function(s){ return esc(s.name)+' ('+s.n+' on the register'+(s.med!=null?', '+esc(ucL7Pace(s.med))+(s.m>1?' median':''):'')+')'; }).join('; ')+'.</div>';
+  var timedU=[]; S.forEach(function(s){ s.g.all.forEach(function(u){ timedU.push({ s:s, u:u }); }); });
+  if(tableOn){ var hasW=timedU.some(function(x){ return x.u.weightTe!=null; });
+    h+='<div class="u6-scroll" style="margin-top:10px"><table class="cyc-t u7-units"><thead><tr><th>Series</th><th>'+esc(a.unit.charAt(0).toUpperCase()+a.unit.slice(1))+'</th><th>Done</th><th class="n">Cycle</th>'+(hasW?'<th class="n">Weight in air</th><th class="n">Min per tonne</th>':'')+'<th>Read as</th></tr></thead><tbody>'+timedU.map(function(x){ var u=x.u; var inC=x.s.g.shown.indexOf(u)>=0; var why=inC?'in the curve':(u.min==null?'first of its series, not timed':(u.intr?'interrupted, not in the curve':'left out')); return '<tr'+(inC?'':' class="dim"')+'><td>'+esc(x.s.name)+'</td><td>'+esc(ucUnitLabelCap(u))+'</td><td>'+esc(ucWhen(u.abs))+'</td><td class="n">'+(u.min!=null?esc(ucFmt(u.min)):'–')+'</td>'+(hasW?'<td class="n">'+(u.weightTe!=null?u.weightTe+' t':'–')+'</td><td class="n">'+((inC && u.weightTe)?esc(ucPace1(u.min/u.weightTe)):'–')+'</td>':'')+'<td>'+why+'</td></tr>'; }).join("")+'</tbody></table></div>'; }
+  return h+'</div>'; }
+var UC_L7_HOW='One series per trip and line, never pooled: a trip, a line and a method each have their own pace. Each chart shows the units in the order they were done on a linear axis; the scale is set by the bulk of the points, and the few far above it are marked on the top edge. The black line is the rolling median; the green line is the steady state (the median over the last third), or the median when the series is too short for one. Hollow points were timed as part of a group (the record named the unit numbers every few units); grey triangles fell in interrupted intervals and are not in the curve. A learning rate is stated only where the points support one (R² of 0.5 or more); otherwise the series is described as it ran. A description of the work done, not a forecast.';
+function ucV_learning7(){ var units=ucSelUnits(); var rows=ucRows(); var ui=ucUI(); var acts=ucActs().filter(function(a){ return units.some(function(u){ return u.act===a.id; }); });
+  var h='<div class="panel cyc-sec"><p class="cyc-h">Learning: how each series ran</p><p class="cyc-sub">'+esc(UC_L7_HOW)+'</p>'+acts.map(function(a){ return ucL7Activity(units, a, {}); }).join("")+'</div>';
+  /* where the time went, per activity, over the selection */
+  var where=acts.map(function(a){ var g=ucGroup(units, a.id, {trip:ui.ucTrip, line:ui.ucLine}); var w=ucWhereHtml(g, rows); return w?'<div style="margin-top:8px"><div style="font-weight:700;font-size:13px">'+esc(a.label)+'</div>'+w+'</div>':''; }).join(""); if(where) h+='<div class="panel cyc-sec"><p class="cyc-h">Where the time went, by stage</p>'+where+'</div>';
+  h+='<div class="panel cyc-sec"><details class="u7-detail"><summary>The full detail: every series on one chart, the counts, the fit and each unit</summary>'+ucV_learningAll()+'</details></div>'; return h; }
+
+var UC7_CSS=[
+'.u7-act{margin-top:18px;padding-top:14px;border-top:1px solid #ebe6dc}',
+'.u7-act:first-of-type{border-top:0;padding-top:4px;margin-top:8px}',
+'.u7-acth{font-weight:700;font-size:15px;color:#1A1A1A}',
+'.u7-bars{margin-top:12px;max-width:980px}',
+'.u7-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:14px;margin-top:12px}',
+'.u7-card{border:1px solid #e6e1d6;border-radius:6px;padding:10px 12px 6px;background:#fff;break-inside:avoid;min-width:0}',
+'.u7-name{font-weight:700;font-size:13px;color:#1A1A1A}',
+'.u7-verdict{font-size:12px;line-height:1.4;margin:2px 0 6px;color:#4a4a4a}',
+'.u7-verdict.u7-learning,.u7-verdict.u7-faster{color:#2f7d4a}',
+'.u7-verdict.u7-slower{color:#b4541a}',
+'.u7-verdict.u7-few{color:#8C8C8C}',
+'.u7-foot{font-size:11px;color:#8C8C8C;margin-top:2px}',
+'.u7-detail>summary{cursor:pointer;font-weight:700;font-size:13px;color:#1A1A1A}',
+'@media print{.u7-grid{grid-template-columns:1fr 1fr}.u7-detail{display:none}}'
+].join("\n");
+(function(){ try{ if(document.getElementById("ucV7Style")) return; var st=document.createElement("style"); st.id="ucV7Style"; st.textContent=UC7_CSS; document.head.appendChild(st); }catch(e){} })();
 
 function cycV_pick(){
   var rsAll=(CYC.reels||[]).filter(function(r){ return !r.deleted && r.included!==false; }).sort(cycByOrder); var u=cycScope().units;
