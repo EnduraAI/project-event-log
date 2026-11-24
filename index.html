@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Endura Project Event Log - build 2026-11-24.1 - deploy check string: PEL-BUILD-2026-11-24.1 -->
+<!-- Endura Project Event Log - build 2026-11-24.2 - deploy check string: PEL-BUILD-2026-11-24.2 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -332,7 +332,7 @@ window.PEL_LIB_SOURCE={}; window.PEL_LIB_READY={};
       <span class="sub" style="margin-left:8px">Project:</span>
       <input id="projectName" style="width:150px" placeholder="project / campaign" onchange="setProject(this.value)" title="Everyone using the same project name sees the same shared log">
       <span id="syncStatus" class="sub" style="margin-left:8px">connecting…</span>
-      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">v6.2.0 · build 2026-11-24.1</span>
+      <span class="sub" style="margin-left:8px;opacity:.55;font-size:11px" title="Deploy check: view source on the live site and search for this build string">v6.2.1 · build 2026-11-24.2</span>
       <span class="spacer"></span>
       <button class="btn" id="adminToggle" onclick="toggleAdmin()" title="Password, backups and data export / import">&#9881; Settings</button>
       <span id="adminTools" style="display:none">
@@ -651,7 +651,7 @@ window.PEL_LIB_SOURCE={}; window.PEL_LIB_READY={};
   g.innerHTML=s;
 })();
 
-var APP_BUILD="2026-11-24.1"; var APP_VERSION="6.2.0";
+var APP_BUILD="2026-11-24.2"; var APP_VERSION="6.2.1";
 var PEL_ENV={env:"TEST",agent:true,schema:7};
 document.addEventListener("DOMContentLoaded",function(){ try{
   var b=document.createElement("div");
@@ -4204,6 +4204,8 @@ function ucRigidEvents(rows, opts){ opts=opts||{};
     if(it.ctx) return;
     /* v6.2.0 a trip the DPR books for another register's work feeds this one nothing */
     if(opts.labelAt && r.src==="dpr" && !ucTripScopeOK("rigid", opts.labelAt(r.abs))){ st.outside=(st.outside||0)+1; return; }
+    /* v6.2.1 so does a Daily Log day after the last DPR while the DPR's last trip is another register's work */
+    if(opts.labelAfter && r.src!=="dpr"){ var la=opts.labelAfter(r.abs); if(la!==undefined && !ucTripScopeOK("rigid", la)){ st.outside=(st.outside||0)+1; return; } }
     var mk=R.kp.exec(tx); if(mk) kps.push({ abs:r.abs, kp:+mk[1], text:tx });
     /* v6.1.0 a spool cut is its own activity, numbered in the order the cuts were made within the trip; the spool and segment kept */
     var sp=R.spool.exec(tx); if(sp){ var spn=sp[1].replace(/\s+/g,"").toUpperCase(); var tk=String(TR(r.abs)); st.spool[tk]=(st.spool[tk]||0)+1; ev.push({ act:"spool", n:st.spool[tk], kind:"done", abs:r.abs, row:r, trip:TR(r.abs), line:"", tag:spn+"-"+("0"+(+sp[2])).slice(-2) }); return; }
@@ -4248,6 +4250,7 @@ function ucMoorEvents(rows, opts){ opts=opts||{}; var ev=[], marks=[], lines={};
   rows.forEach(function(r){ var tx=r.text; var D=(r.src==="dpr"); /* the new wording is the DPR's; the Daily Log is read as before */
     /* a trip the DPR books for other work feeds this register nothing; a DPR day without the trip table is not read for mooring */
     if(r.src==="dpr" && opts.labelAt){ var lb=opts.labelAt(r.abs); if(lb===undefined || !ucTripScopeOK("moor", lb)){ st.outside++; return; } }
+    if(r.src!=="dpr" && opts.labelAfter){ var la2=opts.labelAfter(r.abs); if(la2!==undefined && !ucTripScopeOK("moor", la2)){ st.outside++; return; } }
     if(r.src!=="dpr" || !tripAt){ var mt=UC_RIGID_RE.tripStart.exec(tx); if(mt && /mooring|chain|structure|mobilis/i.test(tx) && (st.trip==null || +mt[2]>=st.trip)) st.trip=+mt[2]; }
     var mm=R.ml.exec(tx); if(mm) setLine("ML"+(+mm[1]), "Mooring line "+(+mm[1]), r.abs);
     if(D && (R.tether.test(tx) || R.tet.test(tx))){ var tn=R.tet.exec(tx); if(tn) st.tet=+tn[1]; setLine("TET", "Tether chains", r.abs);
@@ -4326,7 +4329,7 @@ function ucLinesIn(u, rows){ if(!u.w) return { lines:[], holdups:[], total:0 }; 
 /* the plan for a trip and activity: planned units, set by the reviewer */
 function ucPlanFor(act, trip, line){ var P=ucOf().plans||[]; return P.filter(function(p){ return p.act===act && p.trip===trip && (!line || !p.line || p.line===line); })[0]||null; }
 /* build: read, compare with the register, return the proposal */
-function ucPropose(scope, rows){ scope=scope||CYC_SCOPE; var SR=null; if(!rows){ SR=ucSrcRows(scope); rows=SR.rows; } /* v6.1.0 the window is found in the Daily Log first, so older reports kept with the record never pull it back */ var win=(SR && SR.mode==="dpr")?ucWindow(scope, SR.logAll):ucWindow(scope, rows); if(SR && SR.mode==="dpr" && !win.from) win=ucWindow(scope, rows); var inWin=ucRowsIn(scope, rows, win); var TRf=(SR && SR.mode==="dpr" && ucDprScope(scope) && typeof ucDprTripFn==="function")?ucDprTripFn():null; var read=ucReadEvents(scope, inWin, { ctx:SR?ucRowsIn(scope, SR.ctx, win):[], tripAt:TRf?TRf.at:null, labelAt:TRf?TRf.labelAt:null }); var units=ucBuildUnits(read, scope, inWin); var U=ucOf(); var cur={}; (U.units||[]).forEach(function(u){ cur[ucKey(u)]=u; });
+function ucPropose(scope, rows){ scope=scope||CYC_SCOPE; var SR=null; if(!rows){ SR=ucSrcRows(scope); rows=SR.rows; } /* v6.1.0 the window is found in the Daily Log first, so older reports kept with the record never pull it back */ var win=(SR && SR.mode==="dpr")?ucWindow(scope, SR.logAll):ucWindow(scope, rows); if(SR && SR.mode==="dpr" && !win.from) win=ucWindow(scope, rows); var inWin=ucRowsIn(scope, rows, win); var TRf=(SR && SR.mode==="dpr" && ucDprScope(scope) && typeof ucDprTripFn==="function")?ucDprTripFn():null; var read=ucReadEvents(scope, inWin, { ctx:SR?ucRowsIn(scope, SR.ctx, win):[], tripAt:TRf?TRf.at:null, labelAt:TRf?TRf.labelAt:null, labelAfter:TRf?TRf.labelAfter:null }); var units=ucBuildUnits(read, scope, inWin); var U=ucOf(); var cur={}; (U.units||[]).forEach(function(u){ cur[ucKey(u)]=u; });
   var add=[], chg=[], same=[]; units.forEach(function(u){ var c=cur[ucKey(u)]; if(!c){ add.push(u); return; } var diff=[]; if(c.abs!==u.abs) diff.push("time "+ucWhen(c.abs)+" → "+ucWhen(u.abs)); if((c.min==null?null:Math.round(c.min))!==(u.min==null?null:Math.round(u.min))) diff.push("cycle "+(c.min==null?"–":cycH(Math.round(c.min)))+" → "+(u.min==null?"–":cycH(Math.round(u.min)))); if(!!c.intr!==!!u.intr) diff.push(u.intr?"now read as interrupted":"no longer read as interrupted"); if(JSON.stringify(c.grp)!==JSON.stringify(u.grp)) diff.push(u.grp?"now timed as a group":"now timed on its own"); if((c.flags||[]).indexOf("no longer in the log")>=0) diff.push("back in the log"); if((c.src||"log")!==(u.src||"log")) diff.push(u.src==="dpr"?"now read from the DPR":"now read from the Daily Log"); if((c.tag||"")!==(u.tag||"")) diff.push("tag "+(c.tag||"–")+" → "+(u.tag||"–")); if(diff.length) chg.push({ cur:c, next:u, diff:diff }); else same.push(c); });
   var gone=(U.units||[]).filter(function(c){ return !units.some(function(u){ return ucKey(u)===ucKey(c); }); });
   var logTo=inWin.length?inWin[inWin.length-1].date:(rows.length?rows[rows.length-1].date:""); var lines=read.lines;
@@ -4466,7 +4469,7 @@ function ucLgPaces(units, scope){ var out={}; ucActs(scope).forEach(function(a){
 function ucLedger(opts){ opts=opts||{}; var scope=opts.scope||CYC_SCOPE; var units=(opts.units||ucUnits()).filter(function(u){ return !u.deleted; }).slice().sort(function(x,y){ return x.abs-y.abs || x.n-y.n; }); if(!opts.rows && !opts.src) opts.src=ucSrcRows(scope, {mode:ucViewMode(scope)}); var rows=(opts.rows||opts.src.rows).filter(function(r){ return r && r.abs!=null; });
   /* v6.2.0 the DPR's lines in another register's trips are not this ledger's (for mooring, nor a DPR day without its trip table) */
   var TRL=(opts.src && opts.src.mode==="dpr" && typeof ucDprTripFn==="function")?ucDprTripFn():null;
-  if(TRL) rows=rows.filter(function(r){ if(r.src!=="dpr") return true; var lb=TRL.labelAt(r.abs); if(scope==="moor" && lb===undefined) return false; return ucTripScopeOK(scope, lb); });
+  if(TRL) rows=rows.filter(function(r){ if(r.src!=="dpr"){ var la=TRL.labelAfter(r.abs); return la===undefined || ucTripScopeOK(scope, la); } var lb=TRL.labelAt(r.abs); if(scope==="moor" && lb===undefined) return false; return ucTripScopeOK(scope, lb); });
   var acts=ucActs(scope); var actOrder={}; acts.forEach(function(a,i){ actOrder[a.id]=i; });
   if(!units.length) return { ok:false, reason:"no units on the register" };
   var paces=opts.paces||ucLgPaces(units, scope); var PK=function(act, trip, line){ var b=act+"|"+(trip==null?"":trip); return (line!=null && paces[b+"|"+line]) || paces[b] || null; };
@@ -4660,7 +4663,10 @@ function ucDprTripFn(checks){ var segs=ucDprTripSegs(checks); if(!segs.length) r
   var labelAt=function(abs){ var d=ucAbsDay(abs); if(!covered[d]) return undefined; var s=null; for(var i=0;i<segs.length;i++){ if(segs[i].abs<=abs) s=segs[i]; else break; } return s?s.label:undefined; };
   var trips=[]; segs.forEach(function(s){ if(s.trip!=null && trips.indexOf(s.trip)<0) trips.push(s.trip); });
   var chg=[]; segs.forEach(function(s, i){ if(i===0 || segs[i-1].label!==s.label) chg.push({ abs:s.abs, label:s.label, trip:s.trip, report:s.report }); });
-  return { at:at, labelAt:labelAt, segs:segs, info:{ from:segs[0].day, to:segs[segs.length-1].day, trips:trips, changes:chg, reports:segs.map(function(s){ return s.report; }).filter(function(v,i,a){ return a.indexOf(v)===i; }) } }; }
+  /* v6.2.1 a Daily Log day after the last report with a trip table carries on in the DPR's last booking, so its lines go to the register
+     whose work that trip is (the log typed after the last DPR on a mooring trip feeds the mooring register, not the rigid one) */
+  var lastDay=segs[segs.length-1].day; var labelAfter=function(abs){ return (ucAbsDay(abs)>lastDay)?segs[segs.length-1].label:undefined; };
+  return { at:at, labelAt:labelAt, labelAfter:labelAfter, segs:segs, info:{ from:segs[0].day, to:segs[segs.length-1].day, trips:trips, changes:chg, reports:segs.map(function(s){ return s.report; }).filter(function(v,i,a){ return a.indexOf(v)===i; }) } }; }
 /* every row of the DPR detailed logs kept with the record, in time order */
 function ucDprRows(){ var out=[]; try{ (typeof linesWindow==="function"?linesWindow():[]).forEach(function(t){ var dn=cycDayNum(t.date); if(dn==null) return; (t.rows||[]).forEach(function(r){ if(!r || r.time==null) return; var tx=String(r.text||"").trim(); if(!tx) return; out.push({ date:t.date, abs:dn*1440+r.time, clock:ucAbsClock(dn*1440+r.time), text:tx, report:t.reportNo?"DPR-"+t.reportNo:"DPR", line:r.line||0, src:"dpr" }); }); }); }catch(e){} return out.sort(function(a,b){ return a.abs-b.abs || a.line-b.line; }); }
 /* the live DPR check of each day (the latest recorded) */
